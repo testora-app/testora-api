@@ -1,0 +1,13 @@
+bcrypt==3.2.0
+cffi==1.14.6
+click==8.0.1
+colorama==0.4.4
+Flask==1.1.2
+itsdangerous==2.0.1
+Jinja2==3.0.1
+MarkupSafe==2.0.1
+mysql-connector-python==8.0.27
+mysqlclient @ file:///C:/Users/Jnr/Desktop/Asqii%20Work/schooldesk_backend/lib/MySQL-python-1.2.5/mysqlclient-1.4.6-cp39-cp39-win_amd64.whl
+pycparser==2.20
+six==1.16.0
+Werkzeug==2.0.1
