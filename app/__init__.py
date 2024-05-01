@@ -1,18 +1,31 @@
-from flask import Flask
-from .extensions import *
+from apiflask import APIFlask
+from app.extensions import db, migrate, cors
+from app.errorhandlers import (page_not_found, method_not_allowed, internal_server_error, forbidden)
 
 #importing the routes
 from .routes import main
 
 def create_app():
-    app = Flask(__name__)
+    app = APIFlask(__name__)
 
     app.config.from_object('config.DevelopmentConfig')
 
     #initialize the extensions
+    cors.init_app(app)
+    db.init_app(app)
+    migrate.init_app(app, db)
 
-    #registering blueprints
-    app.register_blueprint(main)
+
+
+    with app.app_context():
+        # register errorhandlers
+        app.register_error_handler(403, forbidden)
+        app.register_error_handler(404, page_not_found)
+        app.register_error_handler(405, method_not_allowed)
+        app.register_error_handler(500, internal_server_error)
+
+        #registering blueprints
+        app.register_blueprint(main)
 
 
     return app

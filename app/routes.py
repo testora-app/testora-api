@@ -1,9 +1,12 @@
-from flask import Blueprint
+from apiflask import APIBlueprint
+from flask import jsonify
 
+from app._shared.schemas import SuccessMessage
 
-main = Blueprint('main', __name__)
+main = APIBlueprint('main', __name__)
 
 #routes
-@main.route("/", methods=['GET'])
-def lhome():
-    return 'Hello World!'
+@main.get("/")
+@main.output(SuccessMessage, 200)
+def index():
+    return jsonify({'message': 'Hello from your friends at Testora or is it?!!!'})
