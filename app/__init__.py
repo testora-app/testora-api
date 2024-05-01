@@ -4,6 +4,7 @@ from app.errorhandlers import (page_not_found, method_not_allowed, internal_serv
 
 #importing the routes
 from .routes import main
+from app.admin.routes import admin
 
 def create_app():
     app = APIFlask(__name__)
@@ -26,6 +27,7 @@ def create_app():
 
         #registering blueprints
         app.register_blueprint(main)
+        app.register_blueprint(admin)
 
 
     return app
