@@ -1,6 +1,32 @@
 from flask import jsonify
 from werkzeug.http import HTTP_STATUS_CODES
 
+def error_response(status_code, message=None, data=None):
+    payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
+    if message:
+        payload['message'] = message
+
+    if data:
+        payload['data'] = data
+
+    response = jsonify(payload)
+    response.status_code = status_code
+    return response
+
+
+def bad_request(message="Bad Request"):
+    return error_response(400, message)
+
+def unauthorized_request(message="You're not allowed to do that!"):
+    return error_response(401, message)
+
+def server_error(message="Something went wrong! Our backend team has been notified and are working to resolve it."):
+    return error_response(500, message)
+
+def not_found(message='The object was not found!'):
+    return error_response(404, message)
+
+
 class BaseError(Exception):
     '''
     Base exception for all custom API errors
@@ -16,7 +42,7 @@ class BaseError(Exception):
         '''
         Get a dictionary representation of this error instance
         '''
-        return {'message': self.message, 'data': self.payload}
+        return error_response(status_code=self.error_code, message=self.message, data=self.payload)
 
 
 class DatabaseError(BaseError):
@@ -54,29 +80,3 @@ class PermissionDeniedError(BaseError):
     def __init__(self, message='You do not have permission to do that!', error_code=403):
         super(PermissionDeniedError, self).__init__(message, error_code)
 
-
-
-
-def error_response(status_code, message=None):
-    payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
-    if message:
-        payload['message'] = message
-    response = jsonify(payload)
-    response.status_code = status_code
-    return response
-
-
-def bad_request(message="Bad Request"):
-    return error_response(400, message)
-
-
-def unauthorized_request(message="You're not allowed to do that!"):
-    return error_response(401, message)
-
-
-def server_error(message="Something went wrong! Our backend team has been notified and are working to resolve it."):
-    return error_response(500, message)
-
-
-def not_found(message='The object was not found!'):
-    return error_response(404, message)

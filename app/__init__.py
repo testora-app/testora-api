@@ -6,6 +6,9 @@ from app.errorhandlers import (page_not_found, method_not_allowed, internal_serv
 from .routes import main
 from app.admin.routes import admin
 
+# importing models or else the migrations won't find them wai
+from app.admin.models import Admin, Subject, Topic
+
 def create_app():
     app = APIFlask(__name__)
 

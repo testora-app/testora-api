@@ -1,7 +1,6 @@
 import os
 import secrets
 
-
 class BaseConfig(object):
     basedir = os.path.abspath(os.path.dirname(__file__))
     DEBUG = False
