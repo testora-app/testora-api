@@ -27,5 +27,6 @@ def token_auth(user_type):
                 raise PermissionDeniedError()
             
             set_current_user(**payload)
+            return func(*args, **kwargs)
         return wrapper
     return decorator
