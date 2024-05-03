@@ -24,7 +24,7 @@ def generate_access_token(user_id, user_type, school_id=None, permissions=None):
 
 
 def hash_password(password):
-    return bcrypt.check_password_hash(password)
+    return bcrypt.generate_password_hash(password)
 
 def check_password(hashed_password, password):
     return bcrypt.check_password_hash(hashed_password, password)

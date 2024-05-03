@@ -17,3 +17,16 @@ class SuccessMessage(Schema):
 
 class GenericSchema(Schema):
     action = String(allow_none=True, required=False)
+
+
+class LoginSchema(BaseSchema):
+    email = String(allow_none=False, required=True)
+    password = String(allow_none=False, required=True)
+
+
+
+class UserTypes:
+    admin = 'admin'
+    school_admin = 'school_admin'
+    staff = 'staff'
+    student = 'student'

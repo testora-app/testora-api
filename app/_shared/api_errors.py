@@ -1,8 +1,15 @@
 from flask import jsonify
 from werkzeug.http import HTTP_STATUS_CODES
 
+def success_response(status_code=200, data=None, message="success"):
+    return error_response(status_code=status_code, message=message, data=data)
+
 def error_response(status_code, message=None, data=None):
-    payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
+    if status_code > 299:
+        payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
+    else:
+        payload = {}
+        
     if message:
         payload['message'] = message
 
@@ -19,6 +26,9 @@ def bad_request(message="Bad Request"):
 
 def unauthorized_request(message="You're not allowed to do that!"):
     return error_response(401, message)
+
+def permissioned_denied(message="You don't have the permissions to do that!"):
+    return error_response(403, message)
 
 def server_error(message="Something went wrong! Our backend team has been notified and are working to resolve it."):
     return error_response(500, message)
