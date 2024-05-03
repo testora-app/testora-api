@@ -30,3 +30,7 @@ class UserTypes:
     school_admin = 'school_admin'
     staff = 'staff'
     student = 'student'
+
+
+class CurriculumTypes:
+    bece = 'bece'

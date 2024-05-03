@@ -30,7 +30,7 @@ class AdminManager(BaseManager):
 
 
 class SubjectManager(BaseManager):
-    def create_subjects(self, entries: List[Dict]):
+    def create_subjects(self, entries: List[Dict]) -> List[Subject]:
         entities: List[Subject] = []
         for entry in entries:
             entities.append(Subject(
@@ -55,7 +55,7 @@ class SubjectManager(BaseManager):
 
 
 class TopicManager(BaseManager):
-    def create_subjects(self, entries: List[Dict]):
+    def create_topics(self, entries: List[Dict]) -> List[Topic]:
         entities: List[Topic] = []
         for entry in entries:
             entities.append(Subject(
@@ -75,13 +75,13 @@ class TopicManager(BaseManager):
     def get_topic_by_id(self, id):
         return Topic.query.filter_by(id=id).first()
     
-    def get_topic_by_subject(self, subject_id):
+    def get_topic_by_subject(self, subject_id) -> List[Topic]:
         return Topic.query.filter_by(subject_id=subject_id).all()
     
-    def get_topic_by_level(self, level):
+    def get_topic_by_level(self, level) -> List[Topic]:
         return Topic.query.filter_by(level=level).all()
     
-    def get_topic_by_subject_level(self, subject_id, level):
+    def get_topic_by_subject_level(self, subject_id, level) -> List[Topic]:
         return Topic.query.filter(subject_id=subject_id, level=level).all()
 
 

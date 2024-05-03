@@ -7,7 +7,7 @@ from app._shared.services import check_password, generate_access_token
 from app._shared.decorators import token_auth
 
 from app.admin.operations import admin_manager, subject_manager, topic_manager
-from app.admin.schemas import AddAdminSchema, AdminListSchema, AdminSchema, VerifiedAdminSchema
+from app.admin.schemas import (AddAdminSchema, AdminListSchema, AdminSchema, VerifiedAdminSchema, SubjectSchemaList, TopicSchemaList, AddSubjectSchemaPost, AddTopicSchemaPost)
 
 admin = APIBlueprint('admin', __name__)
 
@@ -18,7 +18,7 @@ admin = APIBlueprint('admin', __name__)
 @token_auth([UserTypes.admin])
 def get_admins():
     admins = admin_manager.get_admins()
-    return [admin.to_json() for admin in admins]
+    return success_response(data=[admin.to_json() for admin in admins])
 
 
 @admin.post('/admins/')
@@ -48,13 +48,33 @@ def admin_login(json_data):
 
 
 
-# @admin.get('/subjects/')
-# @admin.output()
-# def get_subjects():
-#     return subject_manager.get_subjects()
+@admin.get('/subjects/')
+@admin.output(SubjectSchemaList)
+def get_subjects():
+    return subject_manager.get_subjects()
+
+@admin.post('/subjects/')
+@admin.input(AddSubjectSchemaPost)
+@admin.output(SubjectSchemaList)
+def add_subjects(json_data):
+    new_subjects = subject_manager.create_subjects(json_data)
+    return success_response(data=[s.to_json() for s in new_subjects])
+
+@admin.get('/subjects/<int: subject_id>/topics')
+@admin.output(TopicSchemaList)
+def get_subject_topics(subject_id):
+    topics = topic_manager.get_topic_by_subject(subject_id)
+    return success_response(data=[topic.to_json() for topic in topics])
 
 
-# @admin.get('/topics/')
-# @admin.ouput()
-# def get_topics():
-#     return topic_manager.get_topics()
+@admin.get('/topics/')
+@admin.output(TopicSchemaList)
+def get_topics():
+    return topic_manager.get_topics()
+
+@admin.post('/topics/')
+@admin.input(AddTopicSchemaPost)
+@admin.output(TopicSchemaList)
+def add_topics(json_data):
+    new_topics = topic_manager.create_topics(json_data)
+    return [topic.to_json() for topic in new_topics]
