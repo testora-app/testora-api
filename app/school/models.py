@@ -10,6 +10,7 @@ class School(BaseModel):
     is_package_school = db.Column(db.Boolean, default=False)
     phone_number = db.Column(db.String, nullable=True)
     email = db.Column(db.String, nullable=True)
+    code = db.Column(db.String, nullable=False, unique=True)
 
     def __repr__(self):
         return f'School {self.name}'

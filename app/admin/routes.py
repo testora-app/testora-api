@@ -37,6 +37,7 @@ def add_admin(json_data):
 @admin.input(LoginSchema)
 @admin.output(VerifiedAdminSchema)
 def admin_login(json_data):
+    json_data = json_data["data"]
     admin = admin_manager.get_admin_by_email(json_data["email"])
     if not admin:
         return unauthorized_request("Invalid Login Details")

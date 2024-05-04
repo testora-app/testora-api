@@ -19,6 +19,7 @@ from app.extensions import cors, db, migrate
 from .routes import main
 from app.admin.routes import admin
 from app.school.routes import school
+from app.staff.routes import staff
 
 
 load_dotenv()
@@ -98,6 +99,7 @@ def create_app():
         app.register_blueprint(main)
         app.register_blueprint(admin)
         app.register_blueprint(school)
+        app.register_blueprint(staff)
 
         app.config['VALIDATION_ERROR_SCHEMA'] = validation_error_schema
 
