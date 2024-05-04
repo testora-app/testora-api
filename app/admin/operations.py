@@ -43,13 +43,13 @@ class SubjectManager(BaseManager):
         return entities
     
 
-    def get_subjects(self):
+    def get_subjects(self) -> List[Subject]:
         return Subject.query.all()
     
-    def get_subject_by_id(self, id):
+    def get_subject_by_id(self, id) -> Subject:
         return Subject.query.filter_by(id=id).first()
     
-    def get_subject_by_curriculum(self, curr):
+    def get_subject_by_curriculum(self, curr) -> List[Subject]:
         return Subject.query.filter_by(curriculum=curr).all()
 
 
@@ -69,10 +69,10 @@ class TopicManager(BaseManager):
         return entities
     
 
-    def get_topics(self):
+    def get_topics(self) -> List[Topic]:
         return Topic.query.all()
     
-    def get_topic_by_id(self, id):
+    def get_topic_by_id(self, id) -> Topic:
         return Topic.query.filter_by(id=id).first()
     
     def get_topic_by_subject(self, subject_id) -> List[Topic]:
