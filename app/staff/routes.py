@@ -1,11 +1,11 @@
 from apiflask import APIBlueprint
 
-from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema
+from app._shared.schemas import SuccessMessage, UserTypes, Login as LoginSchema
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token
 
-from app.staff.schemas import SchoolAdminRegisterSchema, StaffRegisterSchema, VerifiedStaffSchema
+from app.staff.schemas import SchoolAdminRegister, StaffRegister, VerifiedStaffSchema
 from app.staff.operations import staff_manager
 
 from app.school.operations import school_manager
@@ -14,10 +14,9 @@ staff = APIBlueprint('staff', __name__)
 
 
 @staff.post("/school-admin/register/")
-@staff.input(SchoolAdminRegisterSchema)
+@staff.input(SchoolAdminRegister)
 @staff.output(SuccessMessage, 201)
 def register_school_admin(json_data):
-    json_data = json_data["data"]
     new_school = school_manager.create_school(**json_data["school"])
     json_data["staff"].pop('school_code')
     staff_manager.create_staff(**json_data["staff"], is_admin=True, school_id=new_school.id, is_approved=True)
@@ -25,11 +24,9 @@ def register_school_admin(json_data):
 
 
 @staff.post("/staff/register/")
-@staff.input(StaffRegisterSchema, 201)
+@staff.input(StaffRegister, 201)
 @staff.output(SuccessMessage)
 def register_staff(json_data):
-    json_data = json_data["data"]
-
     existing = staff_manager.get_staff_by_email(json_data["email"])
     if existing:
         return bad_request("User with the email already exists!")
@@ -46,7 +43,6 @@ def register_staff(json_data):
 @staff.input(LoginSchema)
 @staff.output(VerifiedStaffSchema)
 def login(json_data):
-    json_data=json_data["data"]
     staff = staff_manager.get_staff_by_email(json_data["email"])
 
     if staff and check_password(staff.password_hash, json_data["password"]):

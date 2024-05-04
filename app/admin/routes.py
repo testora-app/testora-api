@@ -1,6 +1,6 @@
 from apiflask import APIBlueprint
 
-from app._shared.schemas import SuccessMessage, LoginSchema, UserTypes
+from app._shared.schemas import SuccessMessage, Login as LoginSchema, UserTypes
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found
 from app._shared.services import check_password, generate_access_token
 from app._shared.decorators import token_auth
@@ -37,7 +37,6 @@ def add_admin(json_data):
 @admin.input(LoginSchema)
 @admin.output(VerifiedAdminSchema)
 def admin_login(json_data):
-    json_data = json_data["data"]
     admin = admin_manager.get_admin_by_email(json_data["email"])
     if not admin:
         return unauthorized_request("Invalid Login Details")
