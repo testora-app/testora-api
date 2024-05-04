@@ -1,6 +1,5 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
 from apiflask.validators import OneOf
-from marshmallow.exceptions import ValidationError
 
 from app._shared.schemas import BaseSchema, CurriculumTypes
 

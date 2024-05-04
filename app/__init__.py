@@ -11,13 +11,15 @@ from flask_migrate import upgrade
 from marshmallow.exceptions import ValidationError
 
 from app._shared.api_errors import BaseError
-from app.admin.routes import admin
 from app.errorhandlers import (forbidden, internal_server_error,
                                method_not_allowed, page_not_found)
 from app.extensions import cors, db, migrate
 
 #importing the routes
 from .routes import main
+from app.admin.routes import admin
+from app.school.routes import school
+
 
 load_dotenv()
 
@@ -95,6 +97,7 @@ def create_app():
         #registering blueprints
         app.register_blueprint(main)
         app.register_blueprint(admin)
+        app.register_blueprint(school)
 
         app.config['VALIDATION_ERROR_SCHEMA'] = validation_error_schema
 

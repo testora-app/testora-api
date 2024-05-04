@@ -1,5 +1,4 @@
 from apiflask import APIBlueprint
-from flask import jsonify
 
 from app._shared.schemas import SuccessMessage, LoginSchema, UserTypes
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found
