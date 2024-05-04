@@ -57,3 +57,4 @@ def login(json_data):
     return unauthorized_request("Invalid Login")
 
 
+# an endpoint to verify the staff
