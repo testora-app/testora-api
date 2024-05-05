@@ -15,6 +15,7 @@ class StaffRegister(BaseSchema):
 class SchoolRegister(BaseSchema):
     name = String(required=True, allow_none=False, validate=[Length(min=3)])
     location = String(required=False, allow_none=True, validate=[Length(min=3)])
+    short_name = String(required=True, allow_none=False, validate=[Length(max=11)])
 
 class SchoolAdminRegister(BaseSchema):
     school_admin = Nested(StaffRegister)
