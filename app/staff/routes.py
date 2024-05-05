@@ -53,4 +53,11 @@ def login(json_data):
     return unauthorized_request("Invalid Login")
 
 
-# an endpoint to verify the staff
+@staff.post("/staff/<int:staff_id>/approve/")
+@staff.output(SuccessMessage)
+@token_auth([UserTypes.school_admin])
+def approve_staff(staff_id, json_data):
+    staff = staff_manager.get_staff_by_id(staff_id)
+    staff.is_approved = True
+    staff.save()
+    return success_response()

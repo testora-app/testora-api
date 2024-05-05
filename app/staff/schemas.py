@@ -49,3 +49,4 @@ class VerifiedStaffSchema(BaseSchema):
     staff = Nested(StaffSchema)
     auth_token = String()
 
+
