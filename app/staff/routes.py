@@ -24,8 +24,8 @@ def register_school_admin(json_data):
 
 
 @staff.post("/staff/register/")
-@staff.input(StaffRegister, 201)
-@staff.output(SuccessMessage)
+@staff.input(StaffRegister)
+@staff.output(SuccessMessage, 201)
 def register_staff(json_data):
     existing = staff_manager.get_staff_by_email(json_data["email"])
     if existing:
@@ -48,7 +48,8 @@ def login(json_data):
     if staff and check_password(staff.password_hash, json_data["password"]):
         user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
         access_token = generate_access_token(staff.id, user_type=user_type, school_id=staff.school_id)
-        return success_response(data={'staff': staff.to_json(), 'auth_token': access_token})
+        school = school_manager.get_school_by_id(staff.school_id)
+        return success_response(data={'staff': staff.to_json(), 'auth_token': access_token, 'school': school.to_json()})
     
     return unauthorized_request("Invalid Login")
 
