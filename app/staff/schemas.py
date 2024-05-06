@@ -54,5 +54,5 @@ class VerifiedStaffSchema(BaseSchema):
 
 
 class ApproveStaffSchema(BaseSchema):
-    staff_ids = List(Nested(ID_FIELD))
+    staff_ids = List(ID_FIELD)
 

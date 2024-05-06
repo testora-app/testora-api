@@ -31,5 +31,5 @@ class VerifiedStudentSchema(BaseSchema):
     school = Nested(SchoolSchema)
 
 class ApproveStudentSchema(BaseSchema):
-    student_ids = List(Nested(ID_FIELD))
+    student_ids = List(ID_FIELD)
 
