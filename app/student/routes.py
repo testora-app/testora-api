@@ -3,7 +3,7 @@ from typing import Dict
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, Login as LoginSchema
-from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request
+from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token
 
@@ -37,9 +37,22 @@ def student_register(json_data: Dict):
 def login(json_data):
     student = student_manager.get_student_by_email(json_data["email"])
 
+    if not student.is_approved:
+        return unapproved_account()
+
     if student and check_password(student.password_hash, json_data["password"]):
         access_token = generate_access_token(student.id, UserTypes.student, student.school_id)
         school = school_manager.get_school_by_id(student.id)
         return success_response(data={'student': student.to_json(), 'auth_token': access_token, 'school': school.to_json()})
 
     return unauthorized_request("Invalid Login")
+
+
+@student.post("/student/<int:student_id>/approve/")
+@student.output(SuccessMessage)
+@token_auth([UserTypes.school_admin])
+def approve_staff(student_id, json_data):
+    student = student_manager.get_student_by_id(student_id)
+    student.is_approved = True
+    student.save()
+    return success_response()

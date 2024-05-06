@@ -37,6 +37,8 @@ def server_error(message="Something went wrong! Our backend team has been notifi
 def not_found(message='The object was not found!'):
     return error_response(404, message)
 
+def unapproved_account(message='Your account has not been approved. Contact your school administrator')
+    return error_response(411, message)
 
 class BaseError(Exception):
     '''

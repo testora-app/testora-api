@@ -1,7 +1,7 @@
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, Login as LoginSchema
-from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request
+from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token
 
@@ -44,6 +44,8 @@ def register_staff(json_data):
 @staff.output(VerifiedStaffSchema)
 def login(json_data):
     staff = staff_manager.get_staff_by_email(json_data["email"])
+    if not staff.is_approved:
+        return unapproved_account()
 
     if staff and check_password(staff.password_hash, json_data["password"]):
         user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
