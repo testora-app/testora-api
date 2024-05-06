@@ -33,3 +33,7 @@ class VerifiedStudentSchema(BaseSchema):
 class ApproveStudentSchema(BaseSchema):
     student_ids = List(ID_FIELD)
 
+
+class GetStudentListSchema(BaseSchema):
+    data = List(Nested(StudentSchema))
+

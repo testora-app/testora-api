@@ -5,9 +5,9 @@ from apiflask import APIBlueprint
 from app._shared.schemas import SuccessMessage, UserTypes, Login as LoginSchema
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
-from app._shared.services import check_password, generate_access_token
+from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.student.schemas import VerifiedStudentSchema, StudentRegister, ApproveStudentSchema
+from app.student.schemas import VerifiedStudentSchema, StudentRegister, ApproveStudentSchema, GetStudentListSchema
 from app.student.operations import student_manager
 
 from app.school.operations import school_manager
@@ -52,10 +52,19 @@ def login(json_data):
 @student.output(SuccessMessage)
 @student.input(ApproveStudentSchema)
 @token_auth([UserTypes.school_admin])
-def approve_staff(student_id, json_data):
+def approve_student(json_data):
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
         if student:
             student.is_approved = True
             student.save()
     return success_response()
+
+
+@student.get("/students/")
+@student.output(GetStudentListSchema)
+@token_auth([UserTypes.school_admin])
+def get_student_list():
+    school_id = get_current_user()["school_id"]
+    student = student_manager.get_student_by_school(school_id)
+    return success_response(data=[st.to_json() for st in student])

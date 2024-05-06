@@ -3,9 +3,9 @@ from apiflask import APIBlueprint
 from app._shared.schemas import SuccessMessage, UserTypes, Login as LoginSchema
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
-from app._shared.services import check_password, generate_access_token
+from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.staff.schemas import SchoolAdminRegister, StaffRegister, VerifiedStaffSchema, ApproveStaffSchema
+from app.staff.schemas import SchoolAdminRegister, StaffRegister, VerifiedStaffSchema, ApproveStaffSchema, GetStaffListSchema
 from app.staff.operations import staff_manager
 
 from app.school.operations import school_manager
@@ -60,10 +60,19 @@ def login(json_data):
 @staff.input(ApproveStaffSchema)
 @staff.output(SuccessMessage)
 @token_auth([UserTypes.school_admin])
-def approve_staff(staff_id, json_data):
+def approve_staff(json_data):
     for staff_id in json_data["staff_ids"]:
         if staff:
             staff = staff_manager.get_staff_by_id(staff_id)
             staff.is_approved = True
             staff.save()
     return success_response()
+
+
+@staff.get("/staff/")
+@staff.output(GetStaffListSchema)
+@token_auth([UserTypes.school_admin])
+def get_staff_list():
+    school_id = get_current_user()["school_id"]
+    staff = staff_manager.get_staff_by_school(school_id)
+    return [st.to_json() for st in staff]
