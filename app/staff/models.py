@@ -22,7 +22,6 @@ class Staff(BaseModel):
             'other_names': self.other_names,
             'surname': self.surname,
             'email': self.email,
-            'password_hash': self.password_hash,
             'school_id': self.school_id,
             'is_approved': self.is_approved,
             'is_admin': self.is_admin
