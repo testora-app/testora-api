@@ -26,7 +26,7 @@ class StudentSchema(BaseSchema):
 
 
 class VerifiedStudentSchema(BaseSchema):
-    student = Nested(StudentSchema)
+    user = Nested(StudentSchema)
     auth_token = String()
     school = Nested(SchoolSchema)
 

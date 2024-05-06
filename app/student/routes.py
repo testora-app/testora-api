@@ -43,7 +43,9 @@ def login(json_data):
     if student and check_password(student.password_hash, json_data["password"]):
         access_token = generate_access_token(student.id, UserTypes.student, student.school_id)
         school = school_manager.get_school_by_id(student.id)
-        return success_response(data={'student': student.to_json(), 'auth_token': access_token, 'school': school.to_json()})
+        school_data = school.to_json()
+        school_data.pop("code")
+        return success_response(data={'user': student.to_json(), 'auth_token': access_token, 'school': school_data})
 
     return unauthorized_request("Invalid Login")
 

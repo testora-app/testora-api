@@ -51,7 +51,10 @@ def login(json_data):
         user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
         access_token = generate_access_token(staff.id, user_type=user_type, school_id=staff.school_id)
         school = school_manager.get_school_by_id(staff.school_id)
-        return success_response(data={'staff': staff.to_json(), 'auth_token': access_token, 'school': school.to_json()})
+        school_data = school.to_json()
+        if user_type == UserTypes.staff:
+            school_data.pop('code')
+        return success_response(data={'user': staff.to_json(), 'auth_token': access_token, 'school': school_data})
     
     return unauthorized_request("Invalid Login")
 

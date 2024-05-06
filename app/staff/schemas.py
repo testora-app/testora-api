@@ -48,7 +48,7 @@ class GetStaffListSchema(BaseSchema):
     data = List(Nested(StaffSchema))
 
 class VerifiedStaffSchema(BaseSchema):
-    staff = Nested(StaffSchema)
+    user = Nested(StaffSchema)
     auth_token = String()
     school = Nested(SchoolSchema)
 
