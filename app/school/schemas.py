@@ -10,6 +10,7 @@ class SchoolSchema(BaseSchema):
     short_name = String(required=False, allow_none=False)
     phone_number = String(required=False, allow_none=False)
     email = String(required=False, allow_none=False)
+    code = String(required=False, allow_none=True)
 
 
 class AddSchool(BaseSchema):

@@ -23,5 +23,6 @@ class School(BaseModel):
             'logo': self.logo,
             'location': self.location,
             'phone_number': self.phone_number,
-            'email': self.email
+            'email': self.email,
+            'code': self.code
         }

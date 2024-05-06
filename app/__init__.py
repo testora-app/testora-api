@@ -20,6 +20,7 @@ from .routes import main
 from app.admin.routes import admin
 from app.school.routes import school
 from app.staff.routes import staff
+from app.student.routes import student
 
 
 load_dotenv()
@@ -100,6 +101,7 @@ def create_app():
         app.register_blueprint(admin)
         app.register_blueprint(school)
         app.register_blueprint(staff)
+        app.register_blueprint(student)
 
         app.config['VALIDATION_ERROR_SCHEMA'] = validation_error_schema
 
