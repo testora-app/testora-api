@@ -44,7 +44,7 @@ def register_staff(json_data):
 @staff.output(VerifiedStaffSchema)
 def login(json_data):
     staff = staff_manager.get_staff_by_email(json_data["email"])
-    if not staff.is_approved:
+    if staff and not staff.is_approved:
         return unapproved_account()
 
     if staff and check_password(staff.password_hash, json_data["password"]):

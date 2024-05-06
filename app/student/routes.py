@@ -37,7 +37,7 @@ def student_register(json_data: Dict):
 def login(json_data):
     student = student_manager.get_student_by_email(json_data["email"])
 
-    if not student.is_approved:
+    if student and not student.is_approved:
         return unapproved_account()
 
     if student and check_password(student.password_hash, json_data["password"]):

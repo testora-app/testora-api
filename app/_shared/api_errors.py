@@ -15,8 +15,7 @@ def error_response(status_code, message=None, data=None):
 
     if data:
         payload['data'] = data
-
-    print(payload)
+        
     response = jsonify(payload)
     response.status_code = status_code
     return response
