@@ -29,3 +29,7 @@ class VerifiedStudentSchema(BaseSchema):
     student = Nested(StudentSchema)
     auth_token = String()
     school = Nested(SchoolSchema)
+
+class ApproveStudentSchema(BaseSchema):
+    student_ids = List(Nested(ID_FIELD))
+

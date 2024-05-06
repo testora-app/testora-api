@@ -53,3 +53,6 @@ class VerifiedStaffSchema(BaseSchema):
     school = Nested(SchoolSchema)
 
 
+class ApproveStaffSchema(BaseSchema):
+    staff_ids = List(Nested(ID_FIELD))
+

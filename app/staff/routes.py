@@ -5,7 +5,7 @@ from app._shared.api_errors import error_response, unauthorized_request, success
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token
 
-from app.staff.schemas import SchoolAdminRegister, StaffRegister, VerifiedStaffSchema
+from app.staff.schemas import SchoolAdminRegister, StaffRegister, VerifiedStaffSchema, ApproveStaffSchema
 from app.staff.operations import staff_manager
 
 from app.school.operations import school_manager
@@ -56,11 +56,14 @@ def login(json_data):
     return unauthorized_request("Invalid Login")
 
 
-@staff.post("/staff/<int:staff_id>/approve/")
+@staff.post("/staff/approve/")
+@staff.input(ApproveStaffSchema)
 @staff.output(SuccessMessage)
 @token_auth([UserTypes.school_admin])
 def approve_staff(staff_id, json_data):
-    staff = staff_manager.get_staff_by_id(staff_id)
-    staff.is_approved = True
-    staff.save()
+    for staff_id in json_data["staff_ids"]:
+        if staff:
+            staff = staff_manager.get_staff_by_id(staff_id)
+            staff.is_approved = True
+            staff.save()
     return success_response()
