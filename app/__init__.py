@@ -121,8 +121,7 @@ def create_app():
             '''
             error_as_dict = error.to_dict()
             # so that we can see the error in the app engine logs
-            response = jsonify({'error': error_as_dict})
-            return response
+            return error_as_dict.get_json(), 422
         
         @app.errorhandler(ValidationError)
         def handle_validation_error(error):
