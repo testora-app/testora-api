@@ -29,10 +29,10 @@ class LoginSchema(BaseSchema):
 
 
 class UserTypes:
-    admin = 'admin'
-    school_admin = 'school_admin'
-    staff = 'staff'
-    student = 'student'
+    admin = 'super_admin'
+    school_admin = 'Admin'
+    staff = 'Teacher'
+    student = 'Student'
 
 
 class CurriculumTypes:

@@ -51,6 +51,7 @@ class VerifiedStaffSchema(BaseSchema):
     user = Nested(StaffSchema)
     auth_token = String()
     school = Nested(SchoolSchema)
+    user_type = String(required=True)
 
 
 class ApproveStaffSchema(BaseSchema):
