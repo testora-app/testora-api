@@ -78,4 +78,4 @@ def approve_staff(json_data):
 def get_staff_list():
     school_id = get_current_user()["school_id"]
     staff = staff_manager.get_staff_by_school(school_id)
-    return [st.to_json() for st in staff]
+    return success_response(data=[st.to_json() for st in staff])
