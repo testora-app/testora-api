@@ -65,8 +65,8 @@ def login(json_data):
 @token_auth([UserTypes.school_admin])
 def approve_staff(json_data):
     for staff_id in json_data["staff_ids"]:
+        staff = staff_manager.get_staff_by_id(staff_id)
         if staff:
-            staff = staff_manager.get_staff_by_id(staff_id)
             staff.is_approved = True
             staff.save()
     return success_response()
@@ -78,11 +78,12 @@ def approve_staff(json_data):
 @token_auth([UserTypes.school_admin])
 def unapprove_staff(json_data):
     for staff_id in json_data["staff_ids"]:
+        staff = staff_manager.get_staff_by_id(staff_id)
         if staff:
-            staff = staff_manager.get_staff_by_id(staff_id)
             staff.is_approved = False
             staff.save()
     return success_response()
+
 
 @staff.get("/staff/")
 @staff.output(GetStaffListSchema)
