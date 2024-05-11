@@ -1,13 +1,13 @@
 from apiflask import APIBlueprint
 
-from app._shared.schemas import SuccessMessage, Login as LoginSchema, UserTypes
+from app._shared.schemas import SuccessMessage, LoginSchema, UserTypes
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found
 from app._shared.services import check_password, generate_access_token
 from app._shared.decorators import token_auth
 
 from app.admin.operations import admin_manager, subject_manager, topic_manager
-from app.admin.schemas import (AddAdminSchema, AdminListSchema, AdminSchema, VerifiedAdminSchema, SubjectSchema, TopicSchema,
-                                SubjectSchemaList, TopicSchemaList, AddSubjectSchemaPost, AddTopicSchemaPost)
+from app.admin.schemas import (AddAdminSchema, AdminListSchema, SubjectSchema, TopicSchema,
+                                SubjectSchemaList, TopicSchemaList, AddSubjectSchemaPost, AddTopicSchemaPost, Responses)
 
 admin = APIBlueprint('admin', __name__)
 
@@ -23,7 +23,7 @@ def get_admins():
 
 @admin.post('/admins/')
 @admin.input(AddAdminSchema)
-@admin.output(AdminSchema)
+@admin.output(Responses.AdminResponseSchema)
 @token_auth([UserTypes.admin])
 def add_admin(json_data):
     if admin_manager.get_admin_by_email(json_data["email"]):
@@ -35,7 +35,7 @@ def add_admin(json_data):
 
 @admin.post('/admins/authenticate/')
 @admin.input(LoginSchema)
-@admin.output(VerifiedAdminSchema)
+@admin.output(Responses.VerifiedAdminResponse)
 def admin_login(json_data):
     admin = admin_manager.get_admin_by_email(json_data["email"])
     if not admin:
@@ -66,7 +66,7 @@ def add_subjects(json_data):
 
 @admin.put('/subjects/<int:subject_id>/')
 @admin.input(SubjectSchema)
-@admin.output(SubjectSchema)
+@admin.output(Responses.SubjectSchema)
 @token_auth([UserTypes.admin])
 def edit_subject(subject_id, json_data):
     subject = subject_manager.get_subject_by_id(subject_id)
@@ -116,7 +116,7 @@ def add_topics(json_data):
 
 @admin.put('/topics/<int:topic_id>/')
 @admin.input(TopicSchema)
-@admin.output(TopicSchema)
+@admin.output(Responses.TopicSchema)
 @token_auth([UserTypes.admin])
 def edit_topic(topic_id, json_data):
     topic = topic_manager.get_topic_by_id(topic_id)

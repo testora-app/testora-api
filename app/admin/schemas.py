@@ -1,7 +1,7 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
 from apiflask.validators import OneOf
 
-from app._shared.schemas import BaseSchema, CurriculumTypes
+from app._shared.schemas import BaseSchema, CurriculumTypes, make_response_schema
 
 #region Admin Schema
 class AddAdminSchema(BaseSchema):
@@ -17,6 +17,8 @@ class AdminSchema(BaseSchema):
     password = String(required=True, allow_none=False)
     username = String(required=True, allow_none=False)
     is_super_admin = Boolean(required=True, allow_none=False)
+
+
 
 
 class AdminListSchema(BaseSchema):
@@ -73,3 +75,12 @@ class TopicSchemaList(BaseSchema):
     data = List(Nested(TopicSchema))
 
 #endregion Subject/Topic Schema
+
+#region Nested Responses
+class Responses:
+    AdminResponseSchema = make_response_schema(AddAdminSchema)
+    VerifiedAdminResponse = make_response_schema(VerifiedAdminSchema)
+    SubjectSchema = make_response_schema(SubjectSchema)
+    TopicSchema = make_response_schema(TopicSchema)
+
+#endregion 

@@ -1,6 +1,6 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
 from apiflask.validators import Email, Length
-from app._shared.schemas import BaseSchema, ID_FIELD
+from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
 
 
@@ -57,3 +57,7 @@ class VerifiedStaffSchema(BaseSchema):
 class ApproveStaffSchema(BaseSchema):
     staff_ids = List(ID_FIELD)
 
+
+class Responses:
+    VerifiedStaffSchema = make_response_schema(VerifiedStaffSchema)
+    

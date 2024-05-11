@@ -1,6 +1,6 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
 from apiflask.validators import Email, Length
-from app._shared.schemas import BaseSchema, ID_FIELD
+from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
 
 
@@ -31,6 +31,7 @@ class VerifiedStudentSchema(BaseSchema):
     school = Nested(SchoolSchema)
     user_type = String(required=True)
 
+
 class ApproveStudentSchema(BaseSchema):
     student_ids = List(ID_FIELD)
 
@@ -38,3 +39,7 @@ class ApproveStudentSchema(BaseSchema):
 class GetStudentListSchema(BaseSchema):
     data = List(Nested(StudentSchema))
 
+
+class Responses:
+    VerifiedStudentSchema = make_response_schema(VerifiedStudentSchema)
+    StudentSchema = make_response_schema(StudentSchema)

@@ -1,7 +1,7 @@
 from typing import Any
 
 from apiflask import Schema
-from apiflask.fields import Integer, String, Nested
+from apiflask.fields import Integer, String, Nested, Dict
 from marshmallow.exceptions import ValidationError
 
 from .api_errors import BaseError
@@ -19,13 +19,17 @@ class GenericSchema(Schema):
     action = String(allow_none=True, required=False)
 
 
-class Login(BaseSchema):
+class LoginSchema(BaseSchema):
     email = String(allow_none=False, required=True)
     password = String(allow_none=False, required=True)
 
-class LoginSchema(BaseSchema):
-    data = Nested(Login)
 
+def make_response_schema(schema: BaseSchema):
+    class Response(BaseSchema):
+        data = Nested(schema)
+
+    response_data = Response()
+    return response_data
 
 
 class UserTypes:

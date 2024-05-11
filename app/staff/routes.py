@@ -1,11 +1,11 @@
 from apiflask import APIBlueprint
 
-from app._shared.schemas import SuccessMessage, UserTypes, Login as LoginSchema
+from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.staff.schemas import SchoolAdminRegister, StaffRegister, VerifiedStaffSchema, ApproveStaffSchema, GetStaffListSchema
+from app.staff.schemas import SchoolAdminRegister, StaffRegister, ApproveStaffSchema, GetStaffListSchema, Responses
 from app.staff.operations import staff_manager
 
 from app.school.operations import school_manager
@@ -41,7 +41,7 @@ def register_staff(json_data):
 
 @staff.post("/staff/authenticate/")
 @staff.input(LoginSchema)
-@staff.output(VerifiedStaffSchema)
+@staff.output(Responses.VerifiedStaffSchema)
 def login(json_data):
     staff = staff_manager.get_staff_by_email(json_data["email"])
     if staff and not staff.is_approved:
