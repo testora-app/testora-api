@@ -7,7 +7,7 @@ from app._shared.api_errors import error_response, unauthorized_request, success
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.student.schemas import VerifiedStudentSchema, StudentRegister, ApproveStudentSchema, GetStudentListSchema, Responses
+from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, Responses
 from app.student.operations import student_manager
 
 from app.school.operations import school_manager
@@ -61,6 +61,20 @@ def approve_student(json_data):
             student.is_approved = True
             student.save()
     return success_response()
+
+
+@student.post("/students/unapprove/")
+@student.output(SuccessMessage)
+@student.input(ApproveStudentSchema)
+@token_auth([UserTypes.school_admin])
+def unapprove_student(json_data):
+    for student_id in json_data["student_ids"]:
+        student = student_manager.get_student_by_id(student_id)
+        if student:
+            student.is_approved = False
+            student.save()
+    return success_response()
+
 
 
 @student.get("/students/")

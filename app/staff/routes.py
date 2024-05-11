@@ -72,6 +72,18 @@ def approve_staff(json_data):
     return success_response()
 
 
+@staff.post("/staff/unapprove/")
+@staff.input(ApproveStaffSchema)
+@staff.output(SuccessMessage)
+@token_auth([UserTypes.school_admin])
+def unapprove_staff(json_data):
+    for staff_id in json_data["staff_ids"]:
+        if staff:
+            staff = staff_manager.get_staff_by_id(staff_id)
+            staff.is_approved = False
+            staff.save()
+    return success_response()
+
 @staff.get("/staff/")
 @staff.output(GetStaffListSchema)
 @token_auth([UserTypes.school_admin])
