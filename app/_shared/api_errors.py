@@ -13,8 +13,8 @@ def error_response(status_code, message=None, data=None):
     if message:
         payload['message'] = message
 
-    if data:
-        payload['data'] = data
+   
+    payload['data'] = data
         
     response = jsonify(payload)
     response.status_code = status_code
