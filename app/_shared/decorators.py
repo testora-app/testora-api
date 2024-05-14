@@ -10,7 +10,7 @@ from app._shared.services import set_current_user
 
 
 # we are going to have a wrapper to check tokens
-def token_auth(user_types: List[str]):
+def token_auth(user_types: List[str]=None):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -27,7 +27,7 @@ def token_auth(user_types: List[str]):
             except jwt.InvalidTokenError:
                 return unauthorized_request('Invalid Token')
             
-            if payload['user_type'] not in user_types:
+            if user_types and payload['user_type'] not in user_types:
                 return permissioned_denied()
             
             set_current_user(**payload)
