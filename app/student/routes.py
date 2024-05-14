@@ -76,7 +76,6 @@ def unapprove_student(json_data):
     return success_response()
 
 
-
 @student.get("/students/")
 @student.output(GetStudentListSchema)
 @token_auth([UserTypes.school_admin])
@@ -85,3 +84,13 @@ def get_student_list():
     student = student_manager.get_student_by_school(school_id)
     student_data = [st.to_json() for st in student] if student else []
     return success_response(data=student_data)
+
+
+@student.get("/students/<int:student_id>/")
+@student.output(Responses.StudentSchema)
+@token_auth()
+def get_student_details(student_id):
+    student = student_manager.get_student_by_id(student_id)
+    if student:
+        return success_response(data=student.to_json())
+    return not_found("Student does not exist!")

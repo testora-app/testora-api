@@ -96,3 +96,13 @@ def get_staff_list():
     school_id = get_current_user()["school_id"]
     staff = staff_manager.get_staff_by_school(school_id)
     return success_response(data=[st.to_json() for st in staff])
+
+
+@staff.get("/staff/<int:staff_id>/")
+@staff.output(Responses.StaffSchema)
+@token_auth()
+def get_staff_details(staff_id):
+    staff = staff_manager.get_staff_by_id(staff_id)
+    if staff:
+        return success_response(data=staff.to_json())
+    return not_found(message="Staff does not exist")

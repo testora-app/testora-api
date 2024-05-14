@@ -60,4 +60,5 @@ class ApproveStaffSchema(BaseSchema):
 
 class Responses:
     VerifiedStaffSchema = make_response_schema(VerifiedStaffSchema)
+    StaffSchema = make_response_schema(StaffSchema)
     
