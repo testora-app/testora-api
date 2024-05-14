@@ -19,7 +19,7 @@ student = APIBlueprint('student', __name__)
 @student.input(StudentRegister)
 @student.output(SuccessMessage, 201)
 def student_register(json_data: Dict):
-    existing_student = student_manager.get_student_by_email(json_data["email"])
+    existing_student = student_manager.get_student_by_email(json_data["email"].strip())
     if existing_student:
         return bad_request("Student with this email already exists!")
     
@@ -35,7 +35,7 @@ def student_register(json_data: Dict):
 @student.input(LoginSchema)
 @student.output(Responses.VerifiedStudentSchema)
 def login(json_data):
-    student = student_manager.get_student_by_email(json_data["email"])
+    student = student_manager.get_student_by_email(json_data["email"].strip())
 
     if student and not student.is_approved:
         return unapproved_account()
@@ -83,4 +83,5 @@ def unapprove_student(json_data):
 def get_student_list():
     school_id = get_current_user()["school_id"]
     student = student_manager.get_student_by_school(school_id)
-    return success_response(data=[st.to_json() for st in student])
+    student_data = [st.to_json() for st in student] if student else []
+    return success_response(data=student_data)

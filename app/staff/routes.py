@@ -17,6 +17,10 @@ staff = APIBlueprint('staff', __name__)
 @staff.input(SchoolAdminRegister)
 @staff.output(SuccessMessage, 201)
 def register_school_admin(json_data):
+    existing = staff_manager.get_staff_by_email(json_data["school_admin"]["email"].strip())
+    if existing:
+        return bad_request("User with the email already exists!")
+
     new_school = school_manager.create_school(**json_data["school"])
     json_data["school_admin"].pop('school_code')
     staff_manager.create_staff(**json_data["school_admin"], is_admin=True, school_id=new_school.id, is_approved=True)
@@ -27,7 +31,7 @@ def register_school_admin(json_data):
 @staff.input(StaffRegister)
 @staff.output(SuccessMessage, 201)
 def register_staff(json_data):
-    existing = staff_manager.get_staff_by_email(json_data["email"])
+    existing = staff_manager.get_staff_by_email(json_data["email"].strip())
     if existing:
         return bad_request("User with the email already exists!")
 
@@ -43,7 +47,7 @@ def register_staff(json_data):
 @staff.input(LoginSchema)
 @staff.output(Responses.VerifiedStaffSchema)
 def login(json_data):
-    staff = staff_manager.get_staff_by_email(json_data["email"])
+    staff = staff_manager.get_staff_by_email(json_data["email"].strip())
     if staff and not staff.is_approved:
         return unapproved_account()
 
