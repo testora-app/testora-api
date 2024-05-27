@@ -50,6 +50,8 @@ class Topic(BaseModel):
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     level = db.Column(db.Integer, nullable=False)
 
+    sub_topics = db.relationship('SubTopic', backref='topic', lazy=True)
+
     def __str__(self):
         return f'{self.name} -- {self.subject_id}, Level: {self.level}'
     
@@ -59,5 +61,27 @@ class Topic(BaseModel):
             'name': self.name,
             'short_name': self.short_name,
             'subject_id': self.subject_id,
-            'level': self.level
+            'level': self.level,
+            'sub_topics': [sub_topic.to_json() for sub_topic in self.sub_topics]
+        }
+
+
+class SubTopic(BaseModel):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    short_name = db.Column(db.String(20), nullable=False, unique=True)
+    level = db.Column(db.Integer, nullable=False)
+    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
+
+
+    def __str__(self):
+        return f'{self.name} -- {self.topic_id}'
+    
+    def to_json(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'short_name': self.short_name,
+            'level': self.level,
+            'topic_id': self.topic_id
         }
