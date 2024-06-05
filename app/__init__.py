@@ -11,6 +11,7 @@ from flask_migrate import upgrade
 from marshmallow.exceptions import ValidationError
 
 from app._shared.api_errors import BaseError
+from app._shared.services import is_in_staging_environment, is_in_development_environment
 from app.errorhandlers import (forbidden, internal_server_error,
                                method_not_allowed, page_not_found)
 from app.extensions import cors, db, migrate
@@ -68,7 +69,12 @@ def create_app():
     }
     app = APIFlask(__name__)
 
-    app.config.from_object('config.DevelopmentConfig')
+    if is_in_staging_environment():
+        app.config.from_object('config.StagingConfig')
+    elif is_in_development_environment():
+        app.config.from_object('config.DevelopmentConfig')
+    else:
+        app.config.from_object('config.DevelopmentConfig')
 
     #initialize the extensions
     cors.init_app(app)
