@@ -21,7 +21,7 @@ from app.admin.routes import admin
 from app.school.routes import school
 from app.staff.routes import staff
 from app.student.routes import student
-from app.tests.routes import testr
+from app.test.routes import testr
 
 
 load_dotenv()

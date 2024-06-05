@@ -1,0 +1,34 @@
+[
+    {
+        "id": 1,
+        "text": "A mixture in which one substance is uniformly dispersed in another substance is known as",
+        "correct_answer": "D. Solution",
+        "possible_answers": [
+            "suspension",
+            "Colloid",
+            "Solusion",
+            "Solution"
+        ],
+        "sub_topic_id": null,
+        "topic_id": null,
+        "points": null,
+        "school_id": null,
+        "sub_questions": []
+    },
+    {
+        "id": 2,
+        "text": "An example of a homogeneous mixture is",
+        "correct_answer": "D. sugar and water",
+        "possible_answers": [
+            "sand and water.",
+            "oil and vinegar.",
+            "salt and pepper.",
+            "sugar and water."
+        ],
+        "sub_topic_id": null,
+        "topic_id": null,
+        "points": null,
+        "school_id": null,
+        "sub_questions": []
+    }
+]
