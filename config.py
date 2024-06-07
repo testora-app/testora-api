@@ -24,7 +24,7 @@ class StagingConfig(BaseConfig):
     FLASK_DEBUG = False
     ITEMS_PER_PAGE = 1000
     SECRET_KEY = os.getenv('SECRET_KEY')
-    SQLALCHEMY_DATABASE_URI = os.getenv('POSTGRES_URI')
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db' #os.getenv('POSTGRES_URI')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CORS_METHODS = ['POST', 'PUT', 'GET', 'OPTIONS', 'DELETE']
     CORS_ORIGIN = ["http://localhost:3000", "*"]
