@@ -50,7 +50,7 @@ def admin_login(json_data):
 
 @admin.get('/subjects/')
 @admin.output(SubjectSchemaList)
-@token_auth([UserTypes.admin])
+# @token_auth([UserTypes.admin])
 def get_subjects():
     subjects = subject_manager.get_subjects()
     return success_response(data=[subject.to_json() for subject in subjects])
@@ -92,7 +92,7 @@ def delete_subject(subject_id):
 
 @admin.get('/subjects/<int:subject_id>/topics')
 @admin.output(TopicSchemaList)
-@token_auth([UserTypes.admin])
+# @token_auth([UserTypes.admin])
 def get_subject_topics(subject_id):
     topics = topic_manager.get_topic_by_subject(subject_id)
     return success_response(data=[topic.to_json() for topic in topics])
@@ -100,7 +100,7 @@ def get_subject_topics(subject_id):
 
 @admin.get('/topics/')
 @admin.output(TopicSchemaList)
-@token_auth([UserTypes.admin])
+# @token_auth([UserTypes.admin])
 def get_topics():
     topics = topic_manager.get_topics()
     return success_response(data=[topic.to_json() for topic in topics])
