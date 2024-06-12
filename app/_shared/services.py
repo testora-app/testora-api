@@ -12,7 +12,7 @@ def generate_access_token(user_id, user_type, school_id=None, permissions=None):
         'user_type': user_type,
         'permissions': permissions,
         'school_id': school_id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=1800),
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=7200),
         'iat': datetime.datetime.utcnow()
     }
 
@@ -24,7 +24,7 @@ def generate_access_token(user_id, user_type, school_id=None, permissions=None):
 
 
 def hash_password(password):
-    return bcrypt.generate_password_hash(password)
+    return bcrypt.generate_password_hash(password).decode('utf-8')
 
 def check_password(hashed_password, password):
     return bcrypt.check_password_hash(hashed_password, password)

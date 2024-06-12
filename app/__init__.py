@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask import jsonify, request
 from flask_migrate import upgrade
 from marshmallow.exceptions import ValidationError
+from sqlalchemy.exc import IntegrityError
 
 from app._shared.api_errors import BaseError
 from app._shared.services import is_in_staging_environment, is_in_development_environment
@@ -116,6 +117,7 @@ def create_app():
         @app.errorhandler(HTTPError)
         def handle_http_error(e):
             db.session.rollback()
+            db.session.close()
             log_error(traceback.format_exc())
             return jsonify({
                 "status_code": e.status_code,
@@ -125,6 +127,7 @@ def create_app():
         @app.errorhandler(BaseError)
         def handle_base_errors(error: BaseError):
             db.session.rollback()
+            db.session.close()
             log_error(traceback.format_exc())
             '''
             Handler for all errors in the API
@@ -135,15 +138,28 @@ def create_app():
         
         @app.errorhandler(ValidationError)
         def handle_validation_error(error):
+            db.session.rollback()
+            db.session.close()
             log_error(traceback.format_exc())
             return jsonify({
                 "message": error.message,
                 "data": error.data,
             })
         
+        @app.errorhandler(IntegrityError)
+        def handle_integrity_error(error: IntegrityError):
+            db.session.rollback()
+            db.session.close()
+            log_error(traceback.format_exc())
+            return jsonify({
+                'error': str(error),
+                'message': error._message()
+            })
+        
         @app.errorhandler(Exception)
         def handle_exceptions(exception):
             db.session.rollback()
+            db.session.close()
             log_error(traceback.format_exc())
             return jsonify({
                 'error': str(exception),

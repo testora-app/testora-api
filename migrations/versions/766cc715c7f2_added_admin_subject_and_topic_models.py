@@ -61,6 +61,9 @@ def upgrade():
     sa.Column('short_name', sa.String(length=20), nullable=False),
     sa.Column('level', sa.Integer(), nullable=False),
     sa.Column('topic_id', sa.Integer(), nullable=False),
+    sa.Column('is_deleted', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['topic_id'], ['topic.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('short_name')

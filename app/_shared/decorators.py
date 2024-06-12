@@ -26,8 +26,8 @@ def token_auth(user_types: List[str]=None):
                 return unauthorized_request('Token has expired')
             except jwt.InvalidTokenError:
                 return unauthorized_request('Invalid Token')
-            
-            if user_types and payload['user_type'] not in user_types:
+
+            if '*' not in user_types and (user_types and payload['user_type'] not in user_types):
                 return permissioned_denied()
             
             set_current_user(**payload)

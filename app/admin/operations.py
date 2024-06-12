@@ -38,13 +38,12 @@ class SubjectManager(BaseManager):
                 short_name=entry['short_name'],
                 curriculum=entry['curriculum']
             ))
-
         self.save_multiple(entities)
         return entities
     
 
     def get_subjects(self) -> List[Subject]:
-        return Subject.query.all()
+        return Subject.query.filter_by(is_deleted=False).all()
     
     def get_subject_by_id(self, id) -> Subject:
         return Subject.query.filter_by(id=id).first()
@@ -58,7 +57,7 @@ class TopicManager(BaseManager):
     def create_topics(self, entries: List[Dict]) -> List[Topic]:
         entities: List[Topic] = []
         for entry in entries:
-            entities.append(Subject(
+            entities.append(Topic(
                 name=entry['name'],
                 short_name=entry['short_name'],
                 subject_id=entry['subject_id'],
@@ -70,7 +69,7 @@ class TopicManager(BaseManager):
     
 
     def get_topics(self) -> List[Topic]:
-        return Topic.query.all()
+        return Topic.query.filter_by(is_deleted=False).all()
     
     def get_topic_by_id(self, id) -> Topic:
         return Topic.query.filter_by(id=id).first()
