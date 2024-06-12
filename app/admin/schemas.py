@@ -83,4 +83,11 @@ class Responses:
     SubjectSchema = make_response_schema(SubjectSchema)
     TopicSchema = make_response_schema(TopicSchema)
 
+
+class Requests:
+    EditSubjectSchema = make_response_schema(SubjectSchema)
+    EditTopicSchema = make_response_schema(TopicSchema)
+    AddAdminSchema = make_response_schema(AddAdminSchema)
+    
+
 #endregion 

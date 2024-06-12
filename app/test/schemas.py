@@ -51,3 +51,8 @@ class QuestionListSchema(BaseSchema):
 class Responses:
     QuestionSchema = make_response_schema(QuestionSchema)
     TestSchema = make_response_schema(TestSchema)
+
+
+class Requests:
+    AddQuestionSchema = make_response_schema(QuestionSchema)
+    EditQuestionSchema = make_response_schema(QuestionSchema)

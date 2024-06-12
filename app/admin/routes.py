@@ -6,8 +6,7 @@ from app._shared.services import check_password, generate_access_token
 from app._shared.decorators import token_auth
 
 from app.admin.operations import admin_manager, subject_manager, topic_manager
-from app.admin.schemas import (AddAdminSchema, AdminListSchema, SubjectSchema, TopicSchema,
-                                SubjectSchemaList, TopicSchemaList, AddSubjectSchemaPost, AddTopicSchemaPost, Responses)
+from app.admin.schemas import (AdminListSchema, SubjectSchemaList, TopicSchemaList, AddSubjectSchemaPost, AddTopicSchemaPost, Responses, Requests)
 
 admin = APIBlueprint('admin', __name__)
 
@@ -22,7 +21,7 @@ def get_admins():
 
 
 @admin.post('/admins/')
-@admin.input(AddAdminSchema)
+@admin.input(Requests.AddAdminSchema)
 @admin.output(Responses.AdminResponseSchema)
 @token_auth([UserTypes.admin])
 def add_admin(json_data):
@@ -68,10 +67,11 @@ def add_subjects(json_data):
 
 
 @admin.put('/subjects/<int:subject_id>/')
-@admin.input(SubjectSchema)
+@admin.input(Requests.EditSubjectSchema)
 @admin.output(Responses.SubjectSchema)
 @token_auth([UserTypes.admin])
 def edit_subject(subject_id, json_data):
+    json_data = json_data["data"]
     subject = subject_manager.get_subject_by_id(subject_id)
     if subject:
         subject.curriculum = json_data["curriculum"]
@@ -118,10 +118,11 @@ def add_topics(json_data):
 
 
 @admin.put('/topics/<int:topic_id>/')
-@admin.input(TopicSchema)
+@admin.input(Requests.EditTopicSchema)
 @admin.output(Responses.TopicSchema)
 @token_auth([UserTypes.admin])
 def edit_topic(topic_id, json_data):
+    json_data = json_data["data"]
     topic = topic_manager.get_topic_by_id(topic_id)
     if topic:
         topic.name = json_data["name"]

@@ -8,7 +8,7 @@ from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
 from app.test.operations import question_manager, test_manager
-from app.test.schemas import TestListSchema, QuestionListSchema, Responses, QuestionSchema, TestSchema
+from app.test.schemas import TestListSchema, QuestionListSchema, Responses, QuestionSchema, TestSchema, Requests
 
 
 testr = APIBlueprint('testr', __name__)
@@ -21,9 +21,10 @@ def get_questions():
     return success_response(data=[question.to_json() for question in questions])
 
 @testr.post("/questions/")
-@testr.input(QuestionSchema)
+@testr.input(Requests.AddQuestionSchema)
 @testr.output(Responses.QuestionSchema)
 def post_questions(json_data):
+    json_data = json_data["data"]
     sub = json_data.pop('sub_questions')
     new_question = question_manager.create_question(**json_data)
     question_manager.create_subquestion(new_question.id, **sub)
@@ -34,12 +35,12 @@ def post_questions(json_data):
 @testr.input(QuestionListSchema)
 @testr.output(Responses.QuestionSchema)
 def post_multiple(json_data):
-    questions = question_manager.save_multiple_questions(json_data)
+    questions = question_manager.save_multiple_questions(json_data["data"])
     return success_response(data=[question.to_json() for question in questions])
 
 
-@testr.get("/questions/<int:question_id>/")
-@testr.input(QuestionSchema)
+@testr.put("/questions/<int:question_id>/")
+@testr.input(Requests.EditQuestionSchema)
 @testr.output(Responses.QuestionSchema)
 def edit_questions(question_id, json_data):
     # implement edit
