@@ -31,7 +31,7 @@ def post_questions(json_data):
 
 
 @testr.post("/questions-multiple/")
-@testr.input(QuestionSchema)
+@testr.input(QuestionListSchema)
 @testr.output(Responses.QuestionSchema)
 def post_multiple(json_data):
     questions = question_manager.save_multiple_questions(json_data)
