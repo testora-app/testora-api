@@ -24,6 +24,7 @@ class LoginSchema(BaseSchema):
     password = String(allow_none=False, required=True)
 
 
+#TODO: improve this to also create lists
 def make_response_schema(schema: BaseSchema):
     class Response(BaseSchema):
         data = Nested(schema)
@@ -41,3 +42,8 @@ class UserTypes:
 
 class CurriculumTypes:
     bece = 'bece'
+
+
+    @classmethod
+    def get_curriculum_types(cls):
+        return [cls.bece]

@@ -7,7 +7,7 @@ class School(BaseModel):
     short_name = db.Column(db.String(11), nullable=False)
     logo = db.Column(db.String, nullable=True)
     location = db.Column(db.String, nullable=False)
-    is_package_school = db.Column(db.Boolean, default=False)
+    is_package_school = db.Column(db.Boolean, default=False) # this we used to track default schools we put the solo students in
     phone_number = db.Column(db.String, nullable=True)
     email = db.Column(db.String, nullable=True)
     code = db.Column(db.String, nullable=False, unique=True)

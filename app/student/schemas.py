@@ -32,6 +32,17 @@ class VerifiedStudentSchema(BaseSchema):
     user_type = String(required=True)
 
 
+class BatchSchema(BaseSchema):
+    id = Integer(required=True, allow_none=False, dump_only=True)
+    batch_name = String(required=True, allow_none=False)
+    curriculum = String(required=True, allow_none=False)
+    students = List(Integer(), allow_none=True, required=False)
+
+
+class BatchListSchema(BaseSchema):
+    data = List(Nested(BatchSchema))
+
+
 class ApproveStudentSchema(BaseSchema):
     student_ids = List(ID_FIELD)
 
@@ -40,6 +51,12 @@ class GetStudentListSchema(BaseSchema):
     data = List(Nested(StudentSchema))
 
 
+
+class Requests:
+    CreateBatchSchema = make_response_schema(BatchSchema)
+
+
 class Responses:
     VerifiedStudentSchema = make_response_schema(VerifiedStudentSchema)
     StudentSchema = make_response_schema(StudentSchema)
+    BatchSchema = make_response_schema(BatchSchema)

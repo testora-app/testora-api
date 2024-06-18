@@ -48,6 +48,10 @@ class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))
 
 
+class CreateTestSchema(BaseSchema):
+    mode = String(required=True, allow_none=False)
+    subject_id = Integer(required=True, allow_none=False)
+
 class Responses:
     QuestionSchema = make_response_schema(QuestionSchema)
     TestSchema = make_response_schema(TestSchema)
@@ -56,3 +60,4 @@ class Responses:
 class Requests:
     AddQuestionSchema = make_response_schema(QuestionSchema)
     EditQuestionSchema = make_response_schema(QuestionSchema)
+    CreateTestSchema = make_response_schema(CreateTestSchema)

@@ -2,19 +2,20 @@ from typing import Dict
 
 from apiflask import APIBlueprint
 
-from app._shared.schemas import SuccessMessage, UserTypes,LoginSchema
+from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
 from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, Responses
-from app.student.operations import student_manager
+from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests
+from app.student.operations import student_manager, batch_manager
 
 from app.school.operations import school_manager
 
 student = APIBlueprint('student', __name__)
 
 
+#region STUDENTS
 @student.post("/students/register/")
 @student.input(StudentRegister)
 @student.output(SuccessMessage, 201)
@@ -94,3 +95,58 @@ def get_student_details(student_id):
     if student:
         return success_response(data=student.to_json())
     return not_found("Student does not exist!")
+
+
+#endregion STUDENTS
+
+
+#region BATCH
+@student.post("/batches/")
+@student.input(Requests.CreateBatchSchema)
+@student.output(Responses.BatchSchema)
+@token_auth([UserTypes.school_admin])
+def create_batch(json_data):
+    school_id = get_current_user()["school_id"]
+    data = json_data["data"]
+
+    if data['curriculum'] not in CurriculumTypes.get_curriculum_types():
+        raise bad_request(f"{data['curriculum']} is not a valid curriculum: {CurriculumTypes.get_curriculum_types()}")
+    
+    new_batch = batch_manager.create_batch(**data, school_id=school_id)
+    return success_response(data=new_batch.to_json())
+
+
+
+@student.put("/batches/<int:batch_id>/")
+@student.input(Requests.CreateBatchSchema)
+@student.output(Responses.BatchSchema)
+@token_auth([UserTypes.school_admin])
+def edit_batch(batch_id, json_data):
+    batch = batch_manager.get_batch_by_id(batch_id)
+    data = json_data["data"]
+    if batch:
+        batch.batch_name = data["batch_name"]
+        batch.curriculum = data["curriculum"]
+        batch.students = data["students"]
+
+        batch.save()
+    
+    return success_response(data=batch.to_json())
+
+
+
+@student.get("/batches/")
+@student.output(GetStudentListSchema)
+@token_auth([UserTypes.school_admin, UserTypes.admin])
+def get_batches():
+    school_id = get_current_user()["school_id"]
+
+    if school_id:
+        batches = batch_manager.get_batches_by_school_id(school_id)
+    else:
+        batches = batch_manager.get_all_batches()
+
+    batches = [batch.to_json() for batch in batches] if batches else []
+    return success_response(data=batches)
+
+#endregion BATCH

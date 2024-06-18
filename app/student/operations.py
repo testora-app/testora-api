@@ -1,4 +1,4 @@
-from app.student.models import Student
+from app.student.models import Student, Batch
 from app._shared.operations import BaseManager
 from app._shared.services import hash_password
 
@@ -33,7 +33,35 @@ class StudentManager(BaseManager):
     
     def get_student_by_school(self, school_id) -> List[Student]:
         return Student.query.filter_by(school_id=school_id).all()
+    
+
+
+class BatchManager(BaseManager):
+    def create_batch(self, batch_name, school_id, curriculum, students=[]):
+        new_batch = Batch(
+            batch_name=batch_name,
+            school_id=school_id,
+            curriculum=curriculum,
+            students=students
+        )
+
+        self.save(new_batch)
+        return new_batch
+    
+    def get_all_batches(self) -> List[Batch]:
+        return Batch.query.all()
+
+    def get_batch_by_id(self, batch_id) -> Batch:
+        return Batch.query.get(batch_id)
+    
+    def get_batches_by_school_id(self, school_id) -> List[Batch]:
+        return Batch.query.filter_by(school_id=school_id).all()
+    
+    def get_batch_by_curriculum(self, curriculum) -> List[Batch]:
+        return Batch.query.filter_by(curriculum=curriculum).all()
+    
 
 
 
 student_manager = StudentManager()
+batch_manager = BatchManager()

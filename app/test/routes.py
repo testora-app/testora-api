@@ -64,3 +64,15 @@ def delete_questions(question_id):
 
 # create test
 # the different test modes and how they would work
+@testr.post("/tests/")
+@testr.input(Requests.CreateTestSchema)
+@testr.output(Responses.TestSchema)
+@token_auth([UserTypes.student])
+def create_test(json_data):
+
+    return success_response()
+
+
+@testr.put("/tests/<int:test_id>/mark/")
+def mark_test(test_id, json_data):
+    return success_response()

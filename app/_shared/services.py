@@ -45,6 +45,10 @@ def is_in_staging_environment():
     return os.getenv('ENVIRONMENT', 'naah').lower().startswith('staging')
 
 
+
+#TODO: change this to an auth user object, so you can just get the properties without worrying about dicts breaking.
+# and then we can use type hinting
+
 def set_current_user(user_type='admin', user_id=-1, school_id=-1, **kwargs):
     """ Set the currently logged in user for a session """
     user_data = {'user_id': user_id, 'user_type':user_type, 'school_id': school_id, 'permissions': kwargs.get('permissions', None)}
