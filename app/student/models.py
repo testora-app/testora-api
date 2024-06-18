@@ -18,14 +18,17 @@ class Batch(BaseModel):
 
     __table_args__ = (db.UniqueConstraint('batch_name', 'school_id', name='uix_batch_name_school_id'),)
 
-    def to_json(self):
-        return {
+    def to_json(self, include_students=True):
+        data = {
             'id': self.id,
             'batch_name': self.batch_name,
             'school_id': self.school_id,
             'curriculum': self.curriculum,
-            'students': [student.to_json() for student in self.students]
         }
+        if include_students:
+            data['students'] =  [student.to_json() for student in self.students]
+        return data
+    
     
 
 
@@ -52,7 +55,8 @@ class Student(BaseModel):
             'email': self.email,
             'school_id': self.school_id,
             'is_approved': self.is_approved,
-            'is_archived': self.is_archived
+            'is_archived': self.is_archived,
+            'batches': [batch.to_json(include_students=False) for batch in self.batches] if self.batches else []
         }
     
 

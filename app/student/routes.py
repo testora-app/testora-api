@@ -128,7 +128,6 @@ def edit_batch(batch_id, json_data):
         batch.batch_name = data["batch_name"]
         batch.curriculum = data["curriculum"]
         batch.students = data["students"]
-
         batch.save()
     
     return success_response(data=batch.to_json())
