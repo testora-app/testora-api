@@ -55,7 +55,7 @@ def get_subjects():
     return success_response(data=[subject.to_json() for subject in subjects])
 
 
-@admin.get('/subjects/<str:curriculum>/')
+@admin.get('/subjects/<string:curriculum>/')
 @admin.output(SubjectSchemaList)
 @token_auth(['*'])
 def get_subjects_by_curriculum(curriculum):
