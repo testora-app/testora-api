@@ -43,14 +43,17 @@ class TestService:
         total_points = 0
 
         for question in questions:
-            total_points += question['level'] * question_multiplier[question['level']]
+            number_of_sub = len(question['sub_questions'])
+            total_points += (question['level'] + number_of_sub) * question_multiplier[question['level']]
+
         return int(total_points)
     
 
     @staticmethod
     def determine_question_points(question) -> int:
         question_multiplier = QuestionPoints.get_question_level_points()
-        return int(question['level'] * question_multiplier[question['level']])
+        number_of_sub = len(question['sub_questions'])
+        return int((question['level'] + number_of_sub)  * question_multiplier[question['level']])
     
 
     #NOTE: this already takes up sub questions
