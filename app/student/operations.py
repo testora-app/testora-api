@@ -1,8 +1,9 @@
-from app.student.models import Student, Batch
+from app.student.models import Student, Batch, StudentSubjectLevel
 from app._shared.operations import BaseManager
 from app._shared.services import hash_password
 
-from typing import List
+from typing import List, Union
+
 
 class StudentManager(BaseManager):
     def create_student(self, first_name, surname, email, password,
@@ -62,6 +63,26 @@ class BatchManager(BaseManager):
     
 
 
+class StudentSubjectLevelManager(BaseManager):
+    def get_student_subject_level(self, student_id, subject_id=None) -> Union[List[StudentSubjectLevel], StudentSubjectLevel]:
+        if subject_id:
+            return StudentSubjectLevel.query.filter_by(student_id=student_id, subject_id=subject_id).first()
+        return StudentSubjectLevel.query.filter_by(student_id=student_id).all()
+    
+    def init_student_subject_level(self, student_id, subject_id) -> StudentSubjectLevel:
+        new_level = StudentSubjectLevel(
+            student_id=student_id,
+            subject_id=subject_id,
+            level = 1,
+            points=0
+        )
+        new_level.save()
+        return new_level
+        
+    
+
+
 
 student_manager = StudentManager()
 batch_manager = BatchManager()
+stusublvl_manager = StudentSubjectLevelManager()

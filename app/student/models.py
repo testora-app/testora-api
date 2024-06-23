@@ -1,6 +1,7 @@
 from app.extensions import db
 from app._shared.models import BaseModel
 
+from datetime import datetime
 
 # Association table for many-to-many relationship
 student_batches = db.Table('student_batches',
@@ -31,7 +32,6 @@ class Batch(BaseModel):
     
     
 
-
 class Student(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     first_name = db.Column(db.String, nullable=False)
@@ -59,4 +59,43 @@ class Student(BaseModel):
             'batches': [batch.to_json(include_students=False) for batch in self.batches] if self.batches else []
         }
     
+
+class StudentSubjectLevel(BaseModel):
+    __tablename__ = 'student_subject_level'
+
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), primary_key=True)
+    level = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Integer, nullable=False)
+
+    def to_json(self):
+        return {
+            'student_id': self.student_id,
+            'subject_id': self.subject_id,
+            'level': self.level,
+            'points': self.points
+        }
+
+
+class StudentLevellingHistory(BaseModel):
+    __tablename__ = 'student_levelling_history'
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
+    level_from = db.Column(db.Integer, nullable=False)
+    level_to = db.Column(db.Integer, nullable=False)
+    levelled_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    meta = db.Column(db.JSON, nullable=True)
+
+    def to_json(self):
+        return {
+            'id': self.id,
+            'student_id': self.student_id,
+            'subject_id': self.subject_id,
+            'level_from': self.level_from,
+            'level_to': self.level_to,
+            'levelled_at': self.levelled_at,
+            'metadata': self.metadata,
+        }
 

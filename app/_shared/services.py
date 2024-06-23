@@ -6,6 +6,7 @@ from app.extensions import bcrypt
 
 from app._shared.api_errors import AuthenticationFailedError
 
+
 def generate_access_token(user_id, user_type, school_id=None, permissions=None):
     payload_data = {
         'user_id': user_id,

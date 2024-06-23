@@ -51,6 +51,8 @@ class Topic(BaseModel):
     level = db.Column(db.Integer, nullable=False)
 
     sub_topics = db.relationship('SubTopic', backref='topic', lazy=True)
+    questions = db.relationship('Question', backref='topic', lazy=True)
+
 
     def __str__(self):
         return f'{self.name} -- {self.subject_id}, Level: {self.level}'
@@ -74,6 +76,8 @@ class SubTopic(BaseModel):
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     level = db.Column(db.Integer, nullable=False)
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
+
+    questions = db.relationship('Question', backref='sub_topic', lazy=True)
 
 
     def __str__(self):

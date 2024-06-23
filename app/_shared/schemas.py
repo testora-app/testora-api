@@ -43,7 +43,51 @@ class UserTypes:
 class CurriculumTypes:
     bece = 'bece'
 
-
     @classmethod
     def get_curriculum_types(cls):
         return [cls.bece]
+    
+
+class ExamModes:
+    exam = 'exam'
+    level = 'level'
+
+    @classmethod
+    def get_valid_exam_modes(cls):
+        return [cls.exam, cls.level]
+    
+
+class QuestionsNumberLimiter:
+    questions_per_level = {
+        '1': 10,
+        '2': 12,
+        '3': 15,
+        '4': 18,
+        '5': 20,
+        '6': 25,
+        '7': 30,
+        '8': 35,
+        '9': 40
+    }
+
+    @classmethod
+    def get_question_limit_for_level(cls, student_subject_level) -> int:
+        return cls.questions_per_level[str(student_subject_level)]
+    
+
+class QuestionPoints:
+    question_level_points = {
+            1: 1.2,
+            2: 1.5,
+            3: 1.7,
+            4: 2,
+            5: 2.2,
+            6: 2.5,
+            7: 2.65,
+            8: 2.8,
+            9: 3
+        }
+    
+    @classmethod
+    def get_question_level_points(cls):
+        return cls.question_level_points
