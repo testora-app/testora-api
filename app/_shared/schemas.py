@@ -1,4 +1,5 @@
 from typing import Any
+import bisect
 
 from apiflask import Schema
 from apiflask.fields import Integer, String, Nested, Dict
@@ -91,3 +92,28 @@ class QuestionPoints:
     @classmethod
     def get_question_level_points(cls):
         return cls.question_level_points
+    
+
+class LevelLimitPoints:
+    points_to_levels = {
+        1000: 1,
+        2100: 2,
+        3200: 3,
+        4300: 4,
+        5400: 5,
+        6500: 6,
+        8000: 7,
+        10000: 8,
+        15000: 9,
+        25000: 10
+    }
+
+    @classmethod
+    def get_points_level(cls, points):
+        sorted_points = sorted(cls.points_to_levels.keys())
+        index = bisect.bisect_right(sorted_points, points)
+        
+        if index == 0:
+            return 1 # Points less than the smallest threshold
+        else:
+            return cls.points_to_levels[sorted_points[index - 1]]

@@ -85,7 +85,7 @@ class StudentLevellingHistory(BaseModel):
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     level_from = db.Column(db.Integer, nullable=False)
     level_to = db.Column(db.Integer, nullable=False)
-    levelled_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    levelled_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
     meta = db.Column(db.JSON, nullable=True)
 
     def to_json(self):
@@ -96,6 +96,6 @@ class StudentLevellingHistory(BaseModel):
             'level_from': self.level_from,
             'level_to': self.level_to,
             'levelled_at': self.levelled_at,
-            'metadata': self.metadata,
+            'meta': self.meta,
         }
 

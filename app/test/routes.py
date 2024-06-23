@@ -1,17 +1,18 @@
 from typing import Dict
-
+from datetime import datetime
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, ExamModes
-from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
+from app._shared.api_errors import  success_response, bad_request
 from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
 from app.test.operations import question_manager, test_manager
-from app.test.schemas import TestListSchema, QuestionListSchema, Responses, QuestionSchema, TestSchema, Requests
+from app.test.schemas import TestQuestionsListSchema, QuestionListSchema, Responses, Requests
 from app.test.services import TestService
 
 from app.student.operations import student_manager, stusublvl_manager
+from app.student.services import SubjectLevelManager
 
 
 testr = APIBlueprint('testr', __name__)
@@ -65,11 +66,10 @@ def delete_questions(question_id):
     return success_response()
 
 
-# create test
-# the different test modes and how they would work
+# region: Tests
 @testr.post("/tests/")
 @testr.input(Requests.CreateTestSchema)
-@testr.output(Responses.TestSchema, 201)
+@testr.output(TestQuestionsListSchema, 201)
 @token_auth([UserTypes.student])
 def create_test(json_data):
     data = json_data["data"]
@@ -96,12 +96,13 @@ def create_test(json_data):
     questions = [question.to_json(include_correct_answer=False) for question in questions]
 
     # determine the number of points and total score
-    total_points = TestService.determine_toal_test_points(questions)
+    total_points = TestService.determine_total_test_points(questions)
 
 
     # create the test
     new_test = test_manager.create_test(
         student_id=student.id,
+        subject_id=subject_id,
         questions=questions,
         total_points=total_points,
         total_score=len(questions),
@@ -109,9 +110,40 @@ def create_test(json_data):
         school_id=student.school_id
     )
 
-    return success_response(data=new_test.to_json(), status_code=201)
+    return success_response(data=new_test.questions, status_code=201)
 
 
 @testr.put("/tests/<int:test_id>/mark/")
+@testr.input(Requests.MarkTestSchema)
+@testr.output(SuccessMessage, 200)
+@token_auth([UserTypes.student])
 def mark_test(test_id, json_data):
-    return success_response()
+    test = test_manager.get_test_by_id(test_id)
+    student_id = get_current_user()['user_id']
+
+    if test:
+        test.is_completed = True
+        #TODO: Determine the level that'll deduct points
+
+        marked_test = TestService.mark_test(json_data['questions'])
+        # update the questions with the correct answer, it'll already have their answer
+        test.finished_on = datetime.utcnow()
+        test.meta = json_data['meta']
+        test.questions = marked_test['questions']
+        test.questions_correct = marked_test['score_acquired']
+        test.points_acquired = marked_test['points_acquired']
+        test.score_acquired = marked_test['score_acquired']
+        test.save()
+
+        # update their points
+        stusublvl = stusublvl_manager.get_student_subject_level(student_id, test.subject_id)
+        stusublvl.points += marked_test['score_acquired']
+        stusublvl.save()
+
+        # pass the sublvl to a level manager, that'll check if they've levelled up
+        # and then add the history accordingly
+        SubjectLevelManager.check_and_level_up(stu_sub_level=stusublvl)
+    return success_response(data=test.to_json())
+
+
+# endregion: Tests

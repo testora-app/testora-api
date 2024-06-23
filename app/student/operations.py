@@ -1,9 +1,8 @@
-from app.student.models import Student, Batch, StudentSubjectLevel
+from app.student.models import Student, Batch, StudentSubjectLevel, StudentLevellingHistory
 from app._shared.operations import BaseManager
 from app._shared.services import hash_password
 
 from typing import List, Union
-
 
 class StudentManager(BaseManager):
     def create_student(self, first_name, surname, email, password,
@@ -81,8 +80,25 @@ class StudentSubjectLevelManager(BaseManager):
         
     
 
+class LevelHistoryManager(BaseManager):
+    def get_levelling_history(self, student_id, subject_id=None) -> List[StudentLevellingHistory]:
+        if subject_id:
+            return StudentLevellingHistory.query.filter_by(student_id=student_id, subject_id=subject_id).all()
+        return StudentLevellingHistory.query.filter_by(student_id=student_id).all()
+    
+    def add_new_history(self, student_id, subject_id, level_from, level_to):
+        new_history = StudentLevellingHistory(
+            student_id=student_id,
+            subject_id=subject_id,
+            level_from=level_from,
+            level_to=level_to
+        )
+
+        new_history.save()
+        return new_history
 
 
 student_manager = StudentManager()
 batch_manager = BatchManager()
 stusublvl_manager = StudentSubjectLevelManager()
+level_history_manager = LevelHistoryManager()

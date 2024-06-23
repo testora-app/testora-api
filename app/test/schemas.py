@@ -47,10 +47,47 @@ class TestListSchema(BaseSchema):
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))
 
-
 class CreateTestSchema(BaseSchema):
     mode = String(required=True, allow_none=False)
     subject_id = Integer(required=True, allow_none=False)
+
+
+class TestQuestionsSchema(BaseSchema):
+    id = Integer(dump_only=True)
+    text = String(required=True)
+    possible_answers = List(String(), required=True)
+    sub_topic_id = Integer(allow_none=True)
+    topic_id = Integer(required=True)
+    school_id = Integer(allow_none=True)
+    sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
+
+
+class TestQuestionsListSchema(BaseSchema):
+    data = List(Nested(TestQuestionsSchema))
+
+
+class SubmittedSubQuestionSchema(BaseSchema):
+    id = Integer(dump_only=True)
+    text = String(required=True)
+    student_answer = String(required=True)
+    possible_answers = List(String(), required=True)
+
+
+class SubmittedQuestionsSchema(BaseSchema):
+    id = Integer(dump_only=True)
+    text = String(required=True)
+    possible_answers = List(String(), required=True)
+    student_answer = String(required=True)
+    sub_topic_id = Integer(allow_none=True)
+    topic_id = Integer(required=True)
+    school_id = Integer(allow_none=True)
+    sub_questions = List(Nested(SubmittedSubQuestionSchema), required=False, allow_none=True)
+
+
+class MarkTestSchema(BaseSchema):
+    questions = List(Nested(SubmittedQuestionsSchema))
+    meta = Dict(allow_none=True, required=False)
+
 
 class Responses:
     QuestionSchema = make_response_schema(QuestionSchema)
@@ -61,3 +98,4 @@ class Requests:
     AddQuestionSchema = make_response_schema(QuestionSchema)
     EditQuestionSchema = make_response_schema(QuestionSchema)
     CreateTestSchema = make_response_schema(CreateTestSchema)
+    MarkTestSchema = make_response_schema(MarkTestSchema)

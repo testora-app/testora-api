@@ -1,7 +1,7 @@
 from app.test.models import Question, SubQuestion, Test
 from app._shared.operations import BaseManager
 
-from typing import List, Dict
+from typing import List, Dict, Union
 
 
 #region Question Manager
@@ -78,14 +78,18 @@ class TestManager(BaseManager):
     def get_tests(self):
         return Test.query.all()
     
+    def get_test_by_id(self, test_id) -> Union[Test, None]:
+        return Test.query.filter_by(id=test_id).first()
+    
     def get_tests_by_student_ids(self, student_ids:List[int]):
         return Test.query.filter(Test.student_id.in_(student_ids)).all()
     
-    def create_test(self, student_id, questions, total_points, total_score, question_number, school_id,
+    def create_test(self, student_id, subject_id, questions, total_points, total_score, question_number, school_id,
                     points_acquired=None, score_acquired=None, started_on=None, finished_on=None,
                     questions_correct=None, meta=None, is_completed=False):
         new_test = Test(
             student_id=student_id,
+            subject_id=subject_id,
             questions=questions,
             total_points=total_points,
             total_score=total_score,

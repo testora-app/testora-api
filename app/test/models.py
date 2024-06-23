@@ -12,7 +12,7 @@ class Question(BaseModel):
     possible_answers = db.Column(db.Text, nullable=False)
     sub_topic_id = db.Column(db.Integer, db.ForeignKey('sub_topic.id'), nullable=True)
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
-    points = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Integer, nullable=True, default=None)
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
     
     sub_questions = db.relationship('SubQuestion', backref='parent_question', lazy=True)
@@ -26,7 +26,7 @@ class Question(BaseModel):
             'topic_id': self.topic_id,
             'points': self.points,
             'school_id': self.school_id,
-            'sub_questions': [sub_question.to_json() for sub_question in self.sub_questions],
+            'sub_questions': [sub_question.to_json(include_correct_answer=include_correct_answer) for sub_question in self.sub_questions],
         }
 
         try:
@@ -49,20 +49,24 @@ class SubQuestion(BaseModel):
     possible_answers = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, nullable=False)
 
-    def to_json(self):
-        return {
+    def to_json(self, include_correct_answer=True):
+        question_json = {
             'id': self.id,
             'parent_question_id': self.parent_question_id,
             'text': self.text,
-            'correct_answer': self.correct_answer,
             'possible_answers': json.dumps(self.possible_answers),
             'points': self.points
         }
+
+        if include_correct_answer:
+            question_json['correct_answer'] = self.correct_answer
+        return question_json
     
 
 class Test(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
     questions = db.Column(db.JSON, nullable=False)
     total_points = db.Column(db.Integer, nullable=False)
     points_acquired = db.Column(db.Integer, nullable=False)
@@ -81,6 +85,7 @@ class Test(BaseModel):
         return {
             'id': self.id,
             'student_id': self.student_id,
+            'subject_id': self.subject_id,
             'questions': self.questions,
             'total_points': self.total_points,
             'points_acquired': self.points_acquired,
@@ -90,7 +95,7 @@ class Test(BaseModel):
             'finished_on': self.finished_on if self.finished_on else None,
             'question_number': self.question_number,
             'questions_correct': self.questions_correct,
-            'metadata': self.metadata,
+            'meta': self.meta,
             'is_completed': self.is_completed,
             'school_id': self.school_id,
             'created_at': self.created_at
