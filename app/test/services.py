@@ -50,11 +50,12 @@ class TestService:
     
 
     @staticmethod
-    def determine_question_points(question) -> int:
+    def determine_question_points(question, main_correct=True, sub_questions_correct=0) -> int:
         question_multiplier = QuestionPoints.get_question_level_points()
-        number_of_sub = len(question['sub_questions'])
-        return int((question['level'] + number_of_sub)  * question_multiplier[question['level']])
-    
+
+        if main_correct:
+            return int((question['level'] + sub_questions_correct)  * question_multiplier[question['level']])
+        return int(sub_questions_correct * question[question['level']])
 
     #NOTE: this already takes up sub questions
     @staticmethod
@@ -89,13 +90,28 @@ class TestService:
         for question in questions:
             # get the question
             q = question_manager.get_question_by_id(question['id'])
+            main_question_correct = False
+            no_subs_correct = 0
             if q.correct_answer == question['student_answer']:
-                points_acquired += TestService.determine_question_points(question)
+                main_question_correct = True
                 score_acquired += 1
             else:
                 if deduct_points:
                     points_acquired -= TestService.determine_question_points(question)
 
+
+            # mark sub questions if any
+            if len(question['sub_questions']) > 0:
+                for sub in question['sub_questions']:
+                    s = question_manager.get_sub_question_by_id(sub['id'])
+                    if s.correct_answer == s['student_answer']:
+                        no_subs_correct += 1
+                    else:
+                        if deduct_points:
+                            points_acquired -= 1
+
+
+            points_acquired += TestService.determine_question_points(question, main_correct=main_question_correct, sub_questions_correct=no_subs_correct)
             question['correct_answer'] = q.correct_answer
 
         return {

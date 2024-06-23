@@ -69,6 +69,10 @@ class QuestionManager(BaseManager):
 
         return self.get_question_by_ids(question.id for question in questions_list)
     
+
+    def get_sub_question_by_id(self, sub_id) -> SubQuestion:
+        return SubQuestion.query.filter_by(id=sub_id).first() 
+    
 #endregion Question Manager
 
 
