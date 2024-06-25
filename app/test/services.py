@@ -22,7 +22,7 @@ class TestService:
         return student_level >= levels[exam_mode]
     
     @classmethod
-    def __generate_level_counts(total_questions, max_level):
+    def __generate_level_counts(cls, total_questions, max_level):
         levels = list(range(1, max_level + 1))
         level_counts = defaultdict(int)
 
@@ -46,7 +46,7 @@ class TestService:
             number_of_sub = len(question['sub_questions'])
             total_points += (question['level'] + number_of_sub) * question_multiplier[question['level']]
 
-        return int(total_points)
+        return round(total_points, 2)
     
 
     @staticmethod
@@ -54,8 +54,8 @@ class TestService:
         question_multiplier = QuestionPoints.get_question_level_points()
 
         if main_correct:
-            return int((question['level'] + sub_questions_correct)  * question_multiplier[question['level']])
-        return int(sub_questions_correct * question[question['level']])
+            return (question['level'] + sub_questions_correct)  * question_multiplier[question['level']]
+        return sub_questions_correct * question['level']
 
     #NOTE: this already takes up sub questions
     @staticmethod
@@ -111,12 +111,15 @@ class TestService:
                             points_acquired -= 1
 
 
-            points_acquired += TestService.determine_question_points(question, main_correct=main_question_correct, sub_questions_correct=no_subs_correct)
+            points = round(TestService.determine_question_points(question, main_correct=main_question_correct, \
+                                                                 sub_questions_correct=no_subs_correct), 2)
+            points_acquired += points
             question['correct_answer'] = q.correct_answer
+            question['points'] = points
 
         return {
             'questions': questions,
-            'points_acquired': points_acquired,
+            'points_acquired': round(points_acquired, 2),
             'score_acquired': score_acquired
         }
             

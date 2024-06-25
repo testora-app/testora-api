@@ -21,7 +21,8 @@ class Question(BaseModel):
         question_json = {
             'id': self.id,
             'text': self.text,
-            'possible_answers': json.dumps(self.possible_answers),
+            'possible_answers': [answer for answer in \
+                                 self.possible_answers.replace('{', '').replace('}', '').split(',')],
             'sub_topic_id': self.sub_topic_id,
             'topic_id': self.topic_id,
             'points': self.points,
@@ -54,7 +55,8 @@ class SubQuestion(BaseModel):
             'id': self.id,
             'parent_question_id': self.parent_question_id,
             'text': self.text,
-            'possible_answers': json.dumps(self.possible_answers),
+            'possible_answers': [answer for answer in \
+                                 self.possible_answers.replace('{', '').replace('}', '').split(',')],
             'points': self.points
         }
 

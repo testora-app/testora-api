@@ -1,5 +1,6 @@
 from app.test.models import Question, SubQuestion, Test
 from app._shared.operations import BaseManager
+import json
 
 from typing import List, Dict, Union
 
@@ -27,7 +28,7 @@ class QuestionManager(BaseManager):
             parent_question_id=parent_question_id,
             text=text,
             correct_answer=correct_answer,
-            possible_answers=possible_answers,
+            possible_answers=json.dumps(possible_answers),
             points=points
         )
 
@@ -56,7 +57,7 @@ class QuestionManager(BaseManager):
         questions_list : List[Question] = []
         sub_questions_list = []
         for obj in questions:
-            sub_obj = obj.pop('sub_questions')
+            sub_obj = obj.get('sub_questions', [])
             new_question = self.create_question(**obj, is_save_function=False)
             questions_list.append(new_question)
             for sub in sub_obj:
@@ -85,11 +86,14 @@ class TestManager(BaseManager):
     def get_test_by_id(self, test_id) -> Union[Test, None]:
         return Test.query.filter_by(id=test_id).first()
     
-    def get_tests_by_student_ids(self, student_ids:List[int]):
+    def get_tests_by_school_id(self, school_id) -> List[Test]:
+        return Test.query.filter_by(school_id=school_id).all()
+    
+    def get_tests_by_student_ids(self, student_ids:List[int]) -> List[Test]:
         return Test.query.filter(Test.student_id.in_(student_ids)).all()
     
     def create_test(self, student_id, subject_id, questions, total_points, total_score, question_number, school_id,
-                    points_acquired=None, score_acquired=None, started_on=None, finished_on=None,
+                    points_acquired=0, score_acquired=0, started_on=None, finished_on=None,
                     questions_correct=None, meta=None, is_completed=False):
         new_test = Test(
             student_id=student_id,

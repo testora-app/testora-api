@@ -67,14 +67,16 @@ class TestQuestionsListSchema(BaseSchema):
 
 
 class SubmittedSubQuestionSchema(BaseSchema):
-    id = Integer(dump_only=True)
+    id = Integer()
     text = String(required=True)
     student_answer = String(required=True)
     possible_answers = List(String(), required=True)
 
 
 class SubmittedQuestionsSchema(BaseSchema):
-    id = Integer(dump_only=True)
+    id = Integer()
+    level = Integer(required=False, allow_none=True)
+    points = Integer(required=False)
     text = String(required=True)
     possible_answers = List(String(), required=True)
     student_answer = String(required=True)

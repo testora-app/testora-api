@@ -3,12 +3,12 @@ from datetime import datetime
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, ExamModes
-from app._shared.api_errors import  success_response, bad_request
+from app._shared.api_errors import  success_response, bad_request, not_found
 from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
 from app.test.operations import question_manager, test_manager
-from app.test.schemas import TestQuestionsListSchema, QuestionListSchema, Responses, Requests
+from app.test.schemas import TestQuestionsListSchema, QuestionListSchema, TestListSchema, Responses, Requests
 from app.test.services import TestService
 
 from app.student.operations import student_manager, stusublvl_manager
@@ -67,14 +67,33 @@ def delete_questions(question_id):
 
 
 # region: Tests
+@testr.get("/tests/")
+@testr.output(TestListSchema)
+@token_auth(['*'])
+def test_history():
+    current_user = get_current_user()
+
+    if current_user['user_type'] == UserTypes.student:
+        tests = test_manager.get_tests_by_student_ids([current_user['user_id']])
+    elif current_user['user_type'] == UserTypes.staff or current_user['user_type'] == UserTypes.school_admin:
+        tests = test_manager.get_tests_by_school_id(current_user['school_id'])
+    else:
+        tests = test_manager.get_tests()
+
+    return success_response(data=[test.to_json() for test in tests])
+
+
 @testr.post("/tests/")
 @testr.input(Requests.CreateTestSchema)
 @testr.output(TestQuestionsListSchema, 201)
 @token_auth([UserTypes.student])
 def create_test(json_data):
+    ''' Returns the questions back to the user'''
     data = json_data["data"]
     exam_mode = data["mode"]
     subject_id = data["subject_id"]
+
+    ## add a verfication layer to check if student takes that course
 
     # validate the mode of the exam
     if exam_mode not in ExamModes.get_valid_exam_modes():
@@ -85,14 +104,14 @@ def create_test(json_data):
     student_level = stusublvl_manager.get_student_subject_level(student.id, subject_id)
     if not student_level:
         student_level = stusublvl_manager.init_student_subject_level(student.id, subject_id)
-
+        
 
     # validate the level of the student whether they can take that
-    if student and not TestService.is_mode_accessible(exam_mode, student_level):
-        return bad_request(f"{exam_mode} is not available at your current level!")
+    if student and not TestService.is_mode_accessible(exam_mode, student_level.level):
+        return bad_request(f"{exam_mode} mode is not available at your current level!")
     
     
-    questions = TestService.generate_random_questions_by_level(subject_id, student_level)
+    questions = TestService.generate_random_questions_by_level(subject_id, student_level.level)
     questions = [question.to_json(include_correct_answer=False) for question in questions]
 
     # determine the number of points and total score
@@ -110,7 +129,7 @@ def create_test(json_data):
         school_id=student.school_id
     )
 
-    return success_response(data=new_test.questions, status_code=201)
+    return success_response(data=new_test.to_json(), status_code=201)
 
 
 @testr.put("/tests/<int:test_id>/mark/")
@@ -118,10 +137,14 @@ def create_test(json_data):
 @testr.output(SuccessMessage, 200)
 @token_auth([UserTypes.student])
 def mark_test(test_id, json_data):
+    json_data = json_data["data"]
     test = test_manager.get_test_by_id(test_id)
     student_id = get_current_user()['user_id']
 
-    if test:
+    if not test:
+        return not_found(message="The requested Test does not exist!")
+
+    if test and not test.is_completed:
         test.is_completed = True
         #TODO: Determine the level that'll deduct points
 

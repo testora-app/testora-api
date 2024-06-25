@@ -75,7 +75,7 @@ class StudentSubjectLevelManager(BaseManager):
             level = 1,
             points=0
         )
-        new_level.save()
+        self.save(new_level)
         return new_level
         
     
@@ -94,7 +94,7 @@ class LevelHistoryManager(BaseManager):
             level_to=level_to
         )
 
-        new_history.save()
+        self.save(new_history)
         return new_history
 
 
