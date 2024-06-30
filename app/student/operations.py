@@ -34,6 +34,10 @@ class StudentManager(BaseManager):
     def get_student_by_school(self, school_id) -> List[Student]:
         return Student.query.filter_by(school_id=school_id).all()
     
+    @staticmethod
+    def get_students_by_ids(student_ids):
+        return Student.query.filter(Student.id.in_(student_ids)).all()
+    
 
 
 class BatchManager(BaseManager):
@@ -41,11 +45,17 @@ class BatchManager(BaseManager):
         new_batch = Batch(
             batch_name=batch_name,
             school_id=school_id,
-            curriculum=curriculum,
-            students=students
+            curriculum=curriculum
         )
 
         self.save(new_batch)
+
+        students = StudentManager.get_students_by_ids(students)
+
+        for student in students:
+            new_batch.students.append(student)
+
+        new_batch.save()
         return new_batch
     
     def get_all_batches(self) -> List[Batch]:
