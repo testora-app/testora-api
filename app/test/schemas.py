@@ -83,6 +83,9 @@ class SubmittedQuestionsSchema(BaseSchema):
     sub_topic_id = Integer(allow_none=True)
     topic_id = Integer(required=True)
     school_id = Integer(allow_none=True)
+    meta = Dict(allow_none=True, required=False)
+    opened = Boolean(allow_none=True, required=False)
+    options = Dict(allow_none=True, required=False)
     sub_questions = List(Nested(SubmittedSubQuestionSchema), required=False, allow_none=True)
 
 
