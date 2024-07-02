@@ -88,6 +88,9 @@ class SubmittedQuestionsSchema(BaseSchema):
     options = Dict(allow_none=True, required=False)
     sub_questions = List(Nested(SubmittedSubQuestionSchema), required=False, allow_none=True)
 
+    #TODO: REMOVETHIS
+    correct_answer = String(allow_none=True, required=False)
+
 
 class MarkTestSchema(BaseSchema):
     questions = List(Nested(SubmittedQuestionsSchema))
