@@ -23,26 +23,7 @@ class QuestionSchema(BaseSchema):
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
 
 
-class TestSchema(BaseSchema):
-    id = Integer(dump_only=True)
-    student_id = Integer(required=True)
-    questions = Dict(required=True)
-    total_points = Integer(required=True)
-    points_acquired = Integer(required=True)
-    total_score = Decimal(required=True)
-    score_acquired = Decimal(required=True)
-    started_on = DateTime(required=True)
-    finished_on = DateTime(allow_none=True)
-    question_number = Integer(allow_none=True)
-    questions_correct = Integer(allow_none=True)
-    meta = Dict(allow_none=True)
-    is_completed = Boolean(required=True)
-    school_id = Integer(allow_none=True)
-    created_at = DateTime(required=True)
 
-
-class TestListSchema(BaseSchema):
-    data = List(Nested(TestSchema))
 
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))
@@ -92,9 +73,32 @@ class SubmittedQuestionsSchema(BaseSchema):
     correct_answer = String(allow_none=True, required=False)
 
 
+class TestSchema(BaseSchema):
+    id = Integer(dump_only=True)
+    student_id = Integer(required=True)
+    questions = List(Nested(TestQuestionsSchema))
+    total_points = Integer(required=True)
+    points_acquired = Integer(required=True)
+    total_score = Decimal(required=True)
+    score_acquired = Decimal(required=True)
+    started_on = DateTime(required=True)
+    finished_on = DateTime(allow_none=True)
+    question_number = Integer(allow_none=True)
+    questions_correct = Integer(allow_none=True)
+    meta = Dict(allow_none=True)
+    is_completed = Boolean(required=True)
+    school_id = Integer(allow_none=True)
+    created_at = DateTime(required=True)
+
+
+class TestListSchema(BaseSchema):
+    data = List(Nested(TestSchema))
+
 class MarkTestSchema(BaseSchema):
     questions = List(Nested(SubmittedQuestionsSchema))
     meta = Dict(allow_none=True, required=False)
+
+
 
 
 class Responses:

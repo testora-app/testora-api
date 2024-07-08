@@ -85,7 +85,7 @@ def test_history():
 
 @testr.post("/tests/")
 @testr.input(Requests.CreateTestSchema)
-@testr.output(TestQuestionsListSchema, 201)
+@testr.output(Responses.TestSchema, 201)
 @token_auth([UserTypes.student])
 def create_test(json_data):
     ''' Returns the questions back to the user'''
