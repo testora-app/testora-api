@@ -56,6 +56,7 @@ class SubmittedSubQuestionSchema(BaseSchema):
 
 class SubmittedQuestionsSchema(BaseSchema):
     id = Integer()
+    index = Integer(required=False)
     level = Integer(required=False, allow_none=True)
     points = Integer(required=False)
     text = String(required=True)
