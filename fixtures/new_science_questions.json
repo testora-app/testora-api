@@ -3,7 +3,7 @@
         "text": "Which of the following states of matter has a definite volume but takes the shape of its container?",
         "correct_answer": "Liquid",
         "possible_answers": ["Solid", "Liquid", "Gas", "Plasma"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -11,7 +11,7 @@
         "text": "Which property of matter describes its resistance to flow?",
         "correct_answer": "Viscosity",
         "possible_answers": ["Density", "Viscosity", "Surface tension", "Conductivity"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },    
@@ -19,7 +19,7 @@
         "text": "What happens to the volume of a gas when its temperature is increased, assuming constant pressure?",
         "correct_answer": "Increases",
         "possible_answers": ["Decreases", "Increases", "Remains constant", "Varies unpredictably"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -27,7 +27,7 @@
         "text": "Which state of matter has particles arranged in a regular, repeating pattern?",
         "correct_answer": "Solid",
         "possible_answers": ["Solid", "Liquid", "Gas", "Plasma"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -35,7 +35,7 @@
         "text": "What is the process called when a solid turns directly into a gas without becoming a liquid first?",
         "correct_answer": "Sublimation",
         "possible_answers": ["Evaporation", "Condensation", "Sublimation", "Melting"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -43,7 +43,7 @@
         "text": "Which property of matter remains constant regardless of its location in the universe?",
         "correct_answer": "Mass",
         "possible_answers": ["Weight", "Volume", "Density", "Mass"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -51,7 +51,7 @@
         "text": "Which state of matter has particles that are closely packed together but can still move past each other?",
         "correct_answer": "Liquid",
         "possible_answers": ["Solid", "Liquid", "Gas", "Plasma"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -59,7 +59,7 @@
         "text": "What is the boiling point of water at standard atmospheric pressure?",
         "correct_answer": "100 degrees Celsius",
         "possible_answers": ["0 degrees Celsius", "50 degrees Celsius", "100 degrees Celsius", "200 degrees Celsius"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -67,7 +67,7 @@
         "text": "Which state of matter has particles that are far apart and move freely?",
         "correct_answer": "Gas",
         "possible_answers": ["Solid", "Liquid", "Gas", "Plasma"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -75,7 +75,7 @@
         "text": "What is the process called when a gas turns into a liquid?",
         "correct_answer": "Condensation",
         "possible_answers": ["Evaporation", "Sublimation", "Condensation", "Deposition"],
-        "topic_id": 2,
+        "topic_id": 10,
         "points": null,
         "school_id": null
     },
@@ -89,7 +89,7 @@
           "Granite",
           "Sugar water"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -102,7 +102,7 @@
           "They cannot be separated",
           "They form new substances"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -115,7 +115,7 @@
           "Filtration",
           "Distillation"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -128,7 +128,7 @@
           "A homogeneous mixture where one substance dissolves in another",
           "A mixture of gases"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -141,7 +141,7 @@
           "Distillation",
           "Evaporation"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -154,7 +154,7 @@
           "New components are formed",
           "The mixture becomes unstable"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -167,7 +167,7 @@
           "Uniform composition throughout",
           "Cannot be separated"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -180,7 +180,7 @@
           "Sublimation",
           "Melting"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -193,7 +193,7 @@
           "Suspension",
           "Emulsion"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -206,7 +206,7 @@
           "Particles that do not settle out",
           "Particles that do not mix"
         ],
-        "topic_id": 3,
+        "topic_id": 11,
         "points": null,
         "school_id": null
       },
@@ -215,7 +215,7 @@
         "text": "Which substance increases the concentration of hydrogen ions (H⁺) in water?",
         "correct_answer": "Acid",
         "possible_answers": ["Base", "Salt", "Acid", "Neutral"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -223,7 +223,7 @@
         "text": "What is the pH of a neutral substance?",
         "correct_answer": "7",
         "possible_answers": ["0", "7", "10", "14"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -231,7 +231,7 @@
         "text": "Which of the following is an example of a strong acid?",
         "correct_answer": "Hydrochloric acid (HCl)",
         "possible_answers": ["Vinegar", "Lemon juice", "Hydrochloric acid (HCl)", "Ammonia"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -239,7 +239,7 @@
         "text": "What happens when an acid reacts with a base?",
         "correct_answer": "Produces salt and water",
         "possible_answers": ["Produces gas", "Produces heat", "Produces salt and water", "Produces light"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -247,7 +247,7 @@
         "text": "Which acid is found in citrus fruits like oranges and lemons?",
         "correct_answer": "Citric acid",
         "possible_answers": ["Acetic acid", "Citric acid", "Sulfuric acid", "Nitric acid"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -255,7 +255,7 @@
         "text": "What is the common name for sodium bicarbonate?",
         "correct_answer": "Baking soda",
         "possible_answers": ["Table salt", "Baking soda", "Borax", "Epsom salt"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -263,7 +263,7 @@
         "text": "Which of the following substances turns red litmus paper blue?",
         "correct_answer": "Base",
         "possible_answers": ["Acid", "Base", "Salt", "Neutral"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -271,7 +271,7 @@
         "text": "What is the chemical formula of sulfuric acid?",
         "correct_answer": "H₂SO₄",
         "possible_answers": ["HCl", "NaOH", "H₂SO₄", "CH₄"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -279,7 +279,7 @@
         "text": "What is the pH range of bases?",
         "correct_answer": "8-14",
         "possible_answers": ["0-7", "7-10", "8-14", "1-6"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -287,7 +287,7 @@
         "text": "What is formed when a metal reacts with an acid?",
         "correct_answer": "Salt and hydrogen gas",
         "possible_answers": ["Salt and oxygen gas", "Salt and water", "Salt and hydrogen gas", "Salt and carbon dioxide"],
-        "topic_id": 4,
+        "topic_id": 12,
         "points": null,
         "school_id": null
     },
@@ -296,7 +296,7 @@
         "text": "What is the first stage in the life cycle of a housefly?",
         "correct_answer": "Egg",
         "possible_answers": ["Larva", "Pupa", "Adult", "Egg"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -304,7 +304,7 @@
         "text": "How long does it typically take for a housefly to complete its life cycle from egg to adult?",
         "correct_answer": "About 10-21 days",
         "possible_answers": ["About 1-2 days", "About 3-4 weeks", "About 10-21 days", "About 1-2 months"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -312,7 +312,7 @@
         "text": "Which stage of the housefly life cycle is characterized by active feeding and growth?",
         "correct_answer": "Larva",
         "possible_answers": ["Egg", "Pupa", "Adult", "Larva"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -320,7 +320,7 @@
         "text": "During which stage does a housefly undergo complete metamorphosis?",
         "correct_answer": "Pupa",
         "possible_answers": ["Egg", "Larva", "Adult", "Pupa"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -328,7 +328,7 @@
         "text": "What is the scientific term for the process of a housefly transforming from one life stage to another?",
         "correct_answer": "Metamorphosis",
         "possible_answers": ["Evolution", "Mutation", "Metamorphosis", "Adaptation"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -336,7 +336,7 @@
         "text": "At what stage of its life cycle does a housefly begin to fly and reproduce?",
         "correct_answer": "Adult",
         "possible_answers": ["Egg", "Larva", "Pupa", "Adult"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -344,7 +344,7 @@
         "text": "Where do houseflies typically lay their eggs?",
         "correct_answer": "On decaying organic matter",
         "possible_answers": ["In clean water", "On leaves of plants", "On human skin", "On decaying organic matter"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -352,7 +352,7 @@
         "text": "Which environmental factor influences the speed of development of housefly larvae?",
         "correct_answer": "Temperature",
         "possible_answers": ["Humidity", "Wind speed", "Daylight duration", "Temperature"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -360,7 +360,7 @@
         "text": "What is the primary diet of housefly larvae?",
         "correct_answer": "Decaying organic matter",
         "possible_answers": ["Fresh fruits", "Nectar from flowers", "Blood of animals", "Decaying organic matter"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -368,7 +368,7 @@
         "text": "What is the main purpose of the adult housefly in its life cycle?",
         "correct_answer": "Reproduction",
         "possible_answers": ["Feeding", "Migrating", "Hibernating", "Reproduction"],
-        "topic_id": 5,
+        "topic_id": 13,
         "points": null,
         "school_id": null
     },
@@ -376,7 +376,7 @@
         "text": "What is the primary host for female Anopheles mosquitoes?",
         "correct_answer": "Humans",
         "possible_answers": ["Cattle", "Birds", "Fish", "Humans"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -384,7 +384,7 @@
         "text": "At what stage of the life cycle do Anopheles mosquitoes feed on blood?",
         "correct_answer": "Adult",
         "possible_answers": ["Egg", "Larva", "Pupa", "Adult"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -392,7 +392,7 @@
         "text": "Where do female Anopheles mosquitoes lay their eggs?",
         "correct_answer": "Water",
         "possible_answers": ["Trees", "Soil", "Air", "Water"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -400,7 +400,7 @@
         "text": "What is the scientific term for the process of a mosquito transforming from one life stage to another?",
         "correct_answer": "Metamorphosis",
         "possible_answers": ["Evolution", "Mutation", "Metamorphosis", "Adaptation"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -408,7 +408,7 @@
         "text": "Which stage of the Anopheles mosquito life cycle is aquatic?",
         "correct_answer": "Larva",
         "possible_answers": ["Egg", "Pupa", "Adult", "Larva"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -416,7 +416,7 @@
         "text": "What is the primary diet of Anopheles mosquito larvae?",
         "correct_answer": "Microorganisms and organic matter",
         "possible_answers": ["Blood", "Nectar", "Microorganisms and organic matter", "Fruits"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -424,7 +424,7 @@
         "text": "How long does it typically take for an Anopheles mosquito to complete its life cycle?",
         "correct_answer": "About 10-14 days",
         "possible_answers": ["About 1-2 days", "About 3-4 weeks", "About 10-14 days", "About 1-2 months"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -432,7 +432,7 @@
         "text": "Which environmental factor influences the breeding and development of Anopheles mosquitoes?",
         "correct_answer": "Temperature and humidity",
         "possible_answers": ["Wind speed", "Daylight duration", "Temperature and humidity", "Elevation"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -440,7 +440,7 @@
         "text": "What is the purpose of the blood meal for female Anopheles mosquitoes?",
         "correct_answer": "To obtain nutrients for egg production",
         "possible_answers": ["To feed the larvae", "To store energy", "To maintain body temperature", "To obtain nutrients for egg production"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -448,7 +448,7 @@
         "text": "Which disease is primarily transmitted by Anopheles mosquitoes?",
         "correct_answer": "Malaria",
         "possible_answers": ["Dengue fever", "Yellow fever", "Zika virus", "Malaria"],
-        "topic_id": 6,
+        "topic_id": 14,
         "points": null,
         "school_id": null
     },
@@ -456,7 +456,7 @@
         "text": "What is the first stage in the life cycle of a grasshopper?",
         "correct_answer": "Egg",
         "possible_answers": ["Larva", "Pupa", "Adult", "Egg"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -464,7 +464,7 @@
         "text": "In which stage of the grasshopper life cycle does it resemble a small version of the adult?",
         "correct_answer": "Nymph",
         "possible_answers": ["Egg", "Larva", "Pupa", "Nymph"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -472,7 +472,7 @@
         "text": "What is the process called when a grasshopper sheds its exoskeleton to allow for growth?",
         "correct_answer": "Molting",
         "possible_answers": ["Metamorphosis", "Hibernation", "Molting", "Regeneration"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -480,7 +480,7 @@
         "text": "At what stage of the grasshopper life cycle does it develop wings?",
         "correct_answer": "Adult",
         "possible_answers": ["Egg", "Larva", "Pupa", "Adult"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -488,7 +488,7 @@
         "text": "Which environmental factor influences the development and behavior of grasshoppers?",
         "correct_answer": "Temperature",
         "possible_answers": ["Humidity", "Wind speed", "Daylight duration", "Temperature"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -496,7 +496,7 @@
         "text": "What do adult grasshoppers primarily feed on?",
         "correct_answer": "Plants",
         "possible_answers": ["Other insects", "Blood", "Plants", "Seeds"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -504,7 +504,7 @@
         "text": "How long does it typically take for a grasshopper to complete its life cycle?",
         "correct_answer": "About 2-3 months",
         "possible_answers": ["About 1-2 weeks", "About 4-6 months", "About 2-3 months", "About 1 year"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -512,7 +512,7 @@
         "text": "Which stage of the grasshopper life cycle is characterized by rapid growth and development?",
         "correct_answer": "Nymph",
         "possible_answers": ["Egg", "Larva", "Pupa", "Nymph"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -520,7 +520,7 @@
         "text": "What is the primary purpose of reproduction in the life cycle of a grasshopper?",
         "correct_answer": "To ensure survival of the species",
         "possible_answers": ["To feed the larvae", "To attract mates", "To store energy", "To ensure survival of the species"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -528,7 +528,7 @@
         "text": "Where do female grasshoppers typically lay their eggs?",
         "correct_answer": "In the ground",
         "possible_answers": ["On leaves", "In water", "On tree branches", "In the ground"],
-        "topic_id": 7,
+        "topic_id": 15,
         "points": null,
         "school_id": null
     },
@@ -536,7 +536,7 @@
         "text": "What is the basic structural and functional unit of all living organisms?",
         "correct_answer": "Cell",
         "possible_answers": ["Organ", "Tissue", "Cell", "Organism"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -544,7 +544,7 @@
         "text": "Which type of cell lacks a defined nucleus and membrane-bound organelles?",
         "correct_answer": "Prokaryotic cell",
         "possible_answers": ["Animal cell", "Plant cell", "Prokaryotic cell", "Eukaryotic cell"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -552,7 +552,7 @@
         "text": "What is the function of the nucleus in a cell?",
         "correct_answer": "Controls cell activities and stores genetic information",
         "possible_answers": ["Produces energy", "Synthesizes proteins", "Controls cell activities and stores genetic information", "Provides structure and support"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -560,7 +560,7 @@
         "text": "Which organelle is responsible for protein synthesis in a cell?",
         "correct_answer": "Ribosome",
         "possible_answers": ["Mitochondrion", "Golgi apparatus", "Ribosome", "Lysosome"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -568,7 +568,7 @@
         "text": "In plant cells, what organelle is responsible for photosynthesis?",
         "correct_answer": "Chloroplast",
         "possible_answers": ["Vacuole", "Nucleus", "Chloroplast", "Endoplasmic reticulum"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -576,7 +576,7 @@
         "text": "Which cellular structure regulates the movement of substances into and out of the cell?",
         "correct_answer": "Cell membrane",
         "possible_answers": ["Cell wall", "Nuclear membrane", "Cell membrane", "Cytoplasm"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -584,7 +584,7 @@
         "text": "What is the role of mitochondria in a cell?",
         "correct_answer": "Produces energy (ATP)",
         "possible_answers": ["Stores genetic information", "Synthesizes proteins", "Produces energy (ATP)", "Digests waste materials"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -592,7 +592,7 @@
         "text": "Which structure is found in plant cells but not in animal cells?",
         "correct_answer": "Cell wall",
         "possible_answers": ["Nucleus", "Lysosome", "Mitochondrion", "Cell wall"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -600,7 +600,7 @@
         "text": "What is the function of the endoplasmic reticulum (ER) in a cell?",
         "correct_answer": "Synthesizes and transports proteins",
         "possible_answers": ["Breaks down cellular waste", "Stores water and nutrients", "Synthesizes and transports proteins", "Controls cell division"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -608,7 +608,7 @@
         "text": "Which organelle is known as the 'powerhouse' of the cell?",
         "correct_answer": "Mitochondrion",
         "possible_answers": ["Lysosome", "Golgi apparatus", "Mitochondrion", "Vacuole"],
-        "topic_id": 8,
+        "topic_id": 16,
         "points": null,
         "school_id": null
     },
@@ -616,7 +616,7 @@
         "text": "What is the primary difference between prokaryotic and eukaryotic cells?",
         "correct_answer": "Presence of membrane-bound organelles",
         "possible_answers": ["Size of the cell", "Presence of nucleus", "Presence of membrane-bound organelles", "Number of chromosomes"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -624,7 +624,7 @@
         "text": "Which type of cell has a true nucleus enclosed within a nuclear membrane?",
         "correct_answer": "Eukaryotic cell",
         "possible_answers": ["Prokaryotic cell", "Plant cell", "Animal cell", "Eukaryotic cell"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -632,7 +632,7 @@
         "text": "What is the function of ribosomes in both prokaryotic and eukaryotic cells?",
         "correct_answer": "Protein synthesis",
         "possible_answers": ["Energy production", "DNA replication", "Protein synthesis", "Cell division"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -640,7 +640,7 @@
         "text": "Which type of cell is typically smaller in size?",
         "correct_answer": "Prokaryotic cell",
         "possible_answers": ["Eukaryotic cell", "Animal cell", "Plant cell", "Prokaryotic cell"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -648,7 +648,7 @@
         "text": "In prokaryotic cells, where is genetic material (DNA) located?",
         "correct_answer": "Nucleoid region",
         "possible_answers": ["Nucleus", "Mitochondria", "Endoplasmic reticulum", "Nucleoid region"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -656,7 +656,7 @@
         "text": "What cellular structure is absent in prokaryotic cells but present in eukaryotic cells?",
         "correct_answer": "Membrane-bound organelles",
         "possible_answers": ["Cell membrane", "Ribosomes", "Nucleus", "Membrane-bound organelles"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -664,7 +664,7 @@
         "text": "Which type of cell is more complex in structure?",
         "correct_answer": "Eukaryotic cell",
         "possible_answers": ["Prokaryotic cell", "Animal cell", "Plant cell", "Eukaryotic cell"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -672,7 +672,7 @@
         "text": "What is the role of the cell membrane in both prokaryotic and eukaryotic cells?",
         "correct_answer": "Regulates movement of substances into and out of the cell",
         "possible_answers": ["Stores genetic material", "Produces energy", "Synthesizes proteins", "Regulates movement of substances into and out of the cell"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -680,7 +680,7 @@
         "text": "Which type of cell is found in bacteria and cyanobacteria?",
         "correct_answer": "Prokaryotic cell",
         "possible_answers": ["Eukaryotic cell", "Animal cell", "Plant cell", "Prokaryotic cell"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -688,7 +688,7 @@
         "text": "What is a characteristic feature of eukaryotic cells that is absent in prokaryotic cells?",
         "correct_answer": "Membrane-bound nucleus",
         "possible_answers": ["Cell wall", "Cytoplasm", "Ribosomes", "Membrane-bound nucleus"],
-        "topic_id": 9,
+        "topic_id": 17,
         "points": null,
         "school_id": null
     },
@@ -696,7 +696,7 @@
         "text": "What type of specialist cells in dicotyledonous plants are responsible for transporting water and nutrients throughout the plant?",
         "correct_answer": "Xylem cells",
         "possible_answers": ["Stomatal cells", "Epidermal cells", "Xylem cells", "Phloem cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -704,7 +704,7 @@
         "text": "Which specialist cells in dicotyledonous plants are primarily involved in photosynthesis?",
         "correct_answer": "Palisade mesophyll cells",
         "possible_answers": ["Guard cells", "Root hairs", "Palisade mesophyll cells", "Collenchyma cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -712,7 +712,7 @@
         "text": "What is the function of phloem cells in dicotyledonous plants?",
         "correct_answer": "Transporting sugars produced during photosynthesis",
         "possible_answers": ["Supporting the plant structure", "Absorbing water and minerals", "Producing flowers", "Transporting sugars produced during photosynthesis"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -720,7 +720,7 @@
         "text": "In humans, what type of specialist cells are responsible for transmitting electrical signals throughout the body?",
         "correct_answer": "Neurons",
         "possible_answers": ["Red blood cells", "Muscle cells", "Neurons", "Skin cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -728,7 +728,7 @@
         "text": "What is the function of red blood cells in humans?",
         "correct_answer": "Transporting oxygen",
         "possible_answers": ["Digesting food", "Producing antibodies", "Filtering waste", "Transporting oxygen"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -736,7 +736,7 @@
         "text": "Which specialist cells in dicotyledonous plants are responsible for opening and closing stomata?",
         "correct_answer": "Guard cells",
         "possible_answers": ["Xylem cells", "Phloem cells", "Guard cells", "Root hairs"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -744,7 +744,7 @@
         "text": "What type of specialist cells in humans are responsible for producing antibodies?",
         "correct_answer": "White blood cells",
         "possible_answers": ["Red blood cells", "Neurons", "White blood cells", "Muscle cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -752,7 +752,7 @@
         "text": "Which specialist cells in dicotyledonous plants provide structural support and flexibility?",
         "correct_answer": "Collenchyma cells",
         "possible_answers": ["Root hairs", "Palisade mesophyll cells", "Collenchyma cells", "Xylem cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -760,7 +760,7 @@
         "text": "In humans, which specialist cells are found in the skeletal muscles and are responsible for contraction?",
         "correct_answer": "Muscle cells (myocytes)",
         "possible_answers": ["Neurons", "Red blood cells", "Muscle cells (myocytes)", "White blood cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     },
@@ -768,7 +768,7 @@
         "text": "What type of specialist cells in dicotyledonous plants protect the plant from pathogens and pests?",
         "correct_answer": "Epidermal cells",
         "possible_answers": ["Xylem cells", "Stomatal cells", "Epidermal cells", "Phloem cells"],
-        "topic_id": 10,
+        "topic_id": 18,
         "points": null,
         "school_id": null
     }

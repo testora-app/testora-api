@@ -17,6 +17,7 @@ from app.student.services import SubjectLevelManager
 
 testr = APIBlueprint('testr', __name__)
 
+#region questions
 
 @testr.get("/questions/")
 @testr.output(QuestionListSchema, 200)
@@ -67,8 +68,9 @@ def delete_questions(question_id):
         question.delete()
     return success_response()
 
+#endregion questions
 
-# region: Tests
+# region Tests
 @testr.get("/tests/")
 @testr.output(TestListSchema)
 @token_auth(['*'])
@@ -171,4 +173,4 @@ def mark_test(test_id, json_data):
     return success_response(data=test.to_json())
 
 
-# endregion: Tests
+# endregion Tests

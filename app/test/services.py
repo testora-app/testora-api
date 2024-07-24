@@ -7,7 +7,7 @@ from app.admin.models import Topic
 from app.extensions import db
 from app.test.models import Question
 
-from typing import List
+from typing import List, Dict
 
 class TestService:
 
@@ -22,7 +22,12 @@ class TestService:
         return student_level >= levels[exam_mode]
     
     @classmethod
-    def __generate_level_counts(cls, total_questions, max_level):
+    def __generate_level_counts(cls, total_questions, max_level) -> Dict[int, int]:
+        '''
+        The code snippet efficiently distributes a specified number of questions (total_questions) randomly across different levels (1 to max_level)
+        This approach ensures that questions are evenly distributed across levels based on the specified parameters.
+        It returns a dictionary where each key represents a level, and the value represents the number of questions generated for that level.
+        '''
         levels = list(range(1, max_level + 1))
         level_counts = defaultdict(int)
 
