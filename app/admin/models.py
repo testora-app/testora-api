@@ -76,7 +76,7 @@ class Topic(BaseModel):
     theme_id = db.Column(db.Integer, db.ForeignKey('theme.id'), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
 
-    questions = db.relationship('Question', backref='topic', lazy=True)
+    questions = db.relationship('Question', back_populates='topic')
 
 
     def __str__(self):

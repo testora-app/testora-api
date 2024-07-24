@@ -14,6 +14,7 @@ class Question(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
     
     sub_questions = db.relationship('SubQuestion', backref='parent_question', lazy=True)
+    topic = db.relationship('Topic', back_populates='questions')
 
     def to_json(self, include_correct_answer=True):
         question_json = {
@@ -23,7 +24,8 @@ class Question(BaseModel):
             'topic_id': self.topic_id,
             'points': self.points,
             'school_id': self.school_id,
-            'sub_questions': [sub_question.to_json(include_correct_answer=include_correct_answer) for sub_question in self.sub_questions]
+            'sub_questions': [sub_question.to_json(include_correct_answer=include_correct_answer) for sub_question in self.sub_questions],
+            'level': self.topic.level
         }
 
         if include_correct_answer:
