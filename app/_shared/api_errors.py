@@ -1,18 +1,20 @@
 from flask import jsonify
 from werkzeug.http import HTTP_STATUS_CODES
 
-def success_response(status_code=200, data=None, message="success"):
-    return response_builder(status_code=status_code, message=message, data=data)
+def success_response(status_code=200, data=None, message="success", pagination=None):
+    return response_builder(status_code=status_code, message=message, data=data, pagination=pagination)
 
-def response_builder(status_code, message=None, data=None):
+def response_builder(status_code, message=None, data=None, pagination=None):
     if status_code > 299:
-        payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown status code')}
+        payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
     else:
         payload = {}
         
     if message:
         payload['message'] = message
-
+    
+    if pagination:
+        payload['pagination'] = pagination
    
     payload['data'] = data
         

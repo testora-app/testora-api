@@ -1,5 +1,7 @@
 # crud operations for all 3
 
+from flask_sqlalchemy.pagination import Pagination
+
 from app.admin.models import Admin, Subject, Topic, Theme
 from app._shared.operations import BaseManager
 from app._shared.services import hash_password
@@ -44,6 +46,9 @@ class SubjectManager(BaseManager):
 
     def get_subjects(self) -> List[Subject]:
         return Subject.query.filter_by(is_deleted=False).all()
+    
+    def get_subjects_paginated(self, page, per_page) -> Pagination:
+        return Subject.query.filter_by(is_deleted=False).paginate(page=page, per_page=per_page)
     
     def get_subject_by_id(self, id) -> Subject:
         return Subject.query.filter_by(id=id).first()

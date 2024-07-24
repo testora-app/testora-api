@@ -3,6 +3,7 @@ import bisect
 
 from apiflask import Schema
 from apiflask.fields import Integer, String, Nested, Dict
+from apiflask.validators import Range
 from marshmallow.exceptions import ValidationError
 
 from .api_errors import BaseError
@@ -12,6 +13,11 @@ ID_FIELD = Integer(allow_none=False, required=True)
 class BaseSchema(Schema):
     def handle_error(self, error: ValidationError, data: Any, *, many: bool, **kwargs):
         raise BaseError("Validation Error", error_code=422, payload=error.messages_dict)
+    
+
+class PaginationQuery(Schema):
+    page = Integer(load_default=1)  # set default page to 1
+    per_page = Integer(load_default=20, validate=Range(max=5000))
 
 class SuccessMessage(Schema):
     message = String(default='success')

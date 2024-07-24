@@ -1,5 +1,6 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
 from apiflask.validators import OneOf
+from apiflask import PaginationSchema
 
 from app._shared.schemas import BaseSchema, CurriculumTypes, make_response_schema
 
@@ -51,6 +52,7 @@ class AddSubjectSchemaPost(BaseSchema):
 
 class SubjectSchemaList(BaseSchema):
     data = List(Nested(SubjectSchema))
+    pagination = Nested(PaginationSchema)
 
 
 class TopicSchema(BaseSchema):
