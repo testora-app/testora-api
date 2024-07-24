@@ -90,7 +90,10 @@ class TestService:
         # we need a way to determine if we're deducting points lost or half points
 
         points_acquired = 0
-        score_acquired = 0
+        score_acquired = 0 # correct/total * 100
+
+        # recommended topic, recommendation_level = high
+        # a break down of topics and the percentage acquired
 
         for question in questions:
             # get the question

@@ -34,7 +34,8 @@ def post_questions(json_data):
     new_question = question_manager.create_question(**json_data)
     
     if sub:
-        question_manager.create_subquestion(parent_question_id=new_question.id, **sub)
+        for s in sub:
+            question_manager.create_subquestion(parent_question_id=new_question.id, **s)
     return success_response(data=new_question.to_json())
 
 
@@ -121,6 +122,8 @@ def create_test(json_data):
     # determine the number of points and total score
     total_points = TestService.determine_total_test_points(questions)
 
+    # number of questions shouold include sub questions
+
 
     # create the test
     new_test = test_manager.create_test(
@@ -128,7 +131,6 @@ def create_test(json_data):
         subject_id=subject_id,
         questions=questions,
         total_points=total_points,
-        total_score=len(questions),
         question_number=len(questions),
         school_id=student.school_id
     )

@@ -8,7 +8,7 @@ class StudentTopicScores(BaseModel):
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'))
     test_id = db.Column(db.Integer, db.ForeignKey('test.d'))
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'))
-    percentage = db.Column(db.Numeric(5,2)
+    score_acquired = db.Column(db.Numeric(5,2))
     
     def to_json(self):
         return {
@@ -17,5 +17,5 @@ class StudentTopicScores(BaseModel):
             'subject_id': self.subject_id,
             'test_id': self.test_id,
             'topic_id': self.topic_id,
-            'percentage': float(self.percentage)
+            'score_acquired': float(self.score_acquired)
         }

@@ -69,8 +69,8 @@ class Test(BaseModel):
 
     total_points = db.Column(db.Integer, nullable=False)
     points_acquired = db.Column(db.Integer, nullable=False)
-    total_score = db.Column(db.Numeric(5,2), nullable=False)
-    score_acquired = db.Column(db.Numeric(5,2), nullable=False)
+    total_score = db.Column(db.Numeric(5,2), nullable=False, default=100)
+    score_acquired = db.Column(db.Numeric(5,2), nullable=False) # stored as a percentage of the score
 
     started_on = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     finished_on = db.Column(db.DateTime, nullable=True)
