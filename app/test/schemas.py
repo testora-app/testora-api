@@ -56,7 +56,7 @@ class SubmittedQuestionsSchema(BaseSchema):
     id = Integer()
     index = Integer(required=False)
     level = Integer(required=False, allow_none=True)
-    points = Integer(required=False)
+    points = Integer(required=False, allow_none=True)
     text = String(required=True)
     possible_answers = List(String(), required=True)
     student_answer = String(required=True)
