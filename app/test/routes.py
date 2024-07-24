@@ -34,7 +34,7 @@ def post_questions(json_data):
     new_question = question_manager.create_question(**json_data)
     
     if sub:
-        question_manager.create_subquestion(new_question.id, **sub)
+        question_manager.create_subquestion(parent_question_id=new_question.id, **sub)
     return success_response(data=new_question.to_json())
 
 

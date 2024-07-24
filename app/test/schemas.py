@@ -4,7 +4,7 @@ from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 
 class SubQuestionSchema(BaseSchema):
     id = Integer(dump_only=True)
-    parent_question_id = Integer(required=True)
+    parent_question_id = Integer(dump_only=True)
     text = String(required=True)
     correct_answer = String(required=True)
     possible_answers = List(String(), required=True)
