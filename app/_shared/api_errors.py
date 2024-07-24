@@ -2,11 +2,11 @@ from flask import jsonify
 from werkzeug.http import HTTP_STATUS_CODES
 
 def success_response(status_code=200, data=None, message="success"):
-    return error_response(status_code=status_code, message=message, data=data)
+    return response_builder(status_code=status_code, message=message, data=data)
 
-def error_response(status_code, message=None, data=None):
+def response_builder(status_code, message=None, data=None):
     if status_code > 299:
-        payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown error')}
+        payload = {'error': HTTP_STATUS_CODES.get(status_code, 'Unknown status code')}
     else:
         payload = {}
         
@@ -22,22 +22,22 @@ def error_response(status_code, message=None, data=None):
 
 
 def bad_request(message="Bad Request"):
-    return error_response(400, message)
+    return response_builder(400, message)
 
 def unauthorized_request(message="You're not allowed to do that!"):
-    return error_response(401, message)
+    return response_builder(401, message)
 
 def permissioned_denied(message="You don't have the permissions to do that!"):
-    return error_response(403, message)
+    return response_builder(403, message)
 
 def server_error(message="Something went wrong! Our backend team has been notified and are working to resolve it."):
-    return error_response(500, message)
+    return response_builder(500, message)
 
 def not_found(message='The object was not found!'):
-    return error_response(404, message)
+    return response_builder(404, message)
 
 def unapproved_account(message='Your account has not been approved. Contact your school administrator'):
-    return error_response(419, message)
+    return response_builder(419, message)
 
 class BaseError(Exception):
     '''
@@ -54,7 +54,7 @@ class BaseError(Exception):
         '''
         Get a dictionary representation of this error instance
         '''
-        return error_response(status_code=self.error_code, message=self.message, data=self.payload)
+        return response_builder(status_code=self.error_code, message=self.message, data=self.payload)
 
 
 class DatabaseError(BaseError):

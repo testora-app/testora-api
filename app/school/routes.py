@@ -1,7 +1,7 @@
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes
-from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found
+from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found
 from app._shared.decorators import token_auth
 
 from app.school.schemas import GetSchoolListSchema, AddSchoolSchema, GetSchoolSchema

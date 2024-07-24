@@ -3,7 +3,7 @@ from typing import Dict
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
-from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found, bad_request, unapproved_account
+from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found, bad_request, unapproved_account
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 

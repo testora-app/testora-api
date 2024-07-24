@@ -1,7 +1,7 @@
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, LoginSchema, UserTypes
-from app._shared.api_errors import error_response, unauthorized_request, success_response, not_found
+from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found
 from app._shared.services import check_password, generate_access_token
 from app._shared.decorators import token_auth
 
@@ -27,7 +27,7 @@ def get_admins():
 #@token_auth([UserTypes.admin]))
 def add_admin(json_data):
     if admin_manager.get_admin_by_email(json_data["email"]):
-        return error_response(400, "Admin with that email already exists!")
+        return response_builder(400, "Admin with that email already exists!")
     
     new_admin = admin_manager.create_admin(**json_data)
     return success_response(data=new_admin.to_json())
@@ -74,7 +74,7 @@ def get_subjects_by_curriculum(curriculum):
 def add_subjects(json_data):
     for subject in json_data["data"]:
         if subject["curriculum"] != "bece":
-            return error_response(422, f'{subject["curriculum"]} is not a valid curriculum!')
+            return response_builder(422, f'{subject["curriculum"]} is not a valid curriculum!')
     new_subjects = subject_manager.create_subjects(json_data["data"])
     return success_response(data=[s.to_json() for s in new_subjects])
 
