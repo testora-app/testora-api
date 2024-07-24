@@ -1,8 +1,7 @@
 from app.extensions import db
 from app._shared.models import BaseModel
 from datetime import datetime
-
-import json
+import ast
 
 
 class Question(BaseModel):
@@ -10,7 +9,6 @@ class Question(BaseModel):
     text = db.Column(db.Text, nullable=False)
     correct_answer = db.Column(db.Text, nullable=False)
     possible_answers = db.Column(db.Text, nullable=False)
-    sub_topic_id = db.Column(db.Integer, db.ForeignKey('sub_topic.id'), nullable=True)
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
     points = db.Column(db.Integer, nullable=True, default=None)
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
@@ -21,19 +19,12 @@ class Question(BaseModel):
         question_json = {
             'id': self.id,
             'text': self.text,
-            'possible_answers': [answer for answer in \
-                                 self.possible_answers.replace('{', '').replace('}', '').split(',')],
-            'sub_topic_id': self.sub_topic_id,
+            'possible_answers': ast.literal_eval(self.possible_answers),
             'topic_id': self.topic_id,
             'points': self.points,
             'school_id': self.school_id,
-            'sub_questions': [sub_question.to_json(include_correct_answer=include_correct_answer) for sub_question in self.sub_questions],
+            'sub_questions': [sub_question.to_json(include_correct_answer=include_correct_answer) for sub_question in self.sub_questions]
         }
-
-        try:
-            question_json['level'] = self.sub_topic.level
-        except:
-            question_json['level'] = self.topic.level or 1
 
         if include_correct_answer:
             question_json['correct_answer'] = self.correct_answer
@@ -55,8 +46,7 @@ class SubQuestion(BaseModel):
             'id': self.id,
             'parent_question_id': self.parent_question_id,
             'text': self.text,
-            'possible_answers': [answer for answer in \
-                                 self.possible_answers.replace('{', '').replace('}', '').split(',')],
+            'possible_answers': ast.literal_eval(self.possible_answers),
             'points': self.points
         }
 

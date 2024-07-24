@@ -58,6 +58,7 @@ class TopicSchema(BaseSchema):
     name = String(required=True, allow_none=False)
     short_name = String(required=False, allow_none=True)
     subject_id = Integer(required=True, allow_none=False)
+    theme_id = Integer(required=True, allow_none=False)
     level = Integer(required=True, allow_none=False)
 
 
@@ -66,6 +67,7 @@ class AddTopicSchema(BaseSchema):
     short_name = String(required=False, allow_none=True)
     subject_id = Integer(required=True, allow_none=False)
     level = Integer(required=True, allow_none=False)
+    theme_id = Integer(required=True, allow_none=False)
 
 
 class AddTopicSchemaPost(BaseSchema):
@@ -73,6 +75,27 @@ class AddTopicSchemaPost(BaseSchema):
 
 class TopicSchemaList(BaseSchema):
     data = List(Nested(TopicSchema))
+
+
+
+class ThemeSchema(BaseSchema):
+    id = Integer(required=True)
+    name = String(required=True, allow_none=False)
+    short_name = String(required=False, allow_none=True)
+    subject_id = Integer(required=True, allow_none=False)
+
+
+class AddThemeSchema(BaseSchema):
+    name = String(required=True, allow_none=False)
+    short_name = String(required=False, allow_none=True)
+    subject_id = Integer(required=True, allow_none=False)
+
+
+class AddThemeSchemaPost(BaseSchema):
+    data = List(Nested(AddThemeSchema), min=1)
+
+class ThemeSchemaList(BaseSchema):
+    data = List(Nested(ThemeSchema))
 
 #endregion Subject/Topic Schema
 
@@ -82,11 +105,13 @@ class Responses:
     VerifiedAdminResponse = make_response_schema(VerifiedAdminSchema)
     SubjectSchema = make_response_schema(SubjectSchema)
     TopicSchema = make_response_schema(TopicSchema)
+    ThemeSchema = make_response_schema(ThemeSchema)
 
 
 class Requests:
     EditSubjectSchema = make_response_schema(SubjectSchema)
     EditTopicSchema = make_response_schema(TopicSchema)
+    EditThemeSchema = make_response_schema(ThemeSchema)
     AddAdminSchema = make_response_schema(AddAdminSchema)
     
 

@@ -29,9 +29,11 @@ def get_questions():
 @testr.output(Responses.QuestionSchema)
 def post_questions(json_data):
     json_data = json_data["data"]
-    sub = json_data.pop('sub_questions')
+    sub = json_data.pop('sub_questions') if json_data.get('sub_questions', None) else []
     new_question = question_manager.create_question(**json_data)
-    question_manager.create_subquestion(new_question.id, **sub)
+    
+    if sub:
+        question_manager.create_subquestion(new_question.id, **sub)
     return success_response(data=new_question.to_json())
 
 

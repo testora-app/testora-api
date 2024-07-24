@@ -43,19 +43,18 @@ class Subject(BaseModel):
         }
     
 
-class Topic(BaseModel):
+class Theme(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
-    level = db.Column(db.Integer, nullable=False)
+    
 
-    sub_topics = db.relationship('SubTopic', backref='topic', lazy=True)
-    questions = db.relationship('Question', backref='topic', lazy=True)
+    topics = db.relationship('Topic', backref='theme', lazy=True)
 
 
     def __str__(self):
-        return f'{self.name} -- {self.subject_id}, Level: {self.level}'
+        return f'{self.name} -- {self.subject_id}'
     
     def to_json(self):
         return {
@@ -63,25 +62,25 @@ class Topic(BaseModel):
             'name': self.name,
             'short_name': self.short_name,
             'subject_id': self.subject_id,
-            'level': self.level,
-            'sub_topics': [sub_topic.to_json() for sub_topic in self.sub_topics]
+            'topics': [topic.to_json() for topic in self.topics]
         }
 
 
-class SubTopic(BaseModel):
-    __tablename__ = 'sub_topic'
+class Topic(BaseModel):
+    __tablename__ = 'topic'
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     level = db.Column(db.Integer, nullable=False)
-    topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
+    theme_id = db.Column(db.Integer, db.ForeignKey('theme.id'), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False)
 
-    questions = db.relationship('Question', backref='sub_topic', lazy=True)
+    questions = db.relationship('Question', backref='topic', lazy=True)
 
 
     def __str__(self):
-        return f'{self.name} -- {self.topic_id}'
+        return f'{self.name} -- {self.theme_id} Level: {self.level}'
     
     def to_json(self):
         return {
@@ -89,5 +88,5 @@ class SubTopic(BaseModel):
             'name': self.name,
             'short_name': self.short_name,
             'level': self.level,
-            'topic_id': self.topic_id
+            'theme_id': self.theme_id
         }

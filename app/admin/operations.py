@@ -1,6 +1,6 @@
 # crud operations for all 3
 
-from app.admin.models import Admin, Subject, Topic
+from app.admin.models import Admin, Subject, Topic, Theme
 from app._shared.operations import BaseManager
 from app._shared.services import hash_password
 
@@ -52,7 +52,6 @@ class SubjectManager(BaseManager):
         return Subject.query.filter_by(curriculum=curr).all()
 
 
-
 class TopicManager(BaseManager):
     def create_topics(self, entries: List[Dict]) -> List[Topic]:
         entities: List[Topic] = []
@@ -60,8 +59,9 @@ class TopicManager(BaseManager):
             entities.append(Topic(
                 name=entry['name'],
                 short_name=entry['short_name'],
-                subject_id=entry['subject_id'],
-                level=entry['level']
+                level=entry['level'],
+                theme_id=entry['theme_id'],
+                subject_id=entry['subject_id']
             ))
 
         self.save_multiple(entities)
@@ -81,11 +81,36 @@ class TopicManager(BaseManager):
         return Topic.query.filter_by(level=level).all()
     
     def get_topic_by_subject_level(self, subject_id, level) -> List[Topic]:
-        return Topic.query.filter(subject_id=subject_id, level=level).all()
+        return Topic.query.filter_by(subject_id=subject_id, level=level).all()
 
 
+
+
+class ThemeManager(BaseManager):
+    def create_themes(self, entries: List[Dict]) -> List[Theme]:
+        entities: List[Theme] = []
+        for entry in entries:
+            entities.append(Theme(
+                name=entry['name'],
+                short_name=entry['short_name'],
+                subject_id=entry['subject_id']
+            ))
+
+        self.save_multiple(entities)
+        return entities
+    
+
+    def get_themes(self) -> List[Theme]:
+        return Theme.query.filter_by(is_deleted=False).all()
+    
+    def get_theme_by_id(self, id) -> Theme:
+        return Theme.query.filter_by(id=id).first()
+    
+    def get_theme_by_subject(self, subject_id) -> List[Theme]:
+        return Theme.query.filter_by(subject_id=subject_id).all()
 
 
 admin_manager = AdminManager()
 subject_manager = SubjectManager()
 topic_manager = TopicManager()
+theme_manager = ThemeManager()

@@ -28,7 +28,7 @@ class QuestionManager(BaseManager):
             parent_question_id=parent_question_id,
             text=text,
             correct_answer=correct_answer,
-            possible_answers=json.dumps(possible_answers),
+            possible_answers=str(possible_answers),
             points=points
         )
 
@@ -37,12 +37,11 @@ class QuestionManager(BaseManager):
 
         return new_sub
     
-    def create_question(self, text, correct_answer, possible_answers, sub_topic_id, topic_id, points, school_id=None, is_save_function=True) -> Question:
+    def create_question(self, text, correct_answer, possible_answers, topic_id, points, school_id=None, is_save_function=True) -> Question:
         new_question = Question(
             text=text,
             correct_answer=correct_answer,
-            possible_answers=possible_answers,
-            sub_topic_id=sub_topic_id,
+            possible_answers=str(possible_answers),
             topic_id=topic_id,
             points=points,
             school_id=school_id

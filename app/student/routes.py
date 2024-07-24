@@ -135,7 +135,7 @@ def edit_batch(batch_id, json_data):
 
 
 @student.get("/batches/")
-@student.output(GetStudentListSchema)
+@student.output(BatchListSchema)
 @token_auth([UserTypes.school_admin, UserTypes.admin])
 def get_batches():
     school_id = get_current_user()["school_id"]

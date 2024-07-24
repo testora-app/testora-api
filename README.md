@@ -7,9 +7,18 @@ Clone this project.
 
 Run `pip install -r requiremnts.txt`
 
+## DB migrations
+After changes are made to the models run
+
+`flask db migrate -m "{enter describe meessage here}"`
+to generate the migrations file.
+
+The app runs migrations automatically when it starts up.
 
 ## Usage
+
 To run the app and check if everything is working correctly
+
 
 Start the server with this command
 `python run.py runserver`

@@ -3,7 +3,7 @@
         "text": "Water that forms lather readily with soap is said to be",
         "correct_answer": "soft",
         "possible_answers": ["clean", "hard", "soapy", "soft"],
-        "sub_topic_id": null,
+        
         "topic_id": 1,
         "points": 1,
         "school_id": null
@@ -12,7 +12,7 @@
         "text": "Which of the following life activities are common to both plants and animals?\nI. Feeding\nII. Locomotion\nIII. Respiration",
         "correct_answer": "I and III only",
         "possible_answers": ["I and II only", "I and III only", "II and III only", "I, II and III"],
-        "sub_topic_id": null,
+        
         "topic_id": 1,
         "points": 1,
         "school_id": null
@@ -21,7 +21,7 @@
         "text": "A suitable instrument that could be used to measure the internal diameter of a bamboo flute is",
         "correct_answer": "vernier calipers",
         "possible_answers": ["beam balance", "metre rule", "surveyor's tape", "vernier calipers"],
-        "sub_topic_id": null,
+        
         "topic_id": 1,
         "points": 1,
         "school_id": null
@@ -30,7 +30,7 @@
         "text": "The ability of soils to supply the right amounts of essential nutrients to plants is known as",
         "correct_answer": "soil fertility",
         "possible_answers": ["soil consistency", "soil fertility", "soil structure", "soil texture"],
-        "sub_topic_id": null,
+        
         "topic_id": 1,
         "points": 1,
         "school_id": null
@@ -39,7 +39,7 @@
         "text": "The simplest way of making well water suitable for laundry purposes is by",
         "correct_answer": "boiling",
         "possible_answers": ["adding alum", "boiling", "chlorination", "filtering"],
-        "sub_topic_id": null,
+        
         "topic_id": 1,
         "points": 1,
         "school_id": null
@@ -48,7 +48,7 @@
         "text": "Washing down of soil nutrients beyond the reach of roots of plants is referred to as",
         "correct_answer": "leaching",
         "possible_answers": ["aeration", "infiltration", "leaching", "percolation"],
-        "sub_topic_id": null,
+        
         "topic_id": 2,
         "points": 1,
         "school_id": null
@@ -57,7 +57,7 @@
         "text": "Which of the following statements explain(s) why an object floats in water?\nA floating object\nI. is less dense than water\nII. is denser than water\nIII. has the same density as water",
         "correct_answer": "I only",
         "possible_answers": ["I only", "II only", "III only", "I and III only"],
-        "sub_topic_id": null,
+        
         "topic_id": 2,
         "points": 1,
         "school_id": null
@@ -67,7 +67,7 @@
         "text": "An example of leafy vegetable crops is",
         "correct_answer": "lettuce",
         "possible_answers": ["cucumber", "lettuce", "okro", "onion"],
-        "sub_topic_id": null,
+        
         "topic_id": 2,
         "points": 1,
         "school_id": null
@@ -76,7 +76,7 @@
         "text": "The structure in the respiratory system of humans where gaseous exchange occurs is",
         "correct_answer": "alveolus",
         "possible_answers": ["alveolus", "bronchus", "nostril", "trachea"],
-        "sub_topic_id": null,
+        
         "topic_id": 2,
         "points": 1,
         "school_id": null
@@ -85,7 +85,7 @@
         "text": "The gas produced when glucose is oxidized during internal respiration is",
         "correct_answer": "carbon (IV) oxide",
         "possible_answers": ["carbon (II) oxide", "carbon (IV) oxide", "hydrogen", "nitrogen"],
-        "sub_topic_id": null,
+        
         "topic_id": 3,
         "points": 1,
         "school_id": null
@@ -94,7 +94,7 @@
         "text": "The farm animal which has crop as part of its digestive system is the",
         "correct_answer": "fowl",
         "possible_answers": ["fowl", "goat", "pig", "sheep"],
-        "sub_topic_id": null,
+        
         "topic_id": 3,
         "points": 1,
         "school_id": null
@@ -103,7 +103,7 @@
         "text": "A beneficial effect of wind on the environment is",
         "correct_answer": "pollination in flowering plants",
         "possible_answers": ["promotion of photosynthesis in green plants", "pollination in flowering plants", "leaching in soils", "erosion in soils"],
-        "sub_topic_id": null,
+        
         "topic_id": 3,
         "points": 1,
         "school_id": null
@@ -112,7 +112,7 @@
         "text": "The chemical solution that can be used to test for the presence of protein in food substances is",
         "correct_answer": "Million's reagent",
         "possible_answers": ["Benedict's solution", "Fehling's solution", "Iodine solution", "Million's reagent"],
-        "sub_topic_id": null,
+        
         "topic_id": 3,
         "points": 1,
         "school_id": null
@@ -121,7 +121,7 @@
         "text": "Which of the following statements about bushfires is/are true?\nI. They cause air pollution\nII. They deplete vegetation cover\nIII. They contribute to global warming",
         "correct_answer": "I, II and III",
         "possible_answers": ["I only", "II only", "II and III only", "I, II and III"],
-        "sub_topic_id": null,
+        
         "topic_id": 4,
         "points": 1,
         "school_id": null
@@ -130,7 +130,7 @@
         "text": "The most effective method of controlling soil erosion on steep slopes is",
         "correct_answer": "terracing",
         "possible_answers": ["cover cropping", "mulching", "strip cropping", "terracing"],
-        "sub_topic_id": null,
+        
         "topic_id": 4,
         "points": 1,
         "school_id": null
@@ -139,7 +139,7 @@
         "text": "Which of the following agencies is responsible for providing information on the weather and climatic conditions of an area?",
         "correct_answer": "Meteorological Services Department",
         "possible_answers": ["Animal Husbandry Department", "Extension Services Department", "Information Services Department", "Meteorological Services Department"],
-        "sub_topic_id": null,
+        
         "topic_id": 4,
         "points": 1,
         "school_id": null
@@ -148,7 +148,7 @@
         "text": "The farming system which involves the growing of one type of crop on the same piece of land every season is known as",
         "correct_answer": "monoculture",
         "possible_answers": ["mixed cropping", "mixed farming", "mono cropping", "monoculture"],
-        "sub_topic_id": null,
+        
         "topic_id": 5,
         "points": 1,
         "school_id": null
@@ -157,7 +157,7 @@
         "text": "The fifth planet from the sun in the solar system is",
         "correct_answer": "Jupiter",
         "possible_answers": ["Jupiter", "Mars", "Neptune", "Venus"],
-        "sub_topic_id": null,
+        
         "topic_id": 5,
         "points": 1,
         "school_id": null
@@ -166,7 +166,7 @@
         "text": "The process that takes place when the sperm and the egg of humans fuse together is referred to as",
         "correct_answer": "fertilization",
         "possible_answers": ["fertilization", "menstruation", "ovulation", "reproduction"],
-        "sub_topic_id": null,
+        
         "topic_id": 6,
         "points": 1,
         "school_id": null
