@@ -138,9 +138,9 @@ def add_themes(json_data):
 @admin.input(Requests.EditThemeSchema)
 @admin.output(Responses.ThemeSchema)
 #@token_auth([UserTypes.admin]))
-def edit_theme(topic_id, json_data):
+def edit_theme(theme_id, json_data):
     json_data = json_data["data"]
-    theme = theme_manager.get_theme_by_id(topic_id)
+    theme = theme_manager.get_theme_by_id(theme_id)
     if theme:
         theme.name = json_data["name"]
         theme.short_name = json_data["short_name"]
@@ -153,8 +153,8 @@ def edit_theme(topic_id, json_data):
 @admin.delete('/themes/<int:theme_id>/')
 @admin.output(SuccessMessage)
 #@token_auth([UserTypes.admin]))
-def delete_theme(topic_id):
-    theme = theme_manager.get_theme_by_id(topic_id)
+def delete_theme(theme_id):
+    theme = theme_manager.get_theme_by_id(theme_id)
     if theme:
         theme.delete()
         return success_response()
