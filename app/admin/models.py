@@ -88,5 +88,6 @@ class Topic(BaseModel):
             'name': self.name,
             'short_name': self.short_name,
             'level': self.level,
-            'theme_id': self.theme_id
+            'theme_id': self.theme_id,
+            'subject_id': self.subject_id
         }
