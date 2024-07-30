@@ -7,7 +7,7 @@ from flask import request
 
 from app._shared.api_errors import (unauthorized_request, permissioned_denied)
 from app._shared.services import set_current_user
-
+from threading import Thread
 
 # we are going to have a wrapper to check tokens
 def token_auth(user_types: List[str]=None):
@@ -34,3 +34,20 @@ def token_auth(user_types: List[str]=None):
             return func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def async_method(f):
+    def wrapper(*args, **kwargs):
+        def inner():
+            with app.app_context():  # Ensure Flask context is available
+                try:
+                    f(*args, **kwargs)
+                except Exception as e:
+                    # Handle exceptions that occur in the thread
+                    app.logger.error(f"Error in async method: {e}")
+        
+        thr = Thread(target=inner)
+        thr.start()
+        return thr  # Optionally return the thread object if you need to join it or track it
+    
+    return wrapper

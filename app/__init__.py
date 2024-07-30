@@ -26,6 +26,8 @@ from app.student.routes import student
 from app.test.routes import testr
 
 
+
+
 load_dotenv()
 
 def create_super_admin_if_not_exists():

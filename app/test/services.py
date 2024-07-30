@@ -49,7 +49,7 @@ class TestService:
 
         for question in questions:
             number_of_sub = len(question['sub_questions'])
-            total_points += (question['level'] + number_of_sub) * question_multiplier[question['level']]
+            total_points += (question['level'] * (1 + number_of_sub)) * question_multiplier[question['level']]
 
         return round(total_points, 2)
     
@@ -94,6 +94,9 @@ class TestService:
 
         # recommended topic, recommendation_level = high
         # a break down of topics and the percentage acquired
+        total_number = len(questions)
+
+        topic_scores = {question['topic_id'] : 0 for question in questions}
 
         for question in questions:
             # get the question
@@ -103,6 +106,7 @@ class TestService:
             if q.correct_answer == question['student_answer']:
                 main_question_correct = True
                 score_acquired += 1
+                topic_scores[q.topic_id] += 1
             else:
                 if deduct_points:
                     points_acquired -= TestService.determine_question_points(question)
@@ -110,10 +114,12 @@ class TestService:
 
             # mark sub questions if any
             if len(question['sub_questions']) > 0:
+                total_number += len(questions['sub_questions'])
                 for sub in question['sub_questions']:
                     s = question_manager.get_sub_question_by_id(sub['id'])
                     if s.correct_answer == s['student_answer']:
                         no_subs_correct += 1
+                        topic_scores[q.topic_id] += 1
                     else:
                         if deduct_points:
                             points_acquired -= 1
@@ -124,11 +130,15 @@ class TestService:
             points_acquired += points
             question['correct_answer'] = q.correct_answer
             question['points'] = points
+            score_acquired += no_subs_correct
+
+            score_acquired = (score_acquired/total_number) * 100 # correct/total * 100
 
         return {
             'questions': questions,
             'points_acquired': round(points_acquired, 2),
-            'score_acquired': score_acquired
+            'score_acquired': score_acquired,
+            'topic_scores': topic_scores
         }
             
             

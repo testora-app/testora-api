@@ -6,7 +6,7 @@ class StudentTopicScores(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'))
-    test_id = db.Column(db.Integer, db.ForeignKey('test.d'))
+    test_id = db.Column(db.Integer, db.ForeignKey('test.id'))
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'))
     score_acquired = db.Column(db.Numeric(5,2))
     

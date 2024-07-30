@@ -14,6 +14,8 @@ from app.test.services import TestService
 from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
 
+from app.analytics.topic_analytics import TopicAnalytics
+
 
 testr = APIBlueprint('testr', __name__)
 
@@ -172,6 +174,9 @@ def mark_test(test_id, json_data):
         # pass the sublvl to a level manager, that'll check if they've levelled up
         # and then add the history accordingly
         SubjectLevelManager.check_and_level_up(stu_sub_level=stusublvl)
+
+        # adding topic_scores
+        TopicAnalytics.save_topic_scores_for_student(marked_test['topic_scores'])
     return success_response(data=test.to_json())
 
 
