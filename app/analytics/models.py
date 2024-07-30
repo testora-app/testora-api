@@ -31,7 +31,7 @@ class StudentSubjectRecommendation(BaseModel):
     recommendation_level = db.Column(db.String(50), nullable=False)
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
     
-    def to_dict(self):
+    def to_json(self):
         return {
             'id': self.id,
             'student_id': self.student_id,
@@ -52,9 +52,10 @@ class StudentBestSubject(BaseModel):
     proficiency_level = db.Column(db.Integer, nullable=False)  # Assume proficiency_level is calculated elsewhere
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
     
-    def to_dict(self):
+    def to_json(self):
         return {
             'id': self.id,
+            'student_id': self.student_id,
             'subject_id': self.subject_id,
             'topic_id': self.topic_id,
             'proficiency_level': self.proficiency_level,

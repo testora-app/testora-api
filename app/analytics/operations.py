@@ -1,5 +1,5 @@
 from app._shared.operations import BaseManager
-from app.analytics.models import StudentTopicScores
+from app.analytics.models import StudentTopicScores, StudentBestSubject, StudentSubjectRecommendation
 from sqlalchemy import func
 from typing import  List, Dict
 
@@ -28,11 +28,7 @@ class StudentTopicScoresManager(BaseManager):
         for entity in entities:
             to_save.append(
                 StudentTopicScores(
-                    student_id=entity['student_id'],
-                    subject_id=['subject_id'],
-                    test_id=['test_id'],
-                    topic_id=['topic_id'],
-                    score_acquired=['score_acquired']
+                    **entity
                 )
             )
         self.save_multiple(to_save)
@@ -49,5 +45,60 @@ class StudentTopicScoresManager(BaseManager):
         
     
 
+class StudentBestSubjectManager(BaseManager):
+    def select_student_best(self, student_id, subject_id=None, include_archived=False) -> List[StudentBestSubject]:
+        if subject_id:
+            return StudentBestSubject.query.filter_by(student_id=student_id, subject_id=subject_id, is_archived=include_archived).all()
+        return StudentBestSubject.query.filter_by(student_id=student_id, subject_id=subject_id, is_archived=include_archived).all()
+    
+    def insert_student_best(self, student_id, subject_id, topic_id, proficiency_level) -> StudentBestSubject:
+        new_best = StudentBestSubject(
+            student_id=student_id,
+            subject_id=subject_id,
+            topic_id=topic_id,
+            proficiency_level=proficiency_level
+        )
+        self.save(new_best)
+        return new_best
+
+    def insert_multiple_bests(self, entities: List[Dict]):
+        to_save: List[StudentBestSubject] = []
+        for entity in entities:
+            to_save.append(
+                StudentBestSubject(**entity)
+            )
+        self.save_multiple(to_save)
+        return [entity.to_json() for entity in to_save]
+    
+    
+
+class StudentSubjectRecommendationManager(BaseManager):
+    def select_student_recommendations(self, student_id, subject_id=None, include_archived=False) -> List[StudentSubjectRecommendation]:
+        if subject_id:
+            return StudentSubjectRecommendation.query.filter_by(student_id=student_id, subject_id=subject_id, is_archived=include_archived).all()
+        return StudentSubjectRecommendation.query.filter_by(student_id=student_id, subject_id=subject_id, is_archived=include_archived).all()
+    
+    def insert_student_recommendation(self, student_id, subject_id, topic_id, recommendation_level) -> StudentSubjectRecommendation:
+        new_recommendation = StudentSubjectRecommendation(
+            student_id=student_id,
+            subject_id=subject_id,
+            topic_id=topic_id,
+            recommendation_level=recommendation_level
+        )
+        self.save(new_recommendation)
+        return new_recommendation
+
+    def insert_multiple_recommendations(self, entities: List[Dict]):
+        to_save: List[StudentSubjectRecommendation] = []
+        for entity in entities:
+            to_save.append(
+                StudentSubjectRecommendation(**entity)
+            )
+        self.save_multiple(to_save)
+        return [entity.to_json() for entity in to_save]
+
+
 
 sts_manager = StudentTopicScoresManager()
+sbs_manager = StudentBestSubjectManager()
+ssr_manager = StudentSubjectRecommendationManager()

@@ -1,4 +1,4 @@
-from app.analytics.operations import sts_manager
+from app.analytics.operations import sts_manager, sbs_manager, ssr_manager
 from typing import List, Dict, Tuple
 from app._shared.decorators import async_method
 import ast
@@ -36,6 +36,21 @@ class RecommendationLevels:
 
 
 class TopicAnalytics:
+    @staticmethod
+    def __compare(old_list, new_list):
+        old_set = set(old_list)
+        new_set = set(new_list)
+        
+        added = list(new_set - old_set)
+        removed = list(old_set - new_set)
+        remaining = list(old_set & new_set)
+        
+        return {
+            "added": added,
+            "removed": removed,
+            "remaining": remaining
+        }
+    
     
     @async_method
     @staticmethod
@@ -156,6 +171,15 @@ class TopicAnalytics:
         test.meta = metadata
         test.save()
 
+    
+    @staticmethod
+    def __archive_the_removed(removed_obj: List):
+        for entity in removed_obj:
+            entity.is_archived = True
+            entity.save()
+
+            
+
     @staticmethod
     def student_level_topic_analytics(student_id, subject_id):
         
@@ -169,13 +193,17 @@ class TopicAnalytics:
                 topic_id: score
             })
         
-        best_topics, worst_topics  = TopicAnalytics.__calculate_topic_recommendations(test_scores)
+        best_topics, worst_topics  = TopicAnalytics.__calculate_topic_recommendations_per_avg(test_scores)
 
-        proficient = []
-        recommended = []
+        proficient = sbs_manager.select_student_best(student_id, subject_id)
+        recommended = ssr_manager.select_student_recommendations(student_id, subject_id)
+
+        proficient_comparisons = TopicAnalytics.__compare([p.id for p in proficient], [b.keys()[0] for b in best_topics])
+        recommended_comparisons = TopicAnalytics.__compare([r.id for r in recommended], [r.keys()[0] for r in worst_topics])
 
         # fetch the current best topics
         # check if the current best topics, are the same as the old and archive and create new ones if applicable else leave as is
+
 
         # get the removed and the added topics
         # archived the removed
@@ -183,8 +211,6 @@ class TopicAnalytics:
         # add the new
 
         # highest average is best topic
-        for best in best_topics:
-            pass
 
         # lowest average is recommended -- check the difference in averages and make the averages
         # fetch the current best topics
