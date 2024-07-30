@@ -9,7 +9,7 @@ from typing import List, Dict, Union
 class QuestionManager(BaseManager):
 
     def get_questions(self) -> List[Question]:
-        return Question.query.all()
+        return Question.query.filter_by(is_deleted=False).all()
     
     def get_questions_by_topics(self, topic_ids: List[int]):
         return Question.query.filter(Question.topic_id.in_(topic_ids)).all()
