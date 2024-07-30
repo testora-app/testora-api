@@ -1,5 +1,5 @@
 from typing import Dict
-from datetime import datetime
+from datetime import datetime, timezone
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, ExamModes
@@ -158,7 +158,7 @@ def mark_test(test_id, json_data):
 
         marked_test = TestService.mark_test(json_data['questions'])
         # update the questions with the correct answer, it'll already have their answer
-        test.finished_on = datetime.utcnow()
+        test.finished_on = datetime.now(timezone.utc)
         test.meta = json_data['meta']
         test.questions = marked_test['questions']
         test.questions_correct = marked_test['score_acquired']
@@ -171,12 +171,16 @@ def mark_test(test_id, json_data):
         stusublvl.points += marked_test['score_acquired']
         stusublvl.save()
 
+
         # pass the sublvl to a level manager, that'll check if they've levelled up
         # and then add the history accordingly
         SubjectLevelManager.check_and_level_up(stu_sub_level=stusublvl)
 
         # adding topic_scores
         TopicAnalytics.save_topic_scores_for_student(marked_test['topic_scores'])
+        TopicAnalytics.test_level_topic_analytics(test.id, marked_test['topic_scores'])
+        TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
+
     return success_response(data=test.to_json())
 
 

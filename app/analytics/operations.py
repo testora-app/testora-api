@@ -1,5 +1,6 @@
 from app._shared.operations import BaseManager
 from app.analytics.models import StudentTopicScores
+from sqlalchemy import func
 from typing import  List, Dict
 
 
@@ -36,6 +37,16 @@ class StudentTopicScoresManager(BaseManager):
             )
         self.save_multiple(to_save)
         return [entity.to_json() for entity in to_save]
+    
+    def get_averages_for_topics_by_subject_id(self, student_id, subject_id) -> List[StudentTopicScores]:
+        return \
+            StudentTopicScores.query.with_entities(
+                StudentTopicScores.topic_id,
+                func.avg(StudentTopicScores.score_acquired).label('average_score')
+            )\
+            .filter_by(student_id=student_id, subject_id=subject_id)\
+            .group_by(StudentTopicScores.topic_id)
+        
     
 
 
