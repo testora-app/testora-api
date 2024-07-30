@@ -21,7 +21,7 @@ class QuestionManager(BaseManager):
         return Question.query.filter(Question.id.in_(question_ids)).all()
     
     def get_subquestion_by_parent(self, question_id) -> List[SubQuestion]:
-        return Question.query.filter_by(parent_question_id=question_id).all()
+        return SubQuestion.query.filter_by(parent_question_id=question_id).all()
     
     def create_subquestion(self, parent_question_id, text, correct_answer, possible_answers, points, is_save_function=True):
         new_sub = SubQuestion(
