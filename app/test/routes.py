@@ -175,11 +175,14 @@ def mark_test(test_id, json_data):
         # pass the sublvl to a level manager, that'll check if they've levelled up
         # and then add the history accordingly
         SubjectLevelManager.check_and_level_up(stu_sub_level=stusublvl)
+        
 
+        print('Running analytics...')
         # adding topic_scores
         TopicAnalytics.save_topic_scores_for_student(marked_test['topic_scores'])
         TopicAnalytics.test_level_topic_analytics(test.id, marked_test['topic_scores'])
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
+        print('Analytics ran successfully...')
 
     return success_response(data=test.to_json())
 
