@@ -50,6 +50,7 @@ class SubmittedSubQuestionSchema(BaseSchema):
     text = String(required=True)
     student_answer = String(required=True)
     possible_answers = List(String(), required=True)
+    parent_question_id = Integer(required=False)
 
 
 class SubmittedQuestionsSchema(BaseSchema):

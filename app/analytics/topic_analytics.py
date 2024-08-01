@@ -143,7 +143,7 @@ class TopicAnalytics:
         return max_kv, min_kv
     
 
-    # do some analytics for the test based, and save it in the test metadata righttt?
+    # do some analytics for the test based, and save it in the test metadata right?
     @async_method
     @staticmethod
     def test_level_topic_analytics(test_id, test_scores):
