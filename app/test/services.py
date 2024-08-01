@@ -117,7 +117,7 @@ class TestService:
                 total_number += len(question['sub_questions'])
                 for sub in question['sub_questions']:
                     s = question_manager.get_sub_question_by_id(sub['id'])
-                    if s.correct_answer == s['student_answer']:
+                    if s.correct_answer == sub['student_answer']:
                         no_subs_correct += 1
                         topic_scores[q.topic_id] += 1
                     else:
