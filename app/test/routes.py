@@ -124,7 +124,7 @@ def create_test(json_data):
     # determine the number of points and total score
     total_points = TestService.determine_total_test_points(questions)
 
-    # number of questions shouold include sub questions
+    # number of questions should include sub questions
 
 
     # create the test

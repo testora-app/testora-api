@@ -23,7 +23,7 @@ class RecommendationLevels:
         
 
     @staticmethod
-    def calcuate_recommendation_level_for_avg(score, recommendation=True):
+    def calculate_recommendation_level_for_avg(score, recommendation=True):
         # if we their average score is really low, it means they're recommended to take that topic
         # else it means their proficient
 
@@ -200,21 +200,32 @@ class TopicAnalytics:
 
         # fetch the current best topics
         # check if the current best topics, are the same as the old and archive and create new ones if applicable else leave as is
-        proficient_comparisons = TopicAnalytics.__compare([p.id for p in proficient], [b.keys()[0] for b in best_topics])
-        recommended_comparisons = TopicAnalytics.__compare([r.id for r in recommended], [r.keys()[0] for r in worst_topics])
+        proficient_comparisons = TopicAnalytics.__compare([p.id for p in proficient], [list(b.keys())[0] for b in best_topics])
+        recommended_comparisons = TopicAnalytics.__compare([r.id for r in recommended], [list(r.keys())[0] for r in worst_topics])
 
         # get the removed and the added topics
         # archived the removed
         TopicAnalytics.__archive_the_removed([p for p in proficient if p.id in proficient_comparisons['removed']])
         TopicAnalytics.__archive_the_removed([r for r in recommended if r.id in recommended_comparisons['removed']])
 
-        # add the new
+
+        worst_objs = {}
+        best_objs = {}
+
+        for t in worst_topics:
+            key : List = list(t.keys())
+            worst_objs[key[0]] = list(t.values())[0]
+
+        for t in best_topics:
+            key : List = list(t.keys())
+            best_objs[key[0]] = list(t.values())[0]
+
+        # add the new recommendations and best topics
+        for topic_id in recommended_comparisons['added']:
+            ssr_manager.insert_student_recommendation(student_id, subject_id, topic_id, RecommendationLevels.calculate_recommendation_level_for_avg(worst_objs[topic_id], recommendation=True))
         
+        for topic_id in proficient_comparisons['added']:
+            sbs_manager.insert_student_best(student_id, subject_id, topic_id, RecommendationLevels.calculate_recommendation_level_for_avg(best_objs[topic_id]))
 
-        # highest average is best topic
-
-        # lowest average is recommended -- check the difference in averages and make the averages
-        # fetch the current best topics
-        # check if the current best topics, are the same as the old and archive and create new ones if applicable else leave as is
 
         

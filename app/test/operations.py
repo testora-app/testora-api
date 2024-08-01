@@ -86,7 +86,7 @@ class TestManager(BaseManager):
         return Test.query.filter_by(id=test_id).first()
     
     def get_tests_by_school_id(self, school_id) -> List[Test]:
-        return Test.query.filter_by(school_id=school_id).all()
+        return Test.query.filter_by(school_id=school_id, is_completed=True).all()
     
     def get_tests_by_student_ids(self, student_ids:List[int]) -> List[Test]:
         return Test.query.filter(Test.student_id.in_(student_ids), Test.is_completed == True).all()
