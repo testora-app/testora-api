@@ -114,7 +114,7 @@ class TestService:
 
             # mark sub questions if any
             if len(question['sub_questions']) > 0:
-                total_number += len(questions['sub_questions'])
+                total_number += len(question['sub_questions'])
                 for sub in question['sub_questions']:
                     s = question_manager.get_sub_question_by_id(sub['id'])
                     if s.correct_answer == s['student_answer']:

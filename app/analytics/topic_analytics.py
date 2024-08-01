@@ -198,17 +198,18 @@ class TopicAnalytics:
         proficient = sbs_manager.select_student_best(student_id, subject_id)
         recommended = ssr_manager.select_student_recommendations(student_id, subject_id)
 
+        # fetch the current best topics
+        # check if the current best topics, are the same as the old and archive and create new ones if applicable else leave as is
         proficient_comparisons = TopicAnalytics.__compare([p.id for p in proficient], [b.keys()[0] for b in best_topics])
         recommended_comparisons = TopicAnalytics.__compare([r.id for r in recommended], [r.keys()[0] for r in worst_topics])
 
-        # fetch the current best topics
-        # check if the current best topics, are the same as the old and archive and create new ones if applicable else leave as is
-
-
         # get the removed and the added topics
         # archived the removed
+        TopicAnalytics.__archive_the_removed([p for p in proficient if p.id in proficient_comparisons['removed']])
+        TopicAnalytics.__archive_the_removed([r for r in recommended if r.id in recommended_comparisons['removed']])
 
         # add the new
+        
 
         # highest average is best topic
 
