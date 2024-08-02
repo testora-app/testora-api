@@ -80,16 +80,16 @@ class QuestionManager(BaseManager):
 class TestManager(BaseManager):
     
     def get_tests(self):
-        return Test.query.all()
+        return Test.query.order_by(-Test.created_at).all()
     
     def get_test_by_id(self, test_id) -> Union[Test, None]:
         return Test.query.filter_by(id=test_id).first()
     
     def get_tests_by_school_id(self, school_id) -> List[Test]:
-        return Test.query.filter_by(school_id=school_id, is_completed=True).all()
+        return Test.query.filter_by(school_id=school_id, is_completed=True).order_by(-Test.created_at).all()
     
     def get_tests_by_student_ids(self, student_ids:List[int]) -> List[Test]:
-        return Test.query.filter(Test.student_id.in_(student_ids), Test.is_completed == True).all()
+        return Test.query.filter(Test.student_id.in_(student_ids), Test.is_completed == True).order_by(-Test.created_at).all()
     
     def create_test(self, student_id, subject_id, questions, total_points, question_number, school_id, total_score=100,
                     points_acquired=0, score_acquired=0, started_on=None, finished_on=None,
