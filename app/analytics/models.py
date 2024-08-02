@@ -49,7 +49,7 @@ class StudentBestSubject(BaseModel):
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'))
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'))
-    proficiency_level = db.Column(db.Integer, nullable=False)  # Assume proficiency_level is calculated elsewhere
+    proficiency_level = db.Column(db.String(50), nullable=False)  # Assume proficiency_level is calculated elsewhere
     is_archived = db.Column(db.Boolean, default=False, nullable=False)
     
     def to_json(self):

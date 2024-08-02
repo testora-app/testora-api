@@ -1,7 +1,7 @@
 from app.analytics.operations import sts_manager, sbs_manager, ssr_manager
 from typing import List, Dict, Tuple
 from app._shared.decorators import async_method
-import ast
+import json
 
 
 class RecommendationLevels:
@@ -52,32 +52,31 @@ class TopicAnalytics:
         }
     
     
-    @async_method
+    # @async_method
     @staticmethod
-    def save_topic_scores_for_student(student_id, subject_id, test_id, test_scores: List[Dict]):
+    def save_topic_scores_for_student(student_id, subject_id, test_id, test_scores: Dict):
         '''
-            test_scores -- List[Dict[]]
+            test_scores -- Dict[]
             [{
                 'topic_id': score
             }]
         '''
         scores_to_save = []
-
-        for score in test_scores:
+        for topic_id, score in test_scores.items():
             scores_to_save.append(
                 {
                     'student_id': student_id,
                     'subject_id': subject_id,
                     'test_id': test_id,
-                    'topic_id': score.keys()[0],
-                    'score_acquired': score.values()[0]
+                    'topic_id': topic_id,
+                    'score_acquired': score
                 }
             )
         return sts_manager.insert_multiple_student_topic_scores(scores_to_save)
     
 
     @staticmethod
-    def __calculate_topic_recommendations(test_scores: List[Dict]) -> Tuple[List[int], List[int], int]:
+    def __calculate_topic_recommendations(test_scores: Dict) -> Tuple[List[int], List[int], int]:
         '''test_scores -- List[Dict[]]
             [{
                 'topic_id': score
@@ -88,21 +87,20 @@ class TopicAnalytics:
         min_keys = set()
         max_keys = set()  # Use a set to handle multiple keys with the same maximum value
 
-        for d in test_scores:
-            for key, value in d.items():
-                # Check for maximum value
-                if value > max_value:
-                    max_value = value
-                    max_keys = {key}
-                elif value == max_value:
-                    max_keys.add(key)
+        for key, value in test_scores.items():
+            # Check for maximum value
+            if value > max_value:
+                max_value = value
+                max_keys = {key}
+            elif value == max_value:
+                max_keys.add(key)
 
-                # Check for minimum value
-                if value < min_value:
-                    min_value = value
-                    min_keys = [key]
-                elif value == min_value:
-                    min_keys.add(key)
+            # Check for minimum value
+            if value < min_value:
+                min_value = value
+                min_keys = [key]
+            elif value == min_value:
+                min_keys.add(key)
 
         # Convert set to list for consistency
         max_keys = list(max_keys)
@@ -120,11 +118,11 @@ class TopicAnalytics:
         '''
         min_value = float('inf')
         max_value = float('-inf')
-        min_kv = list
-        max_kv = list  # Use a set to handle multiple keys with the same maximum value
+        min_kv = []
+        max_kv = []  # Use a set to handle multiple keys with the same maximum value
 
-        for d in test_scores:
-            for key, value in d.items():
+        for s in test_scores:
+            for key, value in s.items():
                 # Check for maximum value
                 if value > max_value:
                     max_value = value
@@ -144,15 +142,13 @@ class TopicAnalytics:
     
 
     # do some analytics for the test based, and save it in the test metadata right?
-    @async_method
+    # @async_method
     @staticmethod
-    def test_level_topic_analytics(test_id, test_scores):
+    def test_level_topic_analytics(test_id, test_scores: Dict):
         from app.test.operations import test_manager
         from app.admin.operations import topic_manager
 
         test = test_manager.get_test_by_id(test_id)
-
-        metadata = ast.literal_eval(test.meta)
 
         best_topics, worst_topics, diff = TopicAnalytics.__calculate_topic_recommendations(test_scores)
         recommendation_level = RecommendationLevels.calculate_recommendation_level(diff)
@@ -166,10 +162,11 @@ class TopicAnalytics:
                 } for id in worst_topics
             ]
         }
-
-        metadata['topic_analytics'] = topic_analytics
-        test.meta = metadata
+        meta= {}
+        meta['topic_analytics'] = topic_analytics
+        test.meta = meta
         test.save()
+        
 
     
     @staticmethod
@@ -200,6 +197,7 @@ class TopicAnalytics:
 
         # fetch the current best topics
         # check if the current best topics, are the same as the old and archive and create new ones if applicable else leave as is
+        
         proficient_comparisons = TopicAnalytics.__compare([p.id for p in proficient], [list(b.keys())[0] for b in best_topics])
         recommended_comparisons = TopicAnalytics.__compare([r.id for r in recommended], [list(r.keys())[0] for r in worst_topics])
 

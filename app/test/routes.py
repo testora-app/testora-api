@@ -179,7 +179,7 @@ def mark_test(test_id, json_data):
 
         print('Running analytics...')
         # adding topic_scores
-        TopicAnalytics.save_topic_scores_for_student(marked_test['topic_scores'])
+        TopicAnalytics.save_topic_scores_for_student(student_id, test.subject_id, test.id, marked_test['topic_scores'])
         TopicAnalytics.test_level_topic_analytics(test.id, marked_test['topic_scores'])
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
         print('Analytics ran successfully...')
