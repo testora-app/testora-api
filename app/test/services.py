@@ -132,7 +132,7 @@ class TestService:
             question['points'] = points
             score_acquired += no_subs_correct
 
-            score_acquired = (score_acquired/total_number) * 100 # correct/total * 100
+        score_acquired = (score_acquired/total_number) * 100 # correct/total * 100
 
         return {
             'questions': questions,
