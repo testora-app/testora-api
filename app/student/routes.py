@@ -1,5 +1,5 @@
 from typing import Dict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dateutil.parser import parse as date_parser
 from apiflask import APIBlueprint
 
@@ -129,10 +129,11 @@ def get_student_details(student_id):
 @student.output(SuccessMessage)
 def end_student_session(json_data):
     data = json_data["data"]
-    session = ssm_manager.select_student_session_history(data['student_id'], date_parser(data['date']).date())
-
+    date_parsed = date_parser(data['date']).date() if type(data['date']) != datetime else data['date'].date()
+    session = ssm_manager.select_student_session_history(data['student_id'], date=date_parsed)
+    
     if session:
-        session.end_time = datetime.now(timezone.utc)
+        session.end_time = session.created_at + timedelta(seconds=data['duration'])
         session.duration = data['duration']
         session.save()
     return success_response()

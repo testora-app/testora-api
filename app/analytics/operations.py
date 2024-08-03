@@ -104,7 +104,7 @@ class StudentSubjectRecommendationManager(BaseManager):
 class StudentSessionManager(BaseManager):
     def select_student_session_history(self, student_id, date=None) -> Union[List[StudentSession], StudentSession]:
         if date:
-            StudentSession.query.filter_by(student_id=student_id, date=date).first()
+            return StudentSession.query.filter_by(student_id=student_id, date=date).first()
         return StudentSession.query.filter_by(student_id=student_id).all()
     
     def add_new_student_session(self, student_id, date) -> StudentSession:
