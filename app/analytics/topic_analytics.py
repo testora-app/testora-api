@@ -154,7 +154,7 @@ class TopicAnalytics:
         recommendation_level = RecommendationLevels.calculate_recommendation_level(diff)
 
         topic_analytics = {
-            'best_topics': [topic_manager.get_topic_by_id(id).to_json() for id in best_topics],
+            'best_topics': [topic_manager.get_topic_by_id(id).name for id in best_topics],
             'recommendations':[
                 {
                     'topic': topic_manager.get_topic_by_id(id).name,
