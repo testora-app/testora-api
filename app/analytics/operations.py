@@ -1,7 +1,7 @@
 from app._shared.operations import BaseManager
-from app.analytics.models import StudentTopicScores, StudentBestSubject, StudentSubjectRecommendation
+from app.analytics.models import StudentTopicScores, StudentBestSubject, StudentSubjectRecommendation, StudentSession
 from sqlalchemy import func
-from typing import  List, Dict
+from typing import  List, Dict, Union
 
 
 class StudentTopicScoresManager(BaseManager):
@@ -99,6 +99,27 @@ class StudentSubjectRecommendationManager(BaseManager):
 
 
 
+#region Session
+
+class StudentSessionManager(BaseManager):
+    def select_student_session_history(self, student_id, date=None) -> Union[List[StudentSession], StudentSession]:
+        if date:
+            StudentSession.query.filter_by(student_id=student_id, date=date).first()
+        return StudentSession.query.filter_by(student_id=student_id).all()
+    
+    def add_new_student_session(self, student_id, date) -> StudentSession:
+        new_session = StudentSession(
+            student_id=student_id,
+            date=date
+        )
+        self.save(new_session)
+        return new_session
+             
+
+#endregion session
+
+
 sts_manager = StudentTopicScoresManager()
 sbs_manager = StudentBestSubjectManager()
 ssr_manager = StudentSubjectRecommendationManager()
+ssm_manager = StudentSessionManager()

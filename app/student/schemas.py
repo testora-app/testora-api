@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested, DateTime
+from apiflask.fields import Integer, String, Boolean, List, Nested, DateTime, Float
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
@@ -54,9 +54,16 @@ class GetStudentListSchema(BaseSchema):
     data = List(Nested(StudentSchema))
 
 
+class EndSessionSchema(BaseSchema):
+    student_id = Integer(required=True, allow_none=False)
+    date = DateTime(required=True, allow_none=False)
+    duration = Float(required=True, allow_none=False)
+
+
 
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
+    EndSessionSchema = make_response_schema(EndSessionSchema)
 
 
 class Responses:

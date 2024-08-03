@@ -1,5 +1,6 @@
 from typing import Dict
 from datetime import datetime, timezone
+from dateutil.parser import parse as date_parser
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
@@ -9,6 +10,7 @@ from app._shared.services import check_password, generate_access_token, get_curr
 
 from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests
 from app.student.operations import student_manager, batch_manager
+from app.analytics.operations import ssm_manager
 
 from app.school.operations import school_manager
 
@@ -66,6 +68,11 @@ def login(json_data):
         student.last_login = current_login_time
         student.save()
 
+        # handle session
+        current_session = ssm_manager.select_student_session_history(student.id, current_login_time.date())
+        if not current_session:
+            ssm_manager.add_new_student_session(student.id, current_login_time.date())
+
         return success_response(data={'user': student.to_json(), 'auth_token': access_token, 'school': school_data, 'user_type': UserTypes.student})
 
     return unauthorized_request("Invalid Login")
@@ -115,6 +122,20 @@ def get_student_details(student_id):
     if student:
         return success_response(data=student.to_json())
     return not_found("Student does not exist!")
+
+
+@student.post("/students/end-session/")
+@student.input(Requests.EndSessionSchema)
+@student.output(SuccessMessage)
+def end_student_session(json_data):
+    data = json_data["data"]
+    session = ssm_manager.select_student_session_history(data['student_id'], date_parser(data['date']).date())
+
+    if session:
+        session.end_time = datetime.now(timezone.utc)
+        session.duration = data['duration']
+        session.save()
+    return success_response()
 
 
 #endregion STUDENTS

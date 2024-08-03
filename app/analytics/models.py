@@ -1,7 +1,9 @@
 from app.extensions import db
 from app._shared.models import BaseModel
+from datetime import datetime, timezone
 
 
+#region Topic and Scores
 class StudentTopicScores(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
@@ -61,3 +63,27 @@ class StudentBestSubject(BaseModel):
             'proficiency_level': self.proficiency_level,
             'is_archived': self.is_archived
         }
+    
+
+#endregion Topic and Scores
+
+
+#region Time
+class StudentSession(BaseModel):
+    id = db.Column(db.Integer, primary_key=True) 
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    end_time = db.Column(db.DateTime, default=None)
+    duration = db.Column(db.Float, default=0.0)  # Duration in seconds
+    date = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
+    def to_json(self):
+        return {
+            'student_id': self.student_id,
+            'end_time': self.end_time,
+            'duration': self.duration,
+            'created_at': self.created_at,
+            'date': self.date
+        }
+
+
+#endregion Time
