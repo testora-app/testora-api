@@ -1,5 +1,5 @@
 from typing import Dict
-
+from datetime import datetime, timezone
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
@@ -46,6 +46,26 @@ def login(json_data):
         school = school_manager.get_school_by_id(student.id)
         school_data = school.to_json()
         school_data.pop("code")
+
+
+        # handle streak
+        current_login_time = datetime.now(timezone.utc)
+
+        if student.last_login and current_login_time - student.last_login == 1:
+            student.current_streak += 1
+            student.highest_streak = student.current_streak if student.current_streak > student.highest_streak else student.highest_streak
+            #TODO: send them a message of increase of streak
+        else:
+            # this is their first time or they lost the streak
+            student.last_login = current_login_time
+            student.current_streak = 1
+            student.highest_streak = 1
+
+            #TODO: if they lost streak send them a message
+
+        student.last_login = current_login_time
+        student.save()
+
         return success_response(data={'user': student.to_json(), 'auth_token': access_token, 'school': school_data, 'user_type': UserTypes.student})
 
     return unauthorized_request("Invalid Login")

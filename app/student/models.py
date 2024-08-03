@@ -42,9 +42,12 @@ class Student(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     is_approved = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
+    current_streak = db.Column(db.Integer, default=0)
+    highest_streak = db.Column(db.Integer, default=0)
+    last_login = db.Column(db.DateTime, default=None, nullable=True)
 
     def __repr__(self):
-        return f'Staff {self.first_name} {self.surname}'
+        return f'Student {self.first_name} {self.surname}'
 
     def to_json(self):
         return {
@@ -56,7 +59,10 @@ class Student(BaseModel):
             'school_id': self.school_id,
             'is_approved': self.is_approved,
             'is_archived': self.is_archived,
-            'batches': [batch.to_json(include_students=False) for batch in self.batches] if self.batches else []
+            'batches': [batch.to_json(include_students=False) for batch in self.batches] if self.batches else [],
+            'current_streak': self.current_streak,
+            'highest_streak': self.highest_streak,
+            'last_login': self.last_login
         }
     
 

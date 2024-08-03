@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested
+from apiflask.fields import Integer, String, Boolean, List, Nested, DateTime
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
@@ -20,6 +20,9 @@ class StudentSchema(BaseSchema):
     surname = String(required=True, allow_none=False, validate=[Length(min=3)])
     other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
     password = String(required=True, allow_none=False, validate=[Length(min=8)])
+    current_streak = Integer(required=False)
+    highest_streak = Integer(required=False)
+    last_login = DateTime(required=False)
     is_approved = Boolean(required=False, allow_none=False)
     is_archived = Boolean(required=False, allow_none=False)
     school_id = ID_FIELD

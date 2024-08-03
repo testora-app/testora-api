@@ -82,6 +82,7 @@ class TopicAnalytics:
                 'topic_id': score
             }]
         '''
+        #TODO: improve this to only take subjects where the student gets wrongs, so if i dont get any wrongs don't recommend it
         min_value = float('inf')
         max_value = float('-inf')
         min_keys = set()
