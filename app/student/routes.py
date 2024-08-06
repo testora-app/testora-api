@@ -52,15 +52,24 @@ def login(json_data):
 
         # handle streak
         current_login_time = datetime.now(timezone.utc)
-        if student.last_login and current_login_time.date().day - student.last_login.date().day == 1:
-            student.current_streak += 1
-            student.highest_streak = student.current_streak if student.current_streak > student.highest_streak else student.highest_streak
-            #TODO: send them a message of increase of streak
+        if student.last_login:
+            # Calculate the difference in days between the current login and the last login
+            days_difference = (current_login_time.date() - student.last_login.date()).days
+            
+            if days_difference == 1:
+                # Logged in on the next day
+                student.current_streak += 1
+                student.highest_streak = max(student.current_streak, student.highest_streak)
+                # TODO: send them a message of increase of streak
+            else:
+                # More than one day has passed, or same day login, reset streak
+                student.current_streak = 1
         else:
-            # this is their first time or they lost the streak
-            student.last_login = current_login_time
+            # First time login
             student.current_streak = 1
             student.highest_streak = 1
+
+            #TODO: if they lost streak send them a message
 
             #TODO: if they lost streak send them a message
 
