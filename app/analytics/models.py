@@ -2,6 +2,8 @@ from app.extensions import db
 from app._shared.models import BaseModel
 from datetime import datetime, timezone
 
+from sqlalchemy import UniqueConstraint
+
 
 #region Topic and Scores
 class StudentTopicScores(BaseModel):
@@ -11,6 +13,10 @@ class StudentTopicScores(BaseModel):
     test_id = db.Column(db.Integer, db.ForeignKey('test.id'))
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'))
     score_acquired = db.Column(db.Numeric(5,2))
+
+    __table_args__ = (
+        UniqueConstraint('student_id', 'test_id', name='uq_topic_test_score'),
+    )
     
     def to_json(self):
         return {

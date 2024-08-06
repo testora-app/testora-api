@@ -20,7 +20,10 @@ class StudentTopicScoresManager(BaseManager):
             score_acquired=score_acquired
         )
 
-        self.save(new_score)
+        try:
+            self.save(new_score)
+        except Exception as e:
+            print(e)
         return new_score
     
     def insert_multiple_student_topic_scores(self, entities: List[Dict]):
