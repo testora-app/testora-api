@@ -6,7 +6,7 @@ class Mailer(object):
         self.api_key = SMTP2GO_API_KEY
         self.api_url = 'https://api.smtp2go.com/v3/email/send'
 
-    def send_email(self, recipients, subject, body, sender='Preppee Support <support@wedidtech.com>', html=False):
+    def send_email(self, recipients, subject, text, sender='Preppee Support <support@wedidtech.com>', html=False):
         """
         Sends an email using the SMTP2GO API.
 
@@ -27,8 +27,8 @@ class Mailer(object):
             'to': recipients,
             'sender': sender,
             'subject': subject,
-            'text_body': body if not html else None,
-            'html_body': body if html else None
+            'text_body': text if not html else None,
+            'html_body': text if html else None
         }
 
         response = requests.post(self.api_url, headers=headers, json=payload)

@@ -13,6 +13,14 @@ ID_FIELD = Integer(allow_none=False, required=True)
 class BaseSchema(Schema):
     def handle_error(self, error: ValidationError, data: Any, *, many: bool, **kwargs):
         raise BaseError("Validation Error", error_code=422, payload=error.messages_dict)
+
+#TODO: improve this to also create lists
+def make_response_schema(schema: BaseSchema):
+    class Response(BaseSchema):
+        data = Nested(schema)
+
+    response_data = Response()
+    return response_data
     
 
 class PaginationQuery(Schema):
@@ -30,14 +38,20 @@ class LoginSchema(BaseSchema):
     email = String(allow_none=False, required=True)
     password = String(allow_none=False, required=True)
 
+class ResetPassword(BaseSchema):
+    email = String(allow_none=False, required=True)
 
-#TODO: improve this to also create lists
-def make_response_schema(schema: BaseSchema):
-    class Response(BaseSchema):
-        data = Nested(schema)
 
-    response_data = Response()
-    return response_data
+class ChangePassword(BaseSchema):
+    new_password = String(allow_none=False, required=True)
+    confirmation_code = String(allow_none=False, required=True)
+
+
+ResetPasswordSchema = make_response_schema(ResetPassword)
+ChangePasswordSchema = make_response_schema(ChangePassword)
+
+
+
 
 
 class UserTypes:

@@ -1,35 +1,15 @@
 import datetime
+import random
 import os
 import jwt
 from flask import current_app as app, g
+from flask import render_template
+
+from globals import FRONTEND_BASE_URL
+
 from app.extensions import bcrypt
-
+from app.integrations.mailer import mailer
 from app._shared.api_errors import AuthenticationFailedError
-
-
-def generate_access_token(user_id, user_type, school_id=None, permissions=None):
-    payload_data = {
-        'user_id': user_id,
-        'user_type': user_type,
-        'permissions': permissions,
-        'school_id': school_id,
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=0, seconds=7200),
-        'iat': datetime.datetime.utcnow()
-    }
-
-    token = jwt.encode(
-        payload=payload_data,
-        key = app.config['SECRET_KEY']
-    )
-    return token
-
-
-def hash_password(password):
-    return bcrypt.generate_password_hash(password).decode('utf-8')
-
-def check_password(hashed_password, password):
-    return bcrypt.check_password_hash(hashed_password, password)
-
 
 
 def is_in_development_environment():
@@ -44,6 +24,59 @@ def is_in_staging_environment():
     Return true if code is running in the staging environment
     '''
     return os.getenv('ENVIRONMENT', 'naah').lower().startswith('staging')
+
+
+
+
+def generate_and_send_reset_password_email(user_id, user_type, school_id,  name, email):
+    payload_data = {
+        'user_id': user_id,
+        'user_type': user_type,
+        'school_id': school_id,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=0, seconds=3600),
+        'iat': datetime.datetime.now(datetime.timezone.utc)
+    }
+    reset_code = FRONTEND_BASE_URL + '/change-password/?confirmationCode=' + jwt.encode(
+        payload=payload_data,
+        key=app.config['SECRET_KEY']
+    )
+
+    html_body = render_template('html_reset_password.html', reset_code=reset_code, name=name)
+    text_body = render_template('text_reset_password.txt', reset_code=reset_code, name=name)
+
+    if is_in_development_environment() or is_in_staging_environment():
+        print(text_body)
+
+    mailer.send_email(
+        [email],
+        'Password Reset',
+        text_body,
+        html= html_body
+    )
+
+
+def generate_access_token(user_id, user_type, school_id=None, permissions=None):
+    payload_data = {
+        'user_id': user_id,
+        'user_type': user_type,
+        'permissions': permissions,
+        'school_id': school_id,
+        'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=0, seconds=7200),
+        'iat': datetime.datetime.now(datetime.timezone.utc)
+    }
+
+    token = jwt.encode(
+        payload=payload_data,
+        key = app.config['SECRET_KEY']
+    )
+    return token
+
+
+def hash_password(password):
+    return bcrypt.generate_password_hash(password).decode('utf-8')
+
+def check_password(hashed_password, password):
+    return bcrypt.check_password_hash(hashed_password, password)
 
 
 
