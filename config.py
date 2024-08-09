@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-
 class BaseConfig(object):
     basedir = os.path.abspath(os.path.dirname(__file__))
     DEBUG = False
