@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested, Date, Float
+from apiflask.fields import Integer, String, Boolean, List, Nested, Date, Float, DateTime
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
