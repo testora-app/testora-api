@@ -136,7 +136,7 @@ def create_app():
             '''
             error_as_dict = error.to_dict()
             # so that we can see the error in the app engine logs
-            return error_as_dict.get_json(), 422
+            return error_as_dict.get_json(), error.error_code
         
         @app.errorhandler(ValidationError)
         def handle_validation_error(error):
@@ -146,7 +146,7 @@ def create_app():
             return jsonify({
                 "message": error.message,
                 "data": error.data,
-            })
+            }), 422
         
         @app.errorhandler(IntegrityError)
         def handle_integrity_error(error: IntegrityError):
@@ -156,7 +156,7 @@ def create_app():
             return jsonify({
                 'error': str(error),
                 'message': error._message()
-            })
+            }), 500
         
         @app.errorhandler(Exception)
         def handle_exceptions(exception):
@@ -166,7 +166,7 @@ def create_app():
             return jsonify({
                 'error': str(exception),
                 'message': 'Something went wrong! Our Developers are workig on it!'
-            })
+            }), 500
                 
 
         @app.before_request
