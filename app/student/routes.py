@@ -139,8 +139,7 @@ def end_student_session(json_data):
     json_data = json_data["data"]
 
     for data in json_data:
-        date_parsed = date_parser(data['date']).date() if type(data['date']) != datetime else data['date'].date()
-        session = ssm_manager.select_student_session_history(data['student_id'], date=date_parsed)
+        session = ssm_manager.select_student_session_history(data['student_id'], date=data['date'])
         
         if session:
             session.end_time = session.created_at + timedelta(seconds=data['duration'])
