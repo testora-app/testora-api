@@ -2,7 +2,7 @@ from typing import Any
 import bisect
 
 from apiflask import Schema
-from apiflask.fields import Integer, String, Nested, Dict
+from apiflask.fields import Integer, String, Nested, Dict, List
 from apiflask.validators import Range
 from marshmallow.exceptions import ValidationError
 
@@ -14,13 +14,16 @@ class BaseSchema(Schema):
     def handle_error(self, error: ValidationError, data: Any, *, many: bool, **kwargs):
         raise BaseError("Validation Error", error_code=422, payload=error.messages_dict)
 
-#TODO: improve this to also create lists
-def make_response_schema(schema: BaseSchema):
+
+def make_response_schema(schema: BaseSchema, is_list=False):
+    if is_list:
+        class ListResponseSchema(Schema):
+            data = List(Nested(schema))
+        return ListResponseSchema()
+    
     class Response(BaseSchema):
         data = Nested(schema)
-
-    response_data = Response()
-    return response_data
+    return Response()
     
 
 class PaginationQuery(Schema):

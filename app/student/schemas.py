@@ -63,7 +63,7 @@ class EndSessionSchema(BaseSchema):
 
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
-    EndSessionSchema = make_response_schema(EndSessionSchema)
+    EndSessionSchema = make_response_schema(EndSessionSchema, is_list=True)
 
 
 class Responses:
