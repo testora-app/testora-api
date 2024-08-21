@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested, DateTime, Float
+from apiflask.fields import Integer, String, Boolean, List, Nested, Date, Float
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
@@ -56,7 +56,7 @@ class GetStudentListSchema(BaseSchema):
 
 class EndSessionSchema(BaseSchema):
     student_id = Integer(required=True, allow_none=False)
-    date = DateTime(required=True, allow_none=False)
+    date = Date(required=True, allow_none=False)
     duration = Float(required=True, allow_none=False)
 
 
