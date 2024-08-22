@@ -140,3 +140,4 @@ class LevelLimitPoints:
             return 1 # Points less than the smallest threshold
         else:
             return cls.points_to_levels[sorted_points[index - 1]]
+

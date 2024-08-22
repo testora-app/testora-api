@@ -53,7 +53,7 @@ def login(json_data):
 
     if staff and check_password(staff.password_hash, json_data["password"]):
         user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
-        access_token = generate_access_token(staff.id, user_type=user_type, school_id=staff.school_id)
+        access_token = generate_access_token(staff.id, user_type, staff.email, school_id=staff.school_id)
         school = school_manager.get_school_by_id(staff.school_id)
         school_data = school.to_json()
         if user_type == UserTypes.staff:

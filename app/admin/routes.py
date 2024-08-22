@@ -42,7 +42,7 @@ def admin_login(json_data):
         return unauthorized_request("Invalid Login Details")
     
     if check_password(admin.password_hash, json_data["password"]):
-        auth_token = generate_access_token(admin.id, UserTypes.admin, None, None)
+        auth_token = generate_access_token(admin.id, UserTypes.admin, admin.email, None, None)
         return success_response(data={'auth_token': auth_token, 'user': admin.to_json()})
     return unauthorized_request("Invalid Login Details")
 

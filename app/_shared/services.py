@@ -28,10 +28,11 @@ def is_in_staging_environment():
 
 
 
-def generate_and_send_reset_password_email(user_id, user_type, school_id,  name, email):
+def generate_and_send_reset_password_email(user_id, user_type, user_email, school_id,  name, email):
     payload_data = {
         'user_id': user_id,
         'user_type': user_type,
+        'user_email': user_email,
         'school_id': school_id,
         'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=0, seconds=3600),
         'iat': datetime.datetime.now(datetime.timezone.utc)
@@ -55,10 +56,11 @@ def generate_and_send_reset_password_email(user_id, user_type, school_id,  name,
     )
 
 
-def generate_access_token(user_id, user_type, school_id=None, permissions=None):
+def generate_access_token(user_id, user_type, user_email, school_id=None, permissions=None):
     payload_data = {
         'user_id': user_id,
         'user_type': user_type,
+        'user_email': user_email,
         'permissions': permissions,
         'school_id': school_id,
         'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=0, seconds=7200),
@@ -83,9 +85,10 @@ def check_password(hashed_password, password):
 #TODO: change this to an auth user object, so you can just get the properties without worrying about dicts breaking.
 # and then we can use type hinting
 
-def set_current_user(user_type='admin', user_id=-1, school_id=-1, **kwargs):
+def set_current_user(user_type='admin', user_id=-1, user_email=None, school_id=-1, **kwargs):
     """ Set the currently logged in user for a session """
-    user_data = {'user_id': user_id, 'user_type':user_type, 'school_id': school_id, 'permissions': kwargs.get('permissions', None)}
+    user_data = {'user_id': user_id, 'user_type':user_type, 'user_email': user_email, 
+                 'school_id': school_id, 'permissions': kwargs.get('permissions', None)}
     if user_id == -1 or school_id == -1 and is_in_development_environment():
         print('Adding a user with negative school-id or user-id')
     user_data.update(kwargs)
