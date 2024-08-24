@@ -200,3 +200,57 @@ def get_batches():
     return success_response(data=batches)
 
 #endregion BATCH
+
+
+#region ANALYTICS
+@student.get('/students/dashboard/line-chart/')
+@student.output(Responses.LineChartSchema)
+@token_auth([UserTypes.student])
+def line_chart():
+    '''
+        const series = [
+        {
+            name: "Series 1",
+            data: [45, 52, 38, 45, 19, 23, 2],
+        },
+        {
+            name: "Series 1",
+            data: [15, 52, 98, 45, 69, 33, 52],
+        },
+    ];
+
+    '''
+    pass
+
+@student.get('/students/dashboard/pie-chart/')
+@student.output(Responses.PieChartSchema)
+@token_auth([UserTypes.student])
+def pie_chart():
+    '''
+        const pieData = [
+            {
+                "subject_name": "English",
+                "tests_taken": 12,
+                "percent_average": 12.2
+            }
+        ]
+    '''
+    pass
+
+@student.get('/students/dashboard/bar-chart/')
+@student.output(Responses.BarChartSchema)
+@token_auth([UserTypes.student])
+def bar_chart():
+    ''' 
+    const chartData = [
+    { month: "January", desktop: 186, mobile: 80 },
+    { month: "February", desktop: 305, mobile: 200 },
+    { month: "March", desktop: 237, mobile: 120 },
+    { month: "April", desktop: 73, mobile: 190 },
+    { month: "May", desktop: 209, mobile: 130 },
+    { month: "June", desktop: 214, mobile: 140 },
+    ]
+    '''
+    pass
+
+#endregion ANALYTICS

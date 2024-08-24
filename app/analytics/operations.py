@@ -3,6 +3,8 @@ from app.analytics.models import StudentTopicScores, StudentBestSubject, Student
 from sqlalchemy import func
 from typing import  List, Dict, Union
 
+from datetime import datetime, timedelta, timezone
+
 
 class StudentTopicScoresManager(BaseManager):
 
@@ -117,7 +119,27 @@ class StudentSessionManager(BaseManager):
         )
         self.save(new_session)
         return new_session
-             
+    
+
+    def compare_session(self, student_id):
+        from app.extensions import db
+        now = datetime.now(timezone.utc)
+
+        # Calculate the start of the current week (e.g., assuming weeks start on Monday)
+        start_of_this_week = now - timedelta(days=now.weekday())
+
+        # Calculate the start of the previous week
+        start_of_last_week = start_of_this_week - timedelta(weeks=1)
+
+        # Query the total time spent between the start of last week and the start of this week
+        last_week_time = db.session.query(db.func.sum(StudentSession.duration)).filter(
+            StudentSession.created_at.between(start_of_last_week, start_of_this_week), StudentSession.student_id == student_id).scalar()
+        
+        # Query the total time spent from the start of this week to now
+        time_spent_this_week = db.session.query(db.func.sum(StudentSession.duration)).filter(
+            StudentSession.created_at.between(start_of_this_week, now), StudentSession.student_id == student_id).scalar()
+        
+        return last_week_time, time_spent_this_week
 
 #endregion session
 

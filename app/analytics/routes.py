@@ -1,18 +1,22 @@
+from apiflask import APIBlueprint
+
+from app._shared.schemas import UserTypes
+from app._shared.api_errors import  success_response
+from app._shared.decorators import token_auth
+from app._shared.services import get_current_user
+
+from app.analytics.schemas import Responses
+from app.analytics.operations import ssm_manager
 
 
+analytics = APIBlueprint('notifications', __name__)
 
-# def compare_time():
-#     now = datetime.utcnow()
-#     one_week_ago = now - timedelta(weeks=1)
-#     two_weeks_ago = now - timedelta(weeks=2)
 
-#     last_week_time = db.session.query(db.func.sum(UserSession.duration)).filter(
-#         UserSession.start_time.between(one_week_ago, now)).scalar()
-
-#     previous_week_time = db.session.query(db.func.sum(UserSession.duration)).filter(
-#         UserSession.start_time.between(two_weeks_ago, one_week_ago)).scalar()
-
-#     return jsonify({
-#         'last_week_time': last_week_time,
-#         'previous_week_time': previous_week_time
-#     }), 200
+@analytics.get('/students/dashboard/weekly-report/')
+@analytics.output(Responses.WeeklyReportSchema)
+@token_auth([UserTypes.student])
+def weekly_report():
+    student_id = get_current_user()['user_id']
+    last_week_time, this_week_time = ssm_manager.compare_session(student_id)
+    difference = this_week_time - last_week_time
+    return success_response(data={'hours_spent': this_week_time, 'percentage': difference})

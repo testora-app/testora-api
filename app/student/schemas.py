@@ -60,6 +60,22 @@ class EndSessionSchema(BaseSchema):
     duration = Float(required=True, allow_none=False)
 
 
+class BarChartSchema(BaseSchema):
+    subject = String()
+    new_score = Float()
+    average_score = Float()
+
+
+class PieChartSchema(BaseSchema):
+    subject = String()
+    tests_taken = Integer()
+    percent_average = Float()
+
+
+class LineChartSchema(BaseSchema):
+    subject = String()
+    scores = List(Float())
+
 
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
@@ -70,3 +86,7 @@ class Responses:
     VerifiedStudentSchema = make_response_schema(VerifiedStudentSchema)
     StudentSchema = make_response_schema(StudentSchema)
     BatchSchema = make_response_schema(BatchSchema)
+
+    LineChartSchema = make_response_schema(LineChartSchema, is_list=True)
+    PieChartSchema = make_response_schema(PieChartSchema, is_list=True)
+    BarChartSchema = make_response_schema(BarChartSchema, is_list=True)
