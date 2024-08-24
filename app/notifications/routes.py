@@ -19,9 +19,10 @@ def get_notifications():
     user_email = get_current_user()['user_email']
     recipient = recipient_manager.get_recipient_by_email(user_email)
 
-    notifications = notification_manager.get_recipient_notifications(recipient.id)
-    
-    return success_response(data=[n.to_json() for n in notifications])
+    if recipient:
+        notifications = notification_manager.get_recipient_notifications(recipient.id)
+        return success_response(data=[n.to_json() for n in notifications])
+    return success_response(data=[])
 
 
 @notification.post('/device-ids/')
