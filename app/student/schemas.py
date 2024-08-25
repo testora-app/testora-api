@@ -76,6 +76,9 @@ class LineChartSchema(BaseSchema):
     subject = String()
     scores = List(Float())
 
+class TotalTestsSchema(BaseSchema):
+    tests_completed = Integer()
+
 
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
@@ -90,3 +93,4 @@ class Responses:
     LineChartSchema = make_response_schema(LineChartSchema, is_list=True)
     PieChartSchema = make_response_schema(PieChartSchema, is_list=True)
     BarChartSchema = make_response_schema(BarChartSchema, is_list=True)
+    TotalTestsSchema = make_response_schema(TotalTestsSchema)

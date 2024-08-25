@@ -13,6 +13,8 @@ from app.student.operations import student_manager, batch_manager
 from app.analytics.operations import ssm_manager
 
 from app.school.operations import school_manager
+from app.admin.operations import subject_manager
+from app.test.operations import test_manager
 
 student = APIBlueprint('student', __name__)
 
@@ -203,54 +205,91 @@ def get_batches():
 
 
 #region ANALYTICS
+@student.get('/students/dashboard/total-tests/')
+@student.output(Responses.TotalTestsSchema)
+@token_auth([UserTypes.student])
+def total_tests():
+    student_id = get_current_user()['user_id']
+    total_completed = test_manager.get_tests_by_student_ids([student_id])
+    return success_response(data={'tests_completed': len(total_completed)})
+
+
 @student.get('/students/dashboard/line-chart/')
 @student.output(Responses.LineChartSchema)
 @token_auth([UserTypes.student])
 def line_chart():
-    '''
-        const series = [
-        {
-            name: "Series 1",
-            data: [45, 52, 38, 45, 19, 23, 2],
-        },
-        {
-            name: "Series 1",
-            data: [15, 52, 98, 45, 69, 33, 52],
-        },
-    ];
+    """
+    Gets the line chart data for a student's dashboard, given the student's id.
+    :return: A list of dictionaries containing the subject name and a list of scores from recent tests (max 7).
+    """
+    student_id = get_current_user()['user_id']
 
-    '''
-    pass
+    line_data = []
+
+    student = student_manager.get_student_by_id(student_id)
+    subjects= []
+
+    for batch in student.batches:
+        subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
+
+    for subject in subjects:
+        recent_tests = test_manager.get_student_recent_tests(student.id, subject_id=subject.id, limit=7)
+
+        line_data.append({
+            "subject": subject.name,
+            "scores": [test.score_acquired for test in recent_tests]
+        })
+
+    return success_response(data=line_data)
 
 @student.get('/students/dashboard/pie-chart/')
 @student.output(Responses.PieChartSchema)
 @token_auth([UserTypes.student])
 def pie_chart():
-    '''
-        const pieData = [
-            {
-                "subject_name": "English",
-                "tests_taken": 12,
-                "percent_average": 12.2
-            }
-        ]
-    '''
-    pass
+    student_id = get_current_user()['user_id']
+
+    pie_data = []
+
+    student = student_manager.get_student_by_id(student_id)
+    subjects= []
+
+    for batch in student.batches:
+        subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
+
+    for subject in subjects:
+        tests_taken = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
+
+        pie_data.append({
+            "subject": subject.name,
+            "tests_taken": len(tests_taken),
+            "percent_average": round(sum([test.score_acquired for test in tests_taken])/len(tests_taken), 1)
+        })
+    return success_response(data=pie_data)
+
 
 @student.get('/students/dashboard/bar-chart/')
 @student.output(Responses.BarChartSchema)
 @token_auth([UserTypes.student])
 def bar_chart():
-    ''' 
-    const chartData = [
-    { month: "January", desktop: 186, mobile: 80 },
-    { month: "February", desktop: 305, mobile: 200 },
-    { month: "March", desktop: 237, mobile: 120 },
-    { month: "April", desktop: 73, mobile: 190 },
-    { month: "May", desktop: 209, mobile: 130 },
-    { month: "June", desktop: 214, mobile: 140 },
-    ]
-    '''
-    pass
+    student_id = get_current_user()['user_id']
+
+    bar_data = []
+
+    student = student_manager.get_student_by_id(student_id)
+    subjects= []
+
+    for batch in student.batches:
+        subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
+
+    for subject in subjects:
+        tests = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
+
+        bar_data.append({
+            "subject": subject.name,
+            "new_score": tests[0].score_acquired,
+            "average_score": round(sum([test.score_acquired for test in tests])/len(tests), 1)
+        })
+
+    return success_response(data=bar_data)
 
 #endregion ANALYTICS

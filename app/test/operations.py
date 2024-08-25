@@ -94,6 +94,16 @@ class TestManager(BaseManager):
     def get_last_test_by_student_id(self, student_id, subject_id) -> Test: 
         return Test.query.filter_by(student_id=student_id, subject_id=subject_id, is_deleted=False, is_completed=True).order_by(Test.finished_on.desc()).first()
     
+    def get_tests_by_subject_and_student(self, student_id, subject_id) -> List[Test]:
+        return Test.query.filter_by(student_id=student_id, subject_id=subject_id, is_completed=True).order_by(Test.created_at.desc()).all()
+    
+    def get_student_recent_tests(self, student_id, subject_id=None, limit=6) -> List[Test]:
+        q = Test.query.filter_by(student_id=student_id, is_completed=True)
+        if subject_id:
+            q = q.filter_by(subject_id=subject_id)
+
+        return q.order_by(Test.created_at.desc()).limit(limit).all()
+    
     def create_test(self, student_id, subject_id, questions, total_points, question_number, school_id, total_score=100,
                     points_acquired=0, score_acquired=0, started_on=None, finished_on=None,
                     questions_correct=None, meta=None, is_completed=False):
