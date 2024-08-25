@@ -9,7 +9,7 @@ from app.analytics.schemas import Responses
 from app.analytics.operations import ssm_manager
 
 
-analytics = APIBlueprint('notifications', __name__)
+analytics = APIBlueprint('analytics', __name__)
 
 
 @analytics.get('/students/dashboard/weekly-report/')

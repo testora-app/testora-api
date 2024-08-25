@@ -25,6 +25,7 @@ from app.staff.routes import staff
 from app.student.routes import student
 from app.test.routes import testr
 from app.notifications.routes import notification
+from app.analytics.routes import analytics
 
 
 
@@ -115,6 +116,7 @@ def create_app():
         app.register_blueprint(student)
         app.register_blueprint(testr)
         app.register_blueprint(notification)
+        app.register_blueprint(analytics)
 
         app.config['VALIDATION_ERROR_SCHEMA'] = validation_error_schema
 
