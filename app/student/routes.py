@@ -235,8 +235,10 @@ def line_chart():
     for subject in subjects:
         recent_tests = test_manager.get_student_recent_tests(student.id, subject_id=subject.id, limit=7)
         data = {"subject": subject.name}
+        count = 0
         for test in recent_tests:
-            data["score" + str(test.id)] = test.score_acquired
+            count +=1
+            data["score" + str(count)] = test.score_acquired
         
         line_data.append(data)
 
