@@ -234,7 +234,7 @@ def line_chart():
 
     for subject in subjects:
         recent_tests = test_manager.get_student_recent_tests(student.id, subject_id=subject.id, limit=7)
-        data = {"subject": subject.name}
+        data = {"subject": subject.short_name}
         count = 0
         for test in recent_tests:
             count +=1
@@ -263,7 +263,7 @@ def pie_chart():
         percent_average = round(sum([test.score_acquired for test in tests_taken])/len(tests_taken), 1) if len(tests_taken) > 0 else 0.0
 
         pie_data.append({
-            "subject": subject.name,
+            "subject": subject.short_name,
             "tests_taken": len(tests_taken),
             "percent_average": percent_average
         })
@@ -291,7 +291,7 @@ def bar_chart():
         average_score = round(sum([test.score_acquired for test in tests])/len(tests), 1) if len(tests) > 0 else 0.0
 
         bar_data.append({
-            "subject": subject.name,
+            "subject": subject.short_name,
             "new_score": new_score,
             "average_score": average_score
         })
