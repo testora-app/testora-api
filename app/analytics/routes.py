@@ -18,5 +18,5 @@ analytics = APIBlueprint('analytics', __name__)
 def weekly_report():
     student_id = get_current_user()['user_id']
     last_week_time, this_week_time = ssm_manager.compare_session(student_id)
-    difference = this_week_time - last_week_time
+    difference = ((this_week_time - last_week_time)/ last_week_time) * 100 if last_week_time else 0
     return success_response(data={'hours_spent': this_week_time, 'percentage': difference})
