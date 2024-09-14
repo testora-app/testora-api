@@ -28,6 +28,7 @@ def get_notifications():
 @notification.post('/device-ids/')
 @notification.input(DeviceIDSchema)
 @notification.output(RecipientSchema, 201)
+@token_auth([UserTypes.staff, UserTypes.student, UserTypes.school_admin])
 def add_device_ids(json_data):
     curr_user = get_current_user()
     data = json_data['data']
