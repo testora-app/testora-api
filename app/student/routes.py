@@ -2,6 +2,7 @@ from typing import Dict
 from datetime import datetime, timezone, timedelta
 from dateutil.parser import parse as date_parser
 from apiflask import APIBlueprint
+from flask import render_template
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
 from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found, bad_request, unapproved_account
@@ -15,6 +16,9 @@ from app.analytics.operations import ssm_manager
 from app.school.operations import school_manager
 from app.admin.operations import subject_manager
 from app.test.operations import test_manager
+from app.notifications.operations import recipient_manager
+
+from app.integrations.pusher import pusher
 
 student = APIBlueprint('student', __name__)
 
@@ -51,7 +55,7 @@ def login(json_data):
         school_data = school.to_json()
         school_data.pop("code")
 
-
+        recipient = recipient_manager.get_recipient_by_email(student.email, UserTypes.student)
         # handle streak
         current_login_time = datetime.now(timezone.utc)
         if student.last_login:
@@ -62,18 +66,19 @@ def login(json_data):
                 # Logged in on the next day
                 student.current_streak += 1
                 student.highest_streak = max(student.current_streak, student.highest_streak)
-                # TODO: send them a message of increase of streak
+                
+                
+                if recipient:
+                    pusher.notify_devices(title='Streak Increased', content=render_template('streak_added.txt'),  device_ids=recipient.device_ids)
             else:
                 # More than one day has passed, or same day login, reset streak
                 student.current_streak = 1
+                if recipient:
+                    pusher.notify_devices(title='Streak Lost', content=render_template('streak_lost.txt'),  device_ids=recipient.device_ids)
         else:
             # First time login
             student.current_streak = 1
             student.highest_streak = 1
-
-            #TODO: if they lost streak send them a message
-
-            #TODO: if they lost streak send them a message
 
         student.last_login = current_login_time
         student.save()
