@@ -33,7 +33,7 @@ def add_device_ids(json_data):
     curr_user = get_current_user()
     data = json_data['data']
 
-    recipient = recipient_manager.get_recipient_by_email(curr_user['user_email'])
+    recipient = recipient_manager.get_recipient_by_email(curr_user['user_email'], curr_user['user_type'])
     if recipient:
         devices = recipient.device_ids
         for id in data['device_ids']:

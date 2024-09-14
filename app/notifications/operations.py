@@ -19,8 +19,8 @@ class RecipientManager(BaseManager):
     def get_recipients(self) -> List[Recipient]:
         return Recipient.query.all()
     
-    def get_recipient_by_email(self, email) -> Recipient:
-        return Recipient.query.filter_by(email=email).first()
+    def get_recipient_by_email(self, email, category) -> Recipient:
+        return Recipient.query.filter_by(email=email, category=category).first()
     
     
 
