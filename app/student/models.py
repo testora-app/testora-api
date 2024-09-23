@@ -27,6 +27,7 @@ class Batch(BaseModel):
             'batch_name': self.batch_name,
             'school_id': self.school_id,
             'curriculum': self.curriculum,
+            'staff':  [staff.to_json() for staff in self.staff]
         }
         if include_students:
             data['students'] =  [student.to_json() for student in self.students]
