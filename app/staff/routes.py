@@ -112,7 +112,7 @@ def get_staff_details(staff_id):
 @staff.put("/staff/<int:staff_id>/")
 @staff.input(Responses.StaffSchema)
 @staff.output(Responses.StaffResponseSchema)
-@token_auth(['*'])
+@token_auth([UserTypes.school_admin])
 def edit_staff_details(staff_id, json_data):
     staff = staff_manager.get_staff_by_id(staff_id)
 

@@ -36,9 +36,8 @@ class StaffSchema(BaseSchema):
     first_name = String(required=True, allow_none=False, validate=[Length(min=3)])
     surname = String(required=True, allow_none=False, validate=[Length(min=3)])
     other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
-    password = String(required=True, allow_none=False, validate=[Length(min=8)])
     is_approved = Boolean(required=False, allow_none=False)
-    batches = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)], dump_only=True)
+    is_admin = Boolean(required=False, allow_none=False)
     subjects = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
     school_id = ID_FIELD
 
@@ -60,7 +59,7 @@ class GetStaffSchema(BaseSchema):
     data = Nested(StaffSchema)
 
 class GetStaffListSchema(BaseSchema):
-    data = List(Nested(StaffSchema))
+    data = List(Nested(StaffResponseSchema))
 
 class VerifiedStaffSchema(BaseSchema):
     user = Nested(StaffSchema)
