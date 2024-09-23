@@ -39,7 +39,7 @@ class Staff(BaseModel):
             'school_id': self.school_id,
             'is_approved': self.is_approved,
             'is_admin': self.is_admin,
-            'subjects': [subject.id for subject in self.subjects],
-            'batches': [batch.id for batch in self.batches] if self.batches else []
+            'subjects': [subject.to_json() for subject in self.subjects],
+            'batches': [batch.to_json() for batch in self.batches] if self.batches else []
         }
     
