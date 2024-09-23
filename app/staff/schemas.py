@@ -38,7 +38,7 @@ class StaffSchema(BaseSchema):
     other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
     password = String(required=True, allow_none=False, validate=[Length(min=8)])
     is_approved = Boolean(required=False, allow_none=False)
-    batches = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
+    batches = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)], dump_only=True)
     subjects = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
     school_id = ID_FIELD
 
