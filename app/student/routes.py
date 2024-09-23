@@ -167,12 +167,14 @@ def end_student_session(json_data):
 def create_batch(json_data):
     school_id = get_current_user()["school_id"]
     data = json_data["data"]
-    data.pop('staff')
+    staff_ids = data.pop('staff')
 
     if data['curriculum'] not in CurriculumTypes.get_curriculum_types():
         raise bad_request(f"{data['curriculum']} is not a valid curriculum: {CurriculumTypes.get_curriculum_types()}")
     
     new_batch = batch_manager.create_batch(**data, school_id=school_id)
+    if staff_ids:
+        new_batch.staff = [staff_id for staff_id in staff_manager.get_staff_by_ids(staff_ids)]
     return success_response(data=new_batch.to_json())
 
 
