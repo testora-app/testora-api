@@ -167,6 +167,7 @@ def end_student_session(json_data):
 def create_batch(json_data):
     school_id = get_current_user()["school_id"]
     data = json_data["data"]
+    data.pop('staff')
 
     if data['curriculum'] not in CurriculumTypes.get_curriculum_types():
         raise bad_request(f"{data['curriculum']} is not a valid curriculum: {CurriculumTypes.get_curriculum_types()}")
