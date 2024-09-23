@@ -101,7 +101,7 @@ def get_staff_list():
 
 @staff.get("/staff/<int:staff_id>/")
 @staff.output(Responses.StaffSchema)
-@token_auth()
+@token_auth(['*'])
 def get_staff_details(staff_id):
     staff = staff_manager.get_staff_by_id(staff_id)
     if staff:
@@ -112,7 +112,7 @@ def get_staff_details(staff_id):
 @staff.put("/staff/<int:staff_id>/")
 @staff.input(Responses.StaffSchema)
 @staff.output(Responses.StaffSchema)
-@token_auth()
+@token_auth(['*'])
 def edit_staff_details(staff_id, json_data):
     staff = staff_manager.get_staff_by_id(staff_id)
 
