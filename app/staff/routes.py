@@ -105,7 +105,7 @@ def get_staff_list():
 def get_staff_details(staff_id):
     staff = staff_manager.get_staff_by_id(staff_id)
     if staff:
-        return success_response(data=staff.to_json())
+        return success_response(data=staff.to_json(include_batches=True))
     return not_found(message="Staff does not exist")
 
 
@@ -131,5 +131,5 @@ def edit_staff_details(staff_id, json_data):
             staff.subjects = [subject_manager.get_subject_by_id(subject_id) for subject_id in subjects]
         staff.save()
 
-        return success_response(data=staff.to_json())
+        return success_response(data=staff.to_json(include_batches=True))
     return not_found(message="Staff does not exist")

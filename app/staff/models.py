@@ -29,8 +29,8 @@ class Staff(BaseModel):
     def __repr__(self):
         return f'Staff {self.first_name} {self.surname}'
 
-    def to_json(self):
-        return {
+    def to_json(self, include_batches=False):
+        data = {
             'id': self.id,
             'first_name': self.first_name,
             'other_names': self.other_names,
@@ -40,6 +40,7 @@ class Staff(BaseModel):
             'is_approved': self.is_approved,
             'is_admin': self.is_admin,
             'subjects': [subject.to_json() for subject in self.subjects],
-            'batches': [batch.to_json() for batch in self.batches] if self.batches else []
         }
-    
+        if include_batches:
+            data['batches'] = [batch.to_json() for batch in self.batches] if self.batches else []
+        return data
