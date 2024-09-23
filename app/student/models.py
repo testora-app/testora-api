@@ -1,5 +1,6 @@
 from app.extensions import db
 from app._shared.models import BaseModel
+from app.staff.models import staff_batches
 
 from datetime import datetime
 
@@ -16,6 +17,7 @@ class Batch(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=False)
     curriculum = db.Column(db.String, nullable=False)
     students = db.relationship('Student', secondary=student_batches, backref=db.backref('batches', lazy=True))
+    staff = db.relationship('Staff', secondary=staff_batches, backref=db.backref('batches', lazy=True))
 
     __table_args__ = (db.UniqueConstraint('batch_name', 'school_id', name='uix_batch_name_school_id'),)
 

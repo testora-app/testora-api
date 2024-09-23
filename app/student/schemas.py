@@ -40,6 +40,7 @@ class BatchSchema(BaseSchema):
     batch_name = String(required=True, allow_none=False)
     curriculum = String(required=True, allow_none=False)
     students = List(Integer(), allow_none=True, required=False)
+    staff = List(Integer(), allow_none=True, required=False)
 
 
 class BatchListSchema(BaseSchema):

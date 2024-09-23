@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested
+from apiflask.fields import Integer, String, Boolean, List, Nested, Dict
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
@@ -38,6 +38,8 @@ class StaffSchema(BaseSchema):
     other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
     password = String(required=True, allow_none=False, validate=[Length(min=8)])
     is_approved = Boolean(required=False, allow_none=False)
+    batches = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
+    subjects = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
     school_id = ID_FIELD
 
 
@@ -56,6 +58,7 @@ class VerifiedStaffSchema(BaseSchema):
 
 class ApproveStaffSchema(BaseSchema):
     staff_ids = List(ID_FIELD)
+
 
 
 class Responses:

@@ -5,6 +5,7 @@ from app._shared.api_errors import response_builder, unauthorized_request, succe
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
+from app.admin.operations import subject_manager
 from app.staff.schemas import SchoolAdminRegister, StaffRegister, ApproveStaffSchema, GetStaffListSchema, Responses
 from app.staff.operations import staff_manager
 
@@ -104,5 +105,31 @@ def get_staff_list():
 def get_staff_details(staff_id):
     staff = staff_manager.get_staff_by_id(staff_id)
     if staff:
+        return success_response(data=staff.to_json())
+    return not_found(message="Staff does not exist")
+
+
+@staff.put("/staff/<int:staff_id>/")
+@staff.input(Responses.StaffSchema)
+@staff.output(Responses.StaffSchema)
+@token_auth()
+def edit_staff_details(staff_id, json_data):
+    staff = staff_manager.get_staff_by_id(staff_id)
+
+    data = json_data['data']
+    subjects = data.pop('subjects', [])
+
+    if staff:
+        staff.first_name = data.get('first_name', staff.first_name)
+        staff.surname = data.get('surname', staff.surname)
+        staff.email = data.get('email', staff.email)
+        staff.other_names = data.get('other_names', staff.other_names)
+        staff.is_admin = data.get('is_admin', staff.is_admin)
+        staff.save()
+
+        if subjects:
+            staff.subjects = [subject_manager.get_subject_by_id(subject_id) for subject_id in subjects]
+        staff.save()
+
         return success_response(data=staff.to_json())
     return not_found(message="Staff does not exist")

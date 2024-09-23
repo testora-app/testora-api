@@ -24,6 +24,9 @@ class StaffManager(BaseManager):
 
     def get_staff_by_id(self, staff_id) -> Staff:
         return Staff.query.get(staff_id)
+    
+    def get_staff_by_ids(self, staff_ids) -> List[Staff]:
+        return Staff.query.filter(Staff.id.in_(staff_ids)).all()
 
     def get_staff_by_email(self, email) -> Staff:
         return Staff.query.filter_by(email=email).first()

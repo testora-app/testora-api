@@ -3,6 +3,8 @@ from datetime import datetime
 from app.extensions import db
 from app._shared.models import BaseModel
 
+from app.staff.models import staff_subjects
+
 
 class Admin(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
@@ -30,6 +32,8 @@ class Subject(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     curriculum = db.Column(db.String(20), nullable=False) # bece, igsce
+
+    staff = db.relationship('Staff', secondary=staff_subjects, back_populates='subjects')
 
     def __str__(self):
         return f'{self.name}, Curriculum: {self.curriculum}'

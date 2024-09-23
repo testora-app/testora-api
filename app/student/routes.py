@@ -14,6 +14,7 @@ from app.student.operations import student_manager, batch_manager
 from app.analytics.operations import ssm_manager
 
 from app.school.operations import school_manager
+from app.staff.operations import staff_manager
 from app.admin.operations import subject_manager
 from app.test.operations import test_manager
 from app.notifications.operations import recipient_manager
@@ -186,6 +187,7 @@ def edit_batch(batch_id, json_data):
         batch.batch_name = data["batch_name"]
         batch.curriculum = data["curriculum"]
         batch.students = [student for student in student_manager.get_students_by_ids(data["students"])]
+        batch.staff = [staff for staff in staff_manager.get_staff_by_ids(data["staff"])]
         batch.save()
     
     return success_response(data=batch.to_json())
