@@ -1,5 +1,7 @@
+from apiflask.schemas import Schema
 from apiflask.fields import Integer, String, Boolean, List, Nested, DateTime, Dict, Decimal
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
+
 
 
 class SubQuestionSchema(BaseSchema):
@@ -98,6 +100,9 @@ class MarkTestSchema(BaseSchema):
     questions = List(Nested(SubmittedQuestionsSchema))
     meta = Dict(allow_none=True, required=False)
 
+
+class TestQuerySchema(Schema):
+    student_id = Integer(allow_none=True, required=False)
 
 
 

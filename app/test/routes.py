@@ -8,7 +8,7 @@ from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
 from app.test.operations import question_manager, test_manager
-from app.test.schemas import TestQuestionsListSchema, QuestionListSchema, TestListSchema, Responses, Requests
+from app.test.schemas import TestQuestionsListSchema, QuestionListSchema, TestListSchema, TestQuerySchema, Responses, Requests
 from app.test.services import TestService
 
 from app.student.operations import student_manager, stusublvl_manager
@@ -76,15 +76,19 @@ def delete_questions(question_id):
 
 # region Tests
 @testr.get("/tests/")
+@testr.input(TestQuerySchema, location='query')
 @testr.output(TestListSchema)
 @token_auth(['*'])
-def test_history():
+def test_history(query_data: Dict):
     current_user = get_current_user()
 
     if current_user['user_type'] == UserTypes.student:
         tests = test_manager.get_tests_by_student_ids([current_user['user_id']])
     elif current_user['user_type'] == UserTypes.staff or current_user['user_type'] == UserTypes.school_admin:
-        tests = test_manager.get_tests_by_school_id(current_user['school_id'])
+        if query_data.get('student_id', None) is not None:
+            tests = test_manager.get_tests_by_student_ids([query_data['student_id']])
+        else:
+            tests = test_manager.get_tests_by_school_id(current_user['school_id'])
     else:
         tests = test_manager.get_tests()
 
