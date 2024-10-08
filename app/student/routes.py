@@ -208,7 +208,7 @@ def get_batches():
     else:
         batches = batch_manager.get_all_batches()
 
-    batches = [batch.to_json() for batch in batches] if batches else []
+    batches = [batch.to_json(include_students=True) for batch in batches] if batches else []
     return success_response(data=batches)
 
 #endregion BATCH

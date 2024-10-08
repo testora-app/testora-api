@@ -35,7 +35,7 @@ class StudentManager(BaseManager):
         return Student.query.filter_by(school_id=school_id).all()
     
     @staticmethod
-    def get_students_by_ids(student_ids):
+    def get_students_by_ids(student_ids) -> List[Student]:
         return Student.query.filter(Student.id.in_(student_ids)).all()
     
 

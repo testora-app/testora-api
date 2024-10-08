@@ -30,7 +30,7 @@ class Batch(BaseModel):
             'staff':  [staff.to_json() for staff in self.staff]
         }
         if include_students:
-            data['students'] =  [student.to_json() for student in self.students]
+            data['students'] =  [student.to_json(include_batch=False) for student in self.students]
         return data
     
     
@@ -52,8 +52,8 @@ class Student(BaseModel):
     def __repr__(self):
         return f'Student {self.first_name} {self.surname}'
 
-    def to_json(self):
-        return {
+    def to_json(self, include_batch=True):
+        student = {
             'id': self.id,
             'first_name': self.first_name,
             'other_names': self.other_names,
@@ -62,11 +62,15 @@ class Student(BaseModel):
             'school_id': self.school_id,
             'is_approved': self.is_approved,
             'is_archived': self.is_archived,
-            'batches': [batch.to_json(include_students=False) for batch in self.batches] if self.batches else [],
             'current_streak': self.current_streak,
             'highest_streak': self.highest_streak,
             'last_login': self.last_login
         }
+
+        if include_batch:
+            student['batches']= [batch.to_json(include_students=False) for batch in self.batches]
+        
+        return student
     
 
 class StudentSubjectLevel(BaseModel):
