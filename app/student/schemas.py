@@ -1,3 +1,4 @@
+from apiflask.schemas import Schema
 from apiflask.fields import Integer, String, Boolean, List, Nested, Date, Float, DateTime
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
@@ -79,6 +80,9 @@ class LineChartSchema(BaseSchema):
 
 class TotalTestsSchema(BaseSchema):
     tests_completed = Integer()
+
+class StudentQuerySchema(Schema):
+    student_id = Integer(allow_none=True, required=False)
 
 
 class Requests:

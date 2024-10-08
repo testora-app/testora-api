@@ -9,7 +9,7 @@ from app._shared.api_errors import response_builder, unauthorized_request, succe
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests
+from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests, StudentQuerySchema
 from app.student.operations import student_manager, batch_manager
 from app.analytics.operations import ssm_manager
 
@@ -216,23 +216,41 @@ def get_batches():
 
 #region ANALYTICS
 @student.get('/students/dashboard/total-tests/')
+@student.input(StudentQuerySchema, location='query')
 @student.output(Responses.TotalTestsSchema)
-@token_auth([UserTypes.student])
-def total_tests():
-    student_id = get_current_user()['user_id']
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+def total_tests(query_data):
+    current_user = get_current_user()
+
+    if current_user['user_type'] == UserTypes.student:
+        student_id = current_user['user_id']
+    else:
+        try:
+            student_id = query_data['student_id']
+        except:
+            return bad_request("'student_id' is required query param")
     total_completed = test_manager.get_tests_by_student_ids([student_id])
     return success_response(data={'tests_completed': len(total_completed)})
 
 
 @student.get('/students/dashboard/line-chart/')
+@student.input(StudentQuerySchema, location='query')
 @student.output(Responses.LineChartSchema)
-@token_auth([UserTypes.student])
-def line_chart():
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+def line_chart(query_data):
     """
     Gets the line chart data for a student's dashboard, given the student's id.
     :return: A list of dictionaries containing the subject name and a list of scores from recent tests (max 7).
     """
-    student_id = get_current_user()['user_id']
+    current_user = get_current_user()
+
+    if current_user['user_type'] == UserTypes.student:
+        student_id = current_user['user_id']
+    else:
+        try:
+            student_id = query_data['student_id']
+        except:
+            return bad_request("'student_id' is required query param")
 
     line_data = []
 
@@ -242,23 +260,36 @@ def line_chart():
     for batch in student.batches:
         subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
 
+    subject_scored = []
     for subject in subjects:
-        recent_tests = test_manager.get_student_recent_tests(student.id, subject_id=subject.id, limit=7)
-        data = {"subject": subject.short_name}
-        count = 0
-        for test in recent_tests:
-            count +=1
-            data["score" + str(count)] = test.score_acquired
-        
-        line_data.append(data)
+        if subject.short_name not in subject_scored:
+            recent_tests = test_manager.get_student_recent_tests(student.id, subject_id=subject.id, limit=7)
+            data = {"subject": subject.short_name}
+            count = 0
+            for test in recent_tests:
+                count +=1
+                data["score" + str(count)] = test.score_acquired
+            
+            line_data.append(data)
+
+            subject_scored.append(subject.short_name)
 
     return success_response(data=line_data)
 
 @student.get('/students/dashboard/pie-chart/')
+@student.input(StudentQuerySchema, location='query')
 @student.output(Responses.PieChartSchema)
-@token_auth([UserTypes.student])
-def pie_chart():
-    student_id = get_current_user()['user_id']
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+def pie_chart(query_data):
+    current_user = get_current_user()
+
+    if current_user['user_type'] == UserTypes.student:
+        student_id = current_user['user_id']
+    else:
+        try:
+            student_id = query_data['student_id']
+        except:
+            return bad_request("'student_id' is required query param")
 
     pie_data = []
 
@@ -268,23 +299,35 @@ def pie_chart():
     for batch in student.batches:
         subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
 
+    subject_scored = []
     for subject in subjects:
-        tests_taken = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
-        percent_average = round(sum([test.score_acquired for test in tests_taken])/len(tests_taken), 1) if len(tests_taken) > 0 else 0.0
+        if subject.short_name not in subject_scored:
+            tests_taken = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
+            percent_average = round(sum([test.score_acquired for test in tests_taken])/len(tests_taken), 1) if len(tests_taken) > 0 else 0.0
 
-        pie_data.append({
-            "subject": subject.short_name,
-            "tests_taken": len(tests_taken),
-            "percent_average": percent_average
-        })
+            pie_data.append({
+                "subject": subject.short_name,
+                "tests_taken": len(tests_taken),
+                "percent_average": percent_average
+            })
+            subject_scored.append(subject.short_name)
     return success_response(data=pie_data)
 
 
 @student.get('/students/dashboard/bar-chart/')
+@student.input(StudentQuerySchema, location='query')
 @student.output(Responses.BarChartSchema)
-@token_auth([UserTypes.student])
-def bar_chart():
-    student_id = get_current_user()['user_id']
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+def bar_chart(query_data):
+    current_user = get_current_user()
+
+    if current_user['user_type'] == UserTypes.student:
+        student_id = current_user['user_id']
+    else:
+        try:
+            student_id = query_data['student_id']
+        except:
+            return bad_request("'student_id' is required query param")
 
     bar_data = []
 
@@ -294,17 +337,21 @@ def bar_chart():
     for batch in student.batches:
         subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
 
+    subject_scored = []
+
     for subject in subjects:
-        tests = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
+        if subject.short_name not in subject_scored:
+            tests = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
 
-        new_score = tests[0].score_acquired if len(tests) > 0 else 0.0
-        average_score = round(sum([test.score_acquired for test in tests])/len(tests), 1) if len(tests) > 0 else 0.0
+            new_score = tests[0].score_acquired if len(tests) > 0 else 0.0
+            average_score = round(sum([test.score_acquired for test in tests])/len(tests), 1) if len(tests) > 0 else 0.0
 
-        bar_data.append({
-            "subject": subject.short_name,
-            "new_score": new_score,
-            "average_score": average_score
-        })
+            bar_data.append({
+                "subject": subject.short_name,
+                "new_score": new_score,
+                "average_score": average_score
+            })
+            subject_scored.append(subject.short_name)
 
     return success_response(data=bar_data)
 
