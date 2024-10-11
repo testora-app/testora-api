@@ -56,12 +56,14 @@ class QuestionManager(BaseManager):
         questions_list : List[Question] = []
         sub_questions_list = []
         for obj in questions:
-            sub_obj = obj.get('sub_questions', [])
+            sub_obj = obj.pop('sub_questions', [])
             new_question = self.create_question(**obj, is_save_function=False)
             questions_list.append(new_question)
-            for sub in sub_obj:
-                new_sub = self.create_subquestion(parent_question_id=new_question.id, **sub, is_save_function=False)
-                sub_questions_list.append(new_sub)
+
+            if sub_obj:
+                for sub in sub_obj:
+                    new_sub = self.create_subquestion(parent_question_id=new_question.id, **sub, is_save_function=False)
+                    sub_questions_list.append(new_sub)
 
         self.save_multiple(questions_list)
         self.save_multiple(sub_questions_list)
