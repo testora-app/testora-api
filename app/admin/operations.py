@@ -53,6 +53,9 @@ class SubjectManager(BaseManager):
     def get_subject_by_id(self, id) -> Subject:
         return Subject.query.filter_by(id=id).first()
     
+    def get_subjects_by_ids(self, ids) -> List[Subject]:
+        return Subject.query.filter(Subject.id.in_(ids)).all()
+    
     def get_subject_by_curriculum(self, curr) -> List[Subject]:
         return Subject.query.filter_by(curriculum=curr).all()
 

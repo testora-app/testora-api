@@ -78,6 +78,7 @@ class SubmittedQuestionsSchema(BaseSchema):
 class TestSchema(BaseSchema):
     id = Integer(dump_only=True)
     student_id = Integer(required=True)
+    subject_name = String(required=False, allow_none=False)
     questions = List(Nested(TestQuestionsSchema))
     total_points = Integer(required=True)
     points_acquired = Integer(required=True)

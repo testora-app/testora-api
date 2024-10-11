@@ -7,6 +7,8 @@ from app._shared.api_errors import  success_response, bad_request, not_found
 from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
+from app.admin.operations import subject_manager
+
 from app.test.operations import question_manager, test_manager
 from app.test.schemas import TestQuestionsListSchema, QuestionListSchema, TestListSchema, TestQuerySchema, Responses, Requests
 from app.test.services import TestService
@@ -92,7 +94,18 @@ def test_history(query_data: Dict):
     else:
         tests = test_manager.get_tests()
 
-    return success_response(data=[test.to_json() for test in tests])
+
+    subject_ids = [test.subject_id for test in tests]
+
+    subjects = subject_manager.get_subjects_by_ids(subject_ids)
+
+    subjects = {subject.id: subject for subject in subjects}
+
+    tests = [test.to_json() for test in tests]
+    for test in tests:
+        test["subject_name"] = subjects[test["subject_id"]].to_json()['name']
+
+    return success_response(data=tests)
 
 
 @testr.post("/tests/")
