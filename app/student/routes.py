@@ -199,7 +199,7 @@ def edit_batch(batch_id, json_data):
 
 @student.get("/batches/")
 @student.output(BatchListSchema)
-@token_auth([UserTypes.school_admin, UserTypes.admin])
+@token_auth([UserTypes.admin, UserTypes.school_admin])
 def get_batches():
     school_id = get_current_user()["school_id"]
 
@@ -218,7 +218,7 @@ def get_batches():
 @student.get('/students/dashboard/total-tests/')
 @student.input(StudentQuerySchema, location='query')
 @student.output(Responses.TotalTestsSchema)
-@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def total_tests(query_data):
     current_user = get_current_user()
 
@@ -236,7 +236,7 @@ def total_tests(query_data):
 @student.get('/students/dashboard/line-chart/')
 @student.input(StudentQuerySchema, location='query')
 @student.output(Responses.LineChartSchema)
-@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def line_chart(query_data):
     """
     Gets the line chart data for a student's dashboard, given the student's id.
@@ -279,7 +279,7 @@ def line_chart(query_data):
 @student.get('/students/dashboard/pie-chart/')
 @student.input(StudentQuerySchema, location='query')
 @student.output(Responses.PieChartSchema)
-@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def pie_chart(query_data):
     current_user = get_current_user()
 
@@ -317,7 +317,7 @@ def pie_chart(query_data):
 @student.get('/students/dashboard/bar-chart/')
 @student.input(StudentQuerySchema, location='query')
 @student.output(Responses.BarChartSchema)
-@token_auth([UserTypes.student, UserTypes.staff, UserTypes.admin])
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def bar_chart(query_data):
     current_user = get_current_user()
 
