@@ -1,8 +1,10 @@
 from app.school.models import School
 from app.school.services import create_school_code
 from app._shared.operations import BaseManager
+from app.subscriptions.constants import SubscriptionPackages
 
 from typing import List
+from datetime import datetime, timezone, timedelta
 
 class SchoolManager(BaseManager):
     def create_school(self, name, location, short_name=None, logo=None, is_package_school=False,
@@ -23,6 +25,10 @@ class SchoolManager(BaseManager):
             code = code
         )
 
+        new_school.subscription_expiry_date = (datetime.now(timezone.utc) + timedelta(days=30)).date()
+
+        new_school.subscription_package = SubscriptionPackages.free
+
         self.save(new_school)
         return new_school
     
@@ -35,6 +41,9 @@ class SchoolManager(BaseManager):
     
     def get_school_by_code(self, code) -> School:
         return School.query.filter_by(code=code).first()
+    
+    def get_schools_with_expired_subscriptions(self, subscription_expiry_date) -> List[School]:
+        return School.query.filter_by(subscription_expiry_date=subscription_expiry_date, is_deleted=False).all()
     
 
 school_manager = SchoolManager()

@@ -32,7 +32,10 @@ class StudentManager(BaseManager):
         return Student.query.all()
     
     def get_student_by_school(self, school_id) -> List[Student]:
-        return Student.query.filter_by(school_id=school_id).all()
+        return Student.query.filter_by(school_id=school_id, is_deleted=False).all()
+    
+    def get_active_students_by_school(self, school_id) -> List[Student]:
+        return Student.query.filter_by(school_id=school_id, is_deleted=False, is_approved=True, is_archived=False).all()
     
     @staticmethod
     def get_students_by_ids(student_ids) -> List[Student]:

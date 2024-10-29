@@ -55,8 +55,6 @@ ChangePasswordSchema = make_response_schema(ChangePassword)
 
 
 
-
-
 class UserTypes:
     admin = 'super_admin'
     school_admin = 'Admin'

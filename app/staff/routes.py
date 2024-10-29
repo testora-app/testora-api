@@ -23,6 +23,7 @@ def register_school_admin(json_data):
         return bad_request("User with the email already exists!")
 
     new_school = school_manager.create_school(**json_data["school"])
+
     json_data["school_admin"].pop('school_code')
     staff_manager.create_staff(**json_data["school_admin"], is_admin=True, school_id=new_school.id, is_approved=True)
     return success_response()
