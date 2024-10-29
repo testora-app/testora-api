@@ -11,6 +11,9 @@ class School(BaseModel):
     phone_number = db.Column(db.String, nullable=True)
     email = db.Column(db.String, nullable=True)
     code = db.Column(db.String, nullable=False, unique=True)
+    subscription_package = db.Column(db.String, nullable=True, default='free')
+    subscription_expiry_date = db.Column(db.Date, nullable=True, default=None)
+
 
     def __repr__(self):
         return f'School {self.name}'
@@ -24,5 +27,7 @@ class School(BaseModel):
             'location': self.location,
             'phone_number': self.phone_number,
             'email': self.email,
-            'code': self.code
+            'code': self.code,
+            'subscription_package': self.subscription_package,
+            'subscription_expiry_date': str(self.subscription_expiry_date) if self.subscription_expiry_date else self.subscription_expiry_date
         }

@@ -26,7 +26,7 @@ from app.student.routes import student
 from app.test.routes import testr
 from app.notifications.routes import notification
 from app.analytics.routes import analytics
-
+from app.subscriptions.routes import subscription
 
 
 
@@ -117,6 +117,7 @@ def create_app():
         app.register_blueprint(testr)
         app.register_blueprint(notification)
         app.register_blueprint(analytics)
+        app.register_blueprint(subscription)
 
         app.config['VALIDATION_ERROR_SCHEMA'] = validation_error_schema
 
@@ -169,7 +170,7 @@ def create_app():
             log_error(traceback.format_exc())
             return jsonify({
                 'error': str(exception),
-                'message': 'Something went wrong! Our Developers are workig on it!'
+                'message': 'Something went wrong! Our Developers are working on it!'
             }), 500
                 
 

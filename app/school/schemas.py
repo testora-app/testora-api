@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested
+from apiflask.fields import String, List, Nested, Date
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 
 
@@ -11,6 +11,8 @@ class SchoolSchema(BaseSchema):
     phone_number = String(required=False, allow_none=False)
     email = String(required=False, allow_none=False)
     code = String(required=False, allow_none=True)
+    subscription_package = String(required=False, allow_none=False)
+    subscription_expiry_date = Date(required=False, allow_none=True)
 
 
 class AddSchoolSchema(BaseSchema):
