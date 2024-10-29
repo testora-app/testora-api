@@ -23,6 +23,7 @@ class PaymentInitSchema(BaseSchema):
 
 
 class Responses:
+    SingleSchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema)
     SchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema, is_list=True)
     PaymentInitSchema = make_response_schema(PaymentInitSchema)
 

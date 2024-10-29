@@ -31,9 +31,10 @@ def get_school_billing_history():
 
 # an endpoint to get a single billing
 @subscription.get('/billing-history/<int:billing_id>/')
-@subscription.output(Responses.SchoolBillingHistorySchema, 200)
+@subscription.output(Responses.SingleSchoolBillingHistorySchema, 200)
 @token_auth([UserTypes.school_admin])
 def get_single_billing_history(billing_id):
+    
     school_id = get_current_user()['school_id']
     billing_history = sb_history_manager.get_school_billing_history_by_id(school_id, billing_id)
     return success_response(data= billing_history.to_json())
@@ -75,7 +76,7 @@ def settle_billing_history(billing_id):
 
 # an endpoint to confirm payment
 @subscription.get('/payment/<string:reference>/confirm/')
-@subscription.output(Responses.SchoolBillingHistorySchema, 200)
+@subscription.output(Responses.SingleSchoolBillingHistorySchema, 200)
 @token_auth([UserTypes.school_admin])
 def confirm_payment(reference):
     school_id = get_current_user()['school_id']
