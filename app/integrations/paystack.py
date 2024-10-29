@@ -1,12 +1,17 @@
 import requests
+from globals import PAYSTACK_API_KEY, PAYSTACK_CALLBACK_URL
 
-
-class Paystack:
+class Paystack(object):
     def __init__(self, api_key):
         self.api_key = api_key
         self.base_url = "https://api.paystack.co"
 
-    def create_payment(self, data):
+    def create_payment(self, email, amount, callback_url=PAYSTACK_CALLBACK_URL):
+        data = {
+            "email": email,
+            "amount": amount * 100, # so we get amount in peswes
+            "callback_url": callback_url
+        }
         url = f"{self.base_url}/transaction/initialize"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -32,3 +37,7 @@ class Paystack:
         }
         response = requests.get(url, headers=headers)
         return response.json()
+    
+
+
+paystack = Paystack(api_key= PAYSTACK_API_KEY)

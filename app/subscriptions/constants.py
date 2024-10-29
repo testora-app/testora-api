@@ -4,6 +4,11 @@ class SubscriptionPackages:
     premium = 'premium'
 
 
+class PaymentStatus:
+    pending = 'pending'
+    success = 'success'
+    failed  = 'failed'
+
 class PackagePrices:
     prices = {
         SubscriptionPackages.free: 0,

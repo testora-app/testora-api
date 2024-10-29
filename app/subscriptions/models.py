@@ -1,6 +1,7 @@
 from app.extensions import db
 from app._shared.models import BaseModel
 
+from app.subscriptions.constants import PaymentStatus
 
 class SchoolBillingHistory(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
@@ -10,6 +11,7 @@ class SchoolBillingHistory(BaseModel):
     billed_on = db.Column(db.Date, nullable=False)
     settled_on = db.Column(db.Date, nullable=True, default=None)
     payment_reference = db.Column(db.String(200), default=None, nullable=True)
+    payment_status = db.Column(db.String(100), nullable=True, default=PaymentStatus.pending, server_default=PaymentStatus.pending)
     subscription_package = db.Column(db.String(100), nullable=False)
     subscription_start_date = db.Column(db.Date, nullable=False)
     subscription_end_date = db.Column(db.Date, nullable=False)
@@ -26,4 +28,5 @@ class SchoolBillingHistory(BaseModel):
             "subscription_package": self.subscription_package,
             "subscription_start_date": str(self.subscription_start_date) if self.subscription_start_date else None,
             "subscription_end_date": str(self.subscription_end_date) if self.subscription_end_date else None,
+            "payment_status": self.payment_status
         }

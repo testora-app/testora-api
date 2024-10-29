@@ -1,5 +1,5 @@
 from app.subscriptions.operations import sb_history_manager
-from app.subscriptions.constants import PackagePrices
+from app.subscriptions.constants import PackagePrices, SubscriptionPackages, PaymentStatus
 
 from app.school.operations import school_manager
 from app.student.operations import student_manager
@@ -29,6 +29,11 @@ def run_billing_process() -> None:
             subscription_end_date= school.subscription_expiry_date
         )
 
+        if school.subscription_package == SubscriptionPackages.free:
+            new_bill.payment_status = PaymentStatus.success
+            new_bill.settled_on = datetime.now(timezone.utc).date()
+            new_bill.save()
+            
         bill_data.append(new_bill)
 
     return bill_data

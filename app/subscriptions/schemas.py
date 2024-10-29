@@ -1,4 +1,4 @@
-from apiflask.fields import String, List, Nested, Date
+from apiflask.fields import String, List, Nested, Date, Boolean
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 
 
@@ -15,7 +15,14 @@ class SchoolBillingHistorySchema(BaseSchema):
     subscription_end_date = Date(required=True, allow_none=False)
 
 
+class PaymentInitSchema(BaseSchema):
+    status = Boolean(required=True, allow_none=False)
+    authorization_url = String(required=True, allow_none=False)
+    reference = String(required=True, allow_none=False)
+    access_code = String(required=True, allow_none=False)
+
 
 class Responses:
     SchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema, is_list=True)
+    PaymentInitSchema = make_response_schema(PaymentInitSchema)
 
