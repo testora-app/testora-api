@@ -1,6 +1,6 @@
 from apiflask import APIBlueprint
 from flask import request
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 from app._shared.schemas import SuccessMessage, UserTypes
 from app._shared.services import get_current_user
@@ -13,6 +13,8 @@ from app.subscriptions.schemas import Responses
 from app.subscriptions.operations import sb_history_manager
 from app.subscriptions.services import run_billing_process
 from app.subscriptions.constants import PaymentStatus
+
+from app.school.operations import school_manager
 
 from globals import APP_SECRET_KEY
 
@@ -40,7 +42,7 @@ def get_single_billing_history(billing_id):
     return success_response(data= billing_history.to_json())
 
 # an endpoint to settle the bill
-@subscription.put('/billing-history/<int:billing_id>/settle/')
+@subscription.get('/billing-history/<int:billing_id>/settle/')
 @subscription.output(Responses.PaymentInitSchema, 201)
 @token_auth([UserTypes.school_admin])
 def settle_billing_history(billing_id):
@@ -77,10 +79,10 @@ def settle_billing_history(billing_id):
 # an endpoint to confirm payment
 @subscription.get('/payment/<string:reference>/confirm/')
 @subscription.output(Responses.SingleSchoolBillingHistorySchema, 200)
-@token_auth([UserTypes.school_admin])
+# @token_auth([UserTypes.school_admin])
 def confirm_payment(reference):
-    school_id = get_current_user()['school_id']
-    billing_history = sb_history_manager.get_school_billing_history_by_payment_ref(school_id, reference)
+    
+    billing_history = sb_history_manager.get_school_billing_history_by_payment_ref(reference)
 
     if not billing_history:
         return not_found('Bill not found')
@@ -94,6 +96,10 @@ def confirm_payment(reference):
         billing_history.payment_status = resp['data']['status']
         billing_history.settled_on = datetime.now(timezone.utc).date()
         billing_history.save()
+
+        school = school_manager.get_school_by_id(billing_history.school_id)
+        school.subscription_expiry_date = school.subscription_expiry_date + timedelta(days=31)
+        school.save()
 
         return success_response(data=billing_history.to_json())
     
