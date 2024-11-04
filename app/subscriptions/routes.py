@@ -31,12 +31,35 @@ def get_school_billing_history():
     return success_response(data= [bill.to_json() for bill in billing_history])
 
 
+@subscription.post("/billing-history/")
+@subscription.input(Responses.SchoolBillingPostSchema)
+@subscription.output(Responses.SchoolBillingHistorySchema, 201)
+@token_auth([UserTypes.school_admin])
+def add_billing_history(json_data):
+    school_id = get_current_user()['school_id']
+    data = json_data['data']
+
+    now = datetime.now(timezone.utc).date()
+
+    new_bill = sb_history_manager.add_school_billing_history(
+            school_id= school_id,
+            amount_due=data['amount_due'],
+            date_due= now,
+            billed_on= now,
+            settled_on= now,
+            payment_reference= data['payment_reference'],
+            subscription_package= data['subscription_package'],
+            subscription_start_date= now,
+            subscription_end_date= now + timedelta(days=31)
+        )
+    return success_response(data= new_bill.to_json())
+
+
 # an endpoint to get a single billing
 @subscription.get('/billing-history/<int:billing_id>/')
 @subscription.output(Responses.SingleSchoolBillingHistorySchema, 200)
 @token_auth([UserTypes.school_admin])
 def get_single_billing_history(billing_id):
-    
     school_id = get_current_user()['school_id']
     billing_history = sb_history_manager.get_school_billing_history_by_id(school_id, billing_id)
     return success_response(data= billing_history.to_json())

@@ -22,8 +22,15 @@ class PaymentInitSchema(BaseSchema):
     access_code = String(required=True, allow_none=False)
 
 
+class SchoolBillingPostSchema(BaseSchema):
+    amount_due = String(required=True, allow_none=False)
+    payment_reference = String(required=False, allow_none=True)
+    subscription_package = String(required=True, allow_none=False)
+
+
 class Responses:
     SingleSchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema)
     SchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema, is_list=True)
     PaymentInitSchema = make_response_schema(PaymentInitSchema)
+    SchoolBillingPostSchema = make_response_schema(SchoolBillingPostSchema) 
 
