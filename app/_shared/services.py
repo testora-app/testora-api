@@ -56,13 +56,15 @@ def generate_and_send_reset_password_email(user_id, user_type, user_email, schoo
     )
 
 
-def generate_access_token(user_id, user_type, user_email, school_id=None, permissions=None):
+def generate_access_token(user_id, user_type, user_email, school_id=None, permissions=None, is_school_suspended=False, school_package='free'):
     payload_data = {
         'user_id': user_id,
         'user_type': user_type,
         'user_email': user_email,
         'permissions': permissions,
         'school_id': school_id,
+        'is_school_suspended': is_school_suspended,
+        'school_package': school_package,
         'exp': datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=0, seconds=7200),
         'iat': datetime.datetime.now(datetime.timezone.utc)
     }

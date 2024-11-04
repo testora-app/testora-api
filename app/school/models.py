@@ -13,6 +13,7 @@ class School(BaseModel):
     code = db.Column(db.String, nullable=False, unique=True)
     subscription_package = db.Column(db.String, nullable=True, default='free')
     subscription_expiry_date = db.Column(db.Date, nullable=True, default=None)
+    is_suspended = db.Column(db.Boolean, default=False)
 
 
     def __repr__(self):
@@ -29,5 +30,6 @@ class School(BaseModel):
             'email': self.email,
             'code': self.code,
             'subscription_package': self.subscription_package.title(),
-            'subscription_expiry_date': str(self.subscription_expiry_date) if self.subscription_expiry_date else self.subscription_expiry_date
+            'subscription_expiry_date': str(self.subscription_expiry_date) if self.subscription_expiry_date else self.subscription_expiry_date,
+            'is_suspended': self.is_suspended
         }

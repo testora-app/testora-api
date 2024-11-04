@@ -54,9 +54,12 @@ def login(json_data):
         return unapproved_account()
 
     if staff and check_password(staff.password_hash, json_data["password"]):
-        user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
-        access_token = generate_access_token(staff.id, user_type, staff.email, school_id=staff.school_id)
         school = school_manager.get_school_by_id(staff.school_id)
+
+        user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
+        access_token = generate_access_token(staff.id, user_type, staff.email, school_id=staff.school_id, 
+                                             is_school_suspended=school.is_suspended, school_package=school.subscription_package)
+        
         school_data = school.to_json()
         if user_type == UserTypes.staff:
             school_data.pop('code')
