@@ -14,4 +14,8 @@ class BaseManager(object):
         db.session.add_all(entities)
         db.session.commit()
 
+    @staticmethod
+    def commit():
+        db.session.commit()
+
     

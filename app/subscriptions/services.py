@@ -36,4 +36,17 @@ def run_billing_process() -> None:
             
         bill_data.append(new_bill)
 
+        #TODO: send email notification
+
     return bill_data
+
+
+def run_suspension_process() -> None:
+    # get all the schools with subscriptions overdue
+    overdue_subscriptions = sb_history_manager.get_overdue_billing_histories(datetime.now(timezone.utc).date())
+    school_ids = [subscription.school_id for subscription in overdue_subscriptions]
+    
+    # suspend them
+    school_manager.suspend_schools(school_ids)
+
+    #TODO: send email notification

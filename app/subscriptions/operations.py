@@ -20,6 +20,9 @@ class SchoolBillingHistoryManager(BaseManager):
     def get_school_billing_history_by_subscription_expiry_date(self, school_id: int, subscription_expiry_date: str) -> SchoolBillingHistory:
         return SchoolBillingHistory.query.filter_by(school_id=school_id, subscription_end_date=subscription_expiry_date, is_deleted=False).first()
     
+    def get_overdue_billing_histories(self, date_due: str) -> List[SchoolBillingHistory]:
+        return SchoolBillingHistory.query.filter(SchoolBillingHistory.date_due >= date_due, SchoolBillingHistory.is_deleted==False).all()
+    
     def add_school_billing_history(self, school_id, amount_due, date_due, billed_on, settled_on, payment_reference, 
                                    subscription_package, subscription_start_date, subscription_end_date) -> SchoolBillingHistory:
         billing_history = SchoolBillingHistory(

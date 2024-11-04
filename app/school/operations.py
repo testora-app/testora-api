@@ -45,5 +45,9 @@ class SchoolManager(BaseManager):
     def get_schools_with_expired_subscriptions(self, subscription_expiry_date) -> List[School]:
         return School.query.filter_by(subscription_expiry_date=subscription_expiry_date, is_deleted=False).all()
     
+    def suspend_schools(self, school_ids: List[int]) -> None:
+        School.query.filter(School.id.in_(school_ids)).update({"is_suspended": True})
+        self.commit()
+    
 
 school_manager = SchoolManager()
