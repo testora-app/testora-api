@@ -48,6 +48,10 @@ class SchoolManager(BaseManager):
     def suspend_schools(self, school_ids: List[int]) -> None:
         School.query.filter(School.id.in_(school_ids)).update({"is_suspended": True})
         self.commit()
+
+    def demote_schools(self, school_ids: List[int]) -> None:
+        School.query.filter(School.id.in_(school_ids)).update({"subscription_package": SubscriptionPackages.free})
+        self.commit()
     
 
 school_manager = SchoolManager()

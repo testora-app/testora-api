@@ -46,7 +46,7 @@ def run_suspension_process() -> None:
     overdue_subscriptions = sb_history_manager.get_overdue_billing_histories(datetime.now(timezone.utc).date())
     school_ids = [subscription.school_id for subscription in overdue_subscriptions]
     
-    # suspend them
-    school_manager.suspend_schools(school_ids)
+    # demote them to free wai
+    school_manager.demote_schools(school_ids)
 
     #TODO: send email notification
