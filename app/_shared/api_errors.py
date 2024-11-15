@@ -41,6 +41,9 @@ def not_found(message='The object was not found!'):
 def unapproved_account(message='Your account has not been approved. Contact your school administrator'):
     return response_builder(419, message)
 
+def premium_only_feature(message='This feature is only available to premium users. Kindly upgrade to premium to gain access'):
+    return response_builder(420, message)
+
 class BaseError(Exception):
     '''
     Base exception for all custom API errors

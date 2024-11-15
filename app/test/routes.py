@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 from apiflask import APIBlueprint
 
 from app._shared.schemas import SuccessMessage, UserTypes, ExamModes
-from app._shared.api_errors import  success_response, bad_request, not_found
+from app._shared.api_errors import  success_response, bad_request, not_found, premium_only_feature
 from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
@@ -15,6 +15,8 @@ from app.test.services import TestService
 
 from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
+from app.school.operations import school_manager
+from app.subscriptions.constants import Features, FeatureStatus, SubscriptionLimits
 
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
@@ -118,11 +120,24 @@ def create_test(json_data):
     exam_mode = data["mode"]
     subject_id = data["subject_id"]
 
-    ## add a verfication layer to check if student takes that course
+    ## check if the school can take the subject they're requesting for
+    school = school_manager.get_school_by_id(get_current_user()["school_id"])
 
+    # get the name of the course, check if it's in the school's subscription thingy or not
+    subject = subject_manager.get_subject_by_id(subject_id)
+
+    subject_limits = SubscriptionLimits.get_limits(school.subscription_package)[Features.SubjectsAllowedForBECE]
+
+    if isinstance(subject_limits, list) and subject.short_name not in subject_limits:
+        return premium_only_feature()
+    
     # validate the mode of the exam
     if exam_mode not in ExamModes.get_valid_exam_modes():
         return bad_request(f"{exam_mode} is not in valid modes: {ExamModes.get_valid_exam_modes()}.")
+    
+    if SubscriptionLimits.get_limits(school.subscription_package)[Features.ExamMode] == FeatureStatus.DISABLED:
+        return premium_only_feature()
+    
 
     # get the student level for the particular subject
     student = student_manager.get_student_by_id(get_current_user()["user_id"])
