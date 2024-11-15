@@ -90,7 +90,9 @@ class TestManager(BaseManager):
     def get_tests_by_school_id(self, school_id) -> List[Test]:
         return Test.query.filter_by(school_id=school_id, is_completed=True).order_by(Test.created_at.desc()).all()
     
-    def get_tests_by_student_ids(self, student_ids:List[int]) -> List[Test]:
+    def get_tests_by_student_ids(self, student_ids:List[int], subject_id=None) -> List[Test]:
+        if subject_id:
+            return Test.query.filter(Test.student_id.in_(student_ids), Test.is_completed == True, Test.subject_id==subject_id).order_by(Test.created_at.desc()).all()
         return Test.query.filter(Test.student_id.in_(student_ids), Test.is_completed == True).order_by(Test.created_at.desc()).all()
     
     def get_last_test_by_student_id(self, student_id, subject_id) -> Test: 

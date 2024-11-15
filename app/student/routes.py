@@ -9,8 +9,9 @@ from app._shared.api_errors import response_builder, unauthorized_request, succe
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests, StudentQuerySchema
+from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests, StudentQuerySchema, StudentAveragesQuerySchema
 from app.student.operations import student_manager, batch_manager
+from app.student.services import transform_data_for_averages, add_batch_to_student_data, sort_results
 from app.analytics.operations import ssm_manager
 from app.subscriptions.constants import SubscriptionLimits, Features
 
@@ -167,7 +168,6 @@ def end_student_session(json_data):
             session.duration = data['duration']
             session.save()
     return success_response()
-
 
 #endregion STUDENTS
 
@@ -367,5 +367,48 @@ def bar_chart(query_data):
             subject_scored.append(subject.short_name)
 
     return success_response(data=bar_data)
+
+
+
+@student.get("/students/averages/")
+@student.input(StudentAveragesQuerySchema, location='query')
+@student.output(Responses.StudentAverageSchema, 200)
+@token_auth([UserTypes.school_admin]) #TODO: update to allow for students and staff
+def student_averages(query_data):
+    school_id = get_current_user()["school_id"] 
+    subject_name = 'All Subjects'
+
+    # fetch one or all students
+    if query_data.get('student_id', None) is not None:
+        student_data = [student_manager.get_student_by_id(query_data['student_id']).to_json(include_batch=True)]
+    else:
+        if query_data.get('batch_id', None) is not None:
+            batch_data = batch_manager.get_batch_by_id(query_data['batch_id']).to_json(include_students=True)
+            student_data = [student for student in batch_data['students']]
+            student_data = add_batch_to_student_data(student_data, batch_data['batch_name'])
+
+        else:
+            student_data = [student.to_json() for student in student_manager.get_active_students_by_school(school_id)]
+
+
+    student_ids= [student.id for student in student_data]
+    student_data = { student['id']: student for student in student_data }
+
+    students_tests = test_manager.get_tests_by_student_ids(student_ids, subject_id=query_data.get('subject_id', None))
+
+    results = transform_data_for_averages(student_data, students_tests, query_data.get('batch_name', None), query_data.get('subject_name', 'All Subjects'))
+
+
+    # apply performance filters if any
+    performance_filter = query_data.get('performance_filter', None)
+    if performance_filter:
+        results = sort_results(results, performance_filter)
+
+    # apply num limit if any
+    num_limit = query_data.get('num_limit', None)
+    if num_limit:
+        results = results[:num_limit]
+
+    return success_response(data=results)
 
 #endregion ANALYTICS

@@ -1,8 +1,9 @@
 from apiflask.schemas import Schema
 from apiflask.fields import Integer, String, Boolean, List, Nested, Date, Float, DateTime
-from apiflask.validators import Email, Length
+from apiflask.validators import Email, Length, OneOf
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
+
 
 
 class StudentRegister(BaseSchema):
@@ -85,6 +86,22 @@ class StudentQuerySchema(Schema):
     student_id = Integer(allow_none=True, required=False)
 
 
+class StudentAveragesQuerySchema(Schema):
+    student_id = Integer(allow_none=True, required=False)
+    subject_id = Integer(allow_none=True, required=False)
+    batch_id = Integer(allow_none=True, required=False)
+    num_limit = Integer(allow_none=True, required=False)
+    performance_filter = String(allow_none=True, required=False,
+                                validate=OneOf(["best", "worst"], error="Invalid value. Allowed values are 'best' or 'worst'."))
+
+
+class StudentAverageSchema(Schema):
+    student_name = String(required=True)
+    batch_name = String(required=True)
+    subject_name = String(required=True)
+    average_score = Float(required=True)
+
+
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
     EndSessionSchema = make_response_schema(EndSessionSchema, is_list=True)
@@ -99,3 +116,5 @@ class Responses:
     PieChartSchema = make_response_schema(PieChartSchema, is_list=True)
     BarChartSchema = make_response_schema(BarChartSchema, is_list=True)
     TotalTestsSchema = make_response_schema(TotalTestsSchema)
+
+    StudentAverageSchema = make_response_schema(StudentAverageSchema, is_list=True)
