@@ -12,6 +12,7 @@ from app._shared.services import check_password, generate_access_token, get_curr
 from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests, StudentQuerySchema
 from app.student.operations import student_manager, batch_manager
 from app.analytics.operations import ssm_manager
+from app.subscriptions.constants import SubscriptionLimits, Features
 
 from app.school.operations import school_manager
 from app.staff.operations import staff_manager
@@ -102,6 +103,15 @@ def login(json_data):
 @student.input(ApproveStudentSchema)
 @token_auth([UserTypes.school_admin])
 def approve_student(json_data):
+    # do a prior check here to see if there's a limit hihi
+    school_id = get_current_user()["school_id"]
+    school = school_manager.get_school_by_id(school_id)
+    student_number = len(student_manager.get_active_students_by_school(school_id))
+
+    if student_number >= SubscriptionLimits.get_limits(school.subscription_package)[Features.StudentLimit]:
+        return bad_request("You have reached your student limit!")
+
+
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
         if student:

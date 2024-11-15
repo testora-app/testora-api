@@ -8,6 +8,7 @@ from app._shared.services import check_password, generate_access_token, get_curr
 from app.admin.operations import subject_manager
 from app.staff.schemas import SchoolAdminRegister, StaffRegister, ApproveStaffSchema, GetStaffListSchema, Responses
 from app.staff.operations import staff_manager
+from app.subscriptions.constants import SubscriptionLimits, Features
 
 from app.school.operations import school_manager
 
@@ -73,6 +74,14 @@ def login(json_data):
 @staff.output(SuccessMessage)
 @token_auth([UserTypes.school_admin])
 def approve_staff(json_data):
+    school_id = get_current_user()["school_id"]
+    school = school_manager.get_school_by_id(school_id)
+
+    staff_number = len(staff_manager.get_staff_by_school(school_id, approved_only=True))
+
+    if staff_number >= SubscriptionLimits.get_limits(school.subscription_package)[Features.StaffLimit]:
+        return bad_request("You have reached your staff limit!")
+    
     for staff_id in json_data["staff_ids"]:
         staff = staff_manager.get_staff_by_id(staff_id)
         if staff:

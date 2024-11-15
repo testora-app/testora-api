@@ -1,4 +1,17 @@
 
+class Features:
+    StudentLimit = 'student_limit'
+    SubjectsAllowedForBECE = 'subjects_allowed_for_bece'
+    StaffLimit = 'staff_limit'
+    TestHistoryLimit = 'test_history_limit'
+    ExamMode = 'exam_mode'
+
+
+class FeatureStatus:
+    ENABLED = 'enabled'
+    DISABLED = 'disabled'
+    UNLIMITED = 'unlimited'
+
 class SubscriptionPackages:
     free = 'free'
     premium = 'premium'
@@ -27,3 +40,26 @@ class PackagePrices:
 
         charge -= total_discount
         return charge 
+    
+
+class SubscriptionLimits:
+    PackageLimits = {
+        SubscriptionPackages.free : {
+        Features.StudentLimit : 10,
+        Features.StaffLimit: 2,
+        Features.ExamMode: FeatureStatus.DISABLED,
+        Features.SubjectsAllowedForBECE: ['RME' , 'Computing'],
+        Features.TestHistoryLimit: 10
+        },
+        SubscriptionPackages.premium : {
+            Features.StudentLimit : FeatureStatus.UNLIMITED,
+            Features.StaffLimit: FeatureStatus.UNLIMITED,
+            Features.ExamMode: FeatureStatus.ENABLED,
+            Features.SubjectsAllowedForBECE: FeatureStatus.UNLIMITED,
+            Features.TestHistoryLimit: FeatureStatus.UNLIMITED
+        }
+    }
+    
+    @staticmethod
+    def get_limits(package):
+        return SubscriptionLimits.PackageLimits[package]
