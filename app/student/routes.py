@@ -396,7 +396,7 @@ def student_averages(query_data):
 
     students_tests = test_manager.get_tests_by_student_ids(student_ids, subject_id=query_data.get('subject_id', None))
 
-    results = transform_data_for_averages(student_data, students_tests, query_data.get('batch_name', None), query_data.get('subject_name', 'All Subjects'))
+    results = transform_data_for_averages(student_data, students_tests, subject_name=subject_name)
 
 
     # apply performance filters if any
