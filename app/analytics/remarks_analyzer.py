@@ -73,11 +73,14 @@ class RemarksAnalyzer(object):
 
     @staticmethod
     def add_remarks_to_test(new_test, old_test):
+        #NOTE: Look at the route that saves a test, we need to do things in 
+        # in compounding mode or the metadata will be overriden
         new_score = new_test.score_acquired
         old_score = old_test.score_acquired if old_test else -1
         remark = RemarksAnalyzer.determine_percentage_change(new_score, old_score) + RemarksAnalyzer.determine_remarks(new_score)
 
         meta = {}
+        meta['out_time'] = new_test.meta.get('out_time', 0)
         meta['topic_analytics'] = new_test.meta.get('topic_analytics', {})
         meta['remarks'] = remark
         new_test.meta = meta

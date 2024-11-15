@@ -164,6 +164,7 @@ class TopicAnalytics:
             ]
         }
         meta= {}
+        meta['out_time'] = test.meta.get('out_time', 0)
         meta['topic_analytics'] = topic_analytics
         test.meta = meta
         test.save()
