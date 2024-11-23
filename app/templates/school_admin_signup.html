@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            border: 1px solid #eaeaea;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .header {
+            background-color: #f4f4f4;
+            padding: 20px;
+            text-align: center;
+        }
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+        .content {
+            padding: 20px;
+        }
+        .content h1 {
+            color: #333333;
+            font-size: 20px;
+            margin-top: 0;
+        }
+        .content p {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 10px 0;
+        }
+        .highlight {
+            background-color: #f9f9f9;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 16px;
+            margin: 15px 0;
+        }
+        .button {
+            display: inline-block;
+            margin: 20px 0;
+            background-color: #0066cc;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .footer {
+            background-color: #f4f4f4;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            color: #777777;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+        </div>
+        <div class="content">
+            <h1>Your School Is All Set For Preppee</h1>
+            <p>We are thrilled to welcome <strong>{{ school_name }}</strong> to Preppee!</p>
+            <p>Your registration details are as follows:</p>
+            <div class="highlight">
+                <p><strong>Registered Email:</strong> {{ email }}</p>
+                <p><strong>Institutional Code:</strong> {{ institutional_code }}</p>
+            </div>
+            <p>Please securely distribute the code to the appropriate personnel in your school. By using this code, your teachers and students will be connected to your school's data, enabling valuable insights into student performance.</p>
+            <p>Need help navigating Preppee? <a href="{{ guide_link }}" style="color: #0066cc; text-decoration: underline;">View our online guide here</a>.</p>
+            <a href="{{ login_url }}" class="button">Get Started</a>
+            <p>If you have any questions, feel free to contact us at <a href="mailto:support@wedidtech.com" style="color: #0066cc; text-decoration: underline;">support@wedidtech.com</a>.</p>
+        </div>
+        <div class="footer">
+            <p>© {{ year }} Preppee. All Rights Reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

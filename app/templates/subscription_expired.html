@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #1E90FF;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 12px 25px;
+      background-color: #1E90FF;
+      color: #fff;
+      font-size: 16px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .cta-button:hover {
+      background-color: #0056b3;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .footer a {
+      color: #1E90FF;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+    </div>
+    <div class="content">
+      <h1>Your Preppee Premium Access Has Ended</h1>
+      <p>Dear {{ user_name }},</p>
+      <p>Thank you for choosing Preppee. We hope it’s been valuable for you. However, your premium access ends today, but your journey with us isn't over.</p>
+      <h2>What This Means For You</h2>
+      <p>Don’t worry; your school can still benefit from Preppee. Your account will automatically transition to our free plan, where you’ll retain access to:</p>
+      <ul>
+        <li>{{ core_feature_1 }}</li>
+        <li>{{ core_feature_2 }}</li>
+      </ul>
+      <p>To regain full access to all our premium features, please renew your subscription by visiting the link below:</p>
+      <p><a href="{{ renewal_link }}" class="cta-button">Renew Your Subscription</a></p>
+      <p>If you have any questions, feel free to contact our support team at <a href="mailto:support@wedidtech.com">support@wedidtech.com</a> or [phone number].</p>
+      <p>Thank you for being a valued member of the Preppee Community.</p>
+    </div>
+    <div class="footer">
+      <p>Best Regards,</p>
+      <p><strong>The Preppee Support Team</strong></p>
+    </div>
+  </div>
+</body>
+</html>
