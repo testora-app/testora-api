@@ -224,3 +224,36 @@ def mark_test(test_id, json_data):
 
 
 # endregion Tests
+@testr.get("/tests/subject-performance/")
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+def subject_performance():
+    test_performances = test_manager.get_average_test_scores()
+
+    average_scores = [
+    {"subject_id": subject_id, "average_score": round(average_score, 2)}
+    for subject_id, average_score in test_performances
+    ]
+
+    # Sort scores to identify best and worst performing subjects
+    sorted_scores = sorted(average_scores, key=lambda x: x['average_score'], reverse=True)
+
+    best_performing_subjects = sorted_scores[:1]
+    worst_performing_subjects = sorted_scores[-3:]
+
+    best_performing = [
+    {
+        "subject_id": subject["subject_id"],
+        "subject_name": subject_manager.get_subject_by_id(subject["subject_id"]).short_name,
+        "average_score": subject["average_score"]
+    } for subject in best_performing_subjects
+    ]
+
+    worst_performing = [
+        {
+            "subject_id": subject["subject_id"],
+            "subject_name": subject_manager.get_subject_by_id(subject["subject_id"]).short_name,
+            "average_score": subject["average_score"]
+        }for subject in worst_performing_subjects
+    ]
+
+    return success_response(data={"best_performing_subjects": best_performing, "worst_performing_subjects": worst_performing})

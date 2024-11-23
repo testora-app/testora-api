@@ -3,6 +3,7 @@ from app._shared.operations import BaseManager
 import json
 
 from typing import List, Dict, Union
+from sqlalchemy.sql import func
 
 
 #region Question Manager
@@ -107,6 +108,18 @@ class TestManager(BaseManager):
             q = q.filter_by(subject_id=subject_id)
 
         return q.order_by(Test.created_at.desc()).limit(limit).all()
+    
+    def get_average_test_scores(self) -> List[Dict]:
+        return (
+            Test.query
+            .filter(Test.is_completed == True)  # Filter for completed tests
+            .with_entities(
+                Test.subject_id,
+                func.avg(Test.score_acquired).label('average_score')  # Calculate average score
+            )
+            .group_by(Test.subject_id)  # Group by subject_id
+            .all()
+        )
     
     def create_test(self, student_id, subject_id, questions, total_points, question_number, school_id, total_score=100,
                     points_acquired=0, score_acquired=0, started_on=None, finished_on=None,
