@@ -225,6 +225,7 @@ def mark_test(test_id, json_data):
 
 # endregion Tests
 @testr.get("/tests/subject-performance/")
+@testr.output(Responses.SubjectPerformances, 200)
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 def subject_performance():
     test_performances = test_manager.get_average_test_scores()

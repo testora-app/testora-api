@@ -106,10 +106,20 @@ class TestQuerySchema(Schema):
     student_id = Integer(allow_none=True, required=False)
 
 
+class SubjectPerformance(Schema):
+    subject_id = Integer(allow_none=True, required=False)
+    subject_name = String(allow_none=True, required=False)
+    average_score = Decimal(allow_none=True, required=False)
+
+class SubjectPerformances(Schema):
+    best_performing_subjects = List(Nested(SubjectPerformance))
+    worst_performing_subjects = List(Nested(SubjectPerformance))
+
 
 class Responses:
     QuestionSchema = make_response_schema(QuestionSchema)
     TestSchema = make_response_schema(TestSchema)
+    SubjectPerformances = make_response_schema(SubjectPerformances)
 
 
 class Requests:
@@ -117,3 +127,4 @@ class Requests:
     EditQuestionSchema = make_response_schema(QuestionSchema)
     CreateTestSchema = make_response_schema(CreateTestSchema)
     MarkTestSchema = make_response_schema(MarkTestSchema)
+    
