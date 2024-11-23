@@ -34,7 +34,7 @@ def transform_data_for_averages(students, test_scores, subject_name='All Subject
     # Aggregate scores by student_id
     scores_by_student = defaultdict(list)
     for score in test_scores:
-        scores_by_student[score['student_id']].append(score['score'])
+        scores_by_student[score['student_id']].append(score['score_acquired'])
 
     # Compute the desired output
     result = [

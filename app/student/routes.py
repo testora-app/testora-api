@@ -376,25 +376,34 @@ def bar_chart(query_data):
 @token_auth([UserTypes.school_admin]) #TODO: update to allow for students and staff
 def student_averages(query_data):
     school_id = get_current_user()["school_id"] 
-    subject_name = 'All Subjects'
+    subject_id = query_data.get('subject_id', None)
+
+    if subject_id:
+        subject_name = subject_manager.get_subject_by_id(subject_id).short_name
+    else:
+        subject_name = "All Subjects"
 
     # fetch one or all students
     if query_data.get('student_id', None) is not None:
         student_data = [student_manager.get_student_by_id(query_data['student_id']).to_json(include_batch=True)]
     else:
         if query_data.get('batch_id', None) is not None:
-            batch_data = batch_manager.get_batch_by_id(query_data['batch_id']).to_json(include_students=True)
-            student_data = [student for student in batch_data['students']]
-            student_data = add_batch_to_student_data(student_data, batch_data['batch_name'])
-
+            batch_data = batch_manager.get_batch_by_id(query_data['batch_id'])
+            if batch_data:
+                batch_data = batch_data.to_json(include_students=True)
+                student_data = [student for student in batch_data['students']]
+                student_data = add_batch_to_student_data(student_data, batch_data['batch_name'])
+            else:
+                return bad_request(f"Batch with ID:{query_data['batch_id']} does not exist!")
         else:
             student_data = [student.to_json() for student in student_manager.get_active_students_by_school(school_id)]
 
 
-    student_ids= [student.id for student in student_data]
+    student_ids= [student['id'] for student in student_data]
     student_data = { student['id']: student for student in student_data }
 
-    students_tests = test_manager.get_tests_by_student_ids(student_ids, subject_id=query_data.get('subject_id', None))
+    students_tests = test_manager.get_tests_by_student_ids(student_ids, subject_id=subject_id)
+    students_tests = [test.to_json() for test in students_tests]
 
     results = transform_data_for_averages(student_data, students_tests, subject_name=subject_name)
 
