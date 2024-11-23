@@ -1,6 +1,7 @@
 from app._shared.operations import BaseManager
 from app.analytics.models import StudentTopicScores, StudentBestSubject, StudentSubjectRecommendation, StudentSession
 from sqlalchemy import func
+from sqlalchemy.sql import case, func as sqlfunc
 from typing import  List, Dict, Union
 
 from datetime import datetime, timedelta, timezone
@@ -101,6 +102,27 @@ class StudentSubjectRecommendationManager(BaseManager):
             )
         self.save_multiple(to_save)
         return [entity.to_json() for entity in to_save]
+    
+    def get_topic_performance(self, student_id=None, subject_id=None) -> List[Dict]:
+        query = (
+            StudentSubjectRecommendation.query
+            .with_entities(
+                StudentSubjectRecommendation.topic_id,
+                StudentSubjectRecommendation.subject_id,
+                sqlfunc.count(case((StudentSubjectRecommendation.recommendation_level == 'low', 1))).label('low_count'),
+                sqlfunc.count(case((StudentSubjectRecommendation.recommendation_level == 'moderate', 1))).label('moderate_count'),
+                sqlfunc.count(case((StudentSubjectRecommendation.recommendation_level == 'high', 1))).label('high_count')
+            )
+        )
+
+        query = query.filter(StudentSubjectRecommendation.is_archived == False)
+
+        if student_id:
+            query = query.filter_by(student_id=student_id)
+        if subject_id: 
+            query = query.filter_by(subject_id=subject_id)
+
+        return query.group_by(StudentSubjectRecommendation.topic_id, StudentSubjectRecommendation.subject_id).all()
 
 
 
