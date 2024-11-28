@@ -2,11 +2,13 @@ import jwt
 from apiflask import APIBlueprint
 from flask import jsonify, request, current_app as app
 
-from app._shared.schemas import SuccessMessage, ResetPasswordSchema, ChangePasswordSchema
+from app._shared.schemas import SuccessMessage, ResetPasswordSchema, ChangePasswordSchema, ContactUsSchema
 from app._shared.api_errors import bad_request, not_found, success_response, unauthorized_request
 from app._shared.services import generate_and_send_reset_password_email, hash_password, generate_and_send_password_changed
 from app.student.operations import student_manager
 from app.staff.operations import staff_manager
+
+from app.integrations.mailer import mailer
 
 main = APIBlueprint('main', __name__)
 
@@ -16,6 +18,21 @@ main = APIBlueprint('main', __name__)
 def index():
     return jsonify({'message': 'Hello from your friends at Testora or is it?!!!'})
 
+
+@main.post("/contact-us/")
+@main.input(ContactUsSchema)
+@main.output(SuccessMessage, 200)
+def contact_us(json_data):
+    data = json_data['data']
+
+    html = mailer.generate_email_text('support_response.html')
+
+    mailer.send_email([data['email']], "We've Received Your Email ", html, html=html)
+
+    contact_html = mailer.generate_email_text('new_contact.html', data)
+
+    mailer.send_email(['support@wedidtech.com', 'info@wedidtech.com'], "We Have A New Contact!", contact_html, html=contact_html)
+    return success_response()
 
 @main.post('/account/reset-password/')
 @main.input(ResetPasswordSchema)

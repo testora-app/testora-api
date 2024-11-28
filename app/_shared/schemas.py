@@ -54,6 +54,18 @@ ResetPasswordSchema = make_response_schema(ResetPassword)
 ChangePasswordSchema = make_response_schema(ChangePassword)
 
 
+class ContactUs(BaseSchema):
+    name = String(allow_none=False, required=True)
+    role = String(allow_none=False, required=True)
+    school_name = String(allow_none=False, required=True)
+    contact_number = String(allow_none=False, required=True)
+    email = String(allow_none=False, required=True)
+    find_out = String(allow_none=False, required=True)
+    contact_message = String(allow_none=False, required=True)
+    message = String(allow_none=False, required=True)
+
+
+ContactUsSchema = make_response_schema(ContactUs)
 
 class UserTypes:
     admin = 'super_admin'

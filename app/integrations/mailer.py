@@ -9,7 +9,7 @@ class Mailer(object):
         self.api_url = 'https://api.smtp2go.com/v3/email/send'
 
 
-    def generate_email_text(template_name, context):
+    def generate_email_text(template_name, context={}):
         return render_template(template_name, **context)
 
     def send_email(self, recipients, subject, text, sender='Preppee Support <support@wedidtech.com>', html=False):
