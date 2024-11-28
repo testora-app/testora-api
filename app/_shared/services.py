@@ -3,7 +3,6 @@ import random
 import os
 import jwt
 from flask import current_app as app, g
-from flask import render_template
 
 from globals import FRONTEND_BASE_URL
 
@@ -42,19 +41,27 @@ def generate_and_send_reset_password_email(user_id, user_type, user_email, schoo
         key=app.config['SECRET_KEY']
     )
 
-    html_body = render_template('html_reset_password.html', reset_code=reset_code, name=name)
-    text_body = render_template('text_reset_password.txt', reset_code=reset_code, name=name)
+    html_body = mailer.generate_email_text('password_reset.html', {'reset_code': reset_code, 'name': name})
+    text_body = mailer.generate_email_text('password_reset.html', {'reset_code': reset_code, 'name': name})
 
     if is_in_development_environment() or is_in_staging_environment():
         print(text_body)
 
     mailer.send_email(
         [email],
-        'Password Reset',
+        'You Requested A Password Change',
         text_body,
         html= html_body
     )
 
+
+def generate_and_send_password_changed(email, name):
+    context = {
+        'name': name
+    }
+
+    html = mailer.generate_email_text('password_changed.html', context)
+    mailer.send_email([email], "Your  Password Has Been  Successfully Changed", html, html=html)
 
 def generate_access_token(user_id, user_type, user_email, school_id=None, permissions=None, is_school_suspended=False, school_package='free'):
     payload_data = {
@@ -113,3 +120,5 @@ def get_current_user():
         # no user data has been attached to g yet. This means no user has been authenticated for this session
         raise AuthenticationFailedError()
     return user_data
+
+

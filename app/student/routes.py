@@ -22,6 +22,8 @@ from app.test.operations import test_manager
 from app.notifications.operations import recipient_manager
 
 from app.integrations.pusher import pusher
+from app.integrations.mailer import mailer
+
 
 student = APIBlueprint('student', __name__)
 
@@ -38,7 +40,16 @@ def student_register(json_data: Dict):
     school = school_manager.get_school_by_code(json_data.pop("school_code"))
 
     if school:
-        student_manager.create_student(**json_data, school_id=school.id)
+        new_student = student_manager.create_student(**json_data, school_id=school.id)
+        context = {
+            'student_name': new_student.first_name,
+            'school_name': school.name,
+            "guide_link": "https://testora-web.onrender.com",
+            "login_url": "https://testora-web.onrender.com",
+            "phone_number": "+233240126470"
+        }
+        html = mailer.generate_email_text('student_signup.html', context)
+        mailer.send_email([new_student.email], "You're In- Let's Get You Exam Ready With Preppee", html, html=html)
         return success_response()
     return bad_request("Invalid School Code")
 

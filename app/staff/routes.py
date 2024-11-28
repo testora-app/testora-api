@@ -1,4 +1,5 @@
 from apiflask import APIBlueprint
+from datetime import datetime
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema
 from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found, bad_request, unapproved_account
@@ -9,6 +10,8 @@ from app.admin.operations import subject_manager
 from app.staff.schemas import SchoolAdminRegister, StaffRegister, ApproveStaffSchema, GetStaffListSchema, Responses
 from app.staff.operations import staff_manager
 from app.subscriptions.constants import SubscriptionLimits, Features
+from app.integrations.mailer import mailer
+
 
 from app.school.operations import school_manager
 
@@ -26,7 +29,21 @@ def register_school_admin(json_data):
     new_school = school_manager.create_school(**json_data["school"])
 
     json_data["school_admin"].pop('school_code')
-    staff_manager.create_staff(**json_data["school_admin"], is_admin=True, school_id=new_school.id, is_approved=True)
+    school_admin = staff_manager.create_staff(**json_data["school_admin"], is_admin=True, school_id=new_school.id, is_approved=True)
+    context = {
+        "school_name": new_school.name,
+        "institutional_code": new_school.code,
+        "email": school_admin.email,
+        "year": datetime.now().year,
+        "guide_link": "https://testora-web.onrender.com",
+        "login_url": "https://testora-web.onrender.com",
+        "phone_number": "+233240126470"
+    }
+    html_body = mailer.generate_email_text('school_admin_signup.html', context)
+
+    mailer.send_email([school_admin.email], 
+                      "Your School Is All Set For Preppee - Here's Your Access Code", 
+                      html_body, html=html_body)
     return success_response()
 
 
@@ -41,7 +58,18 @@ def register_staff(json_data):
     code = json_data.pop("school_code")
     school = school_manager.get_school_by_code(code)
     if school:
-        staff_manager.create_staff(**json_data, is_admin=False, school_id=school.id)
+        teacher = staff_manager.create_staff(**json_data, is_admin=False, school_id=school.id)
+        
+        context = {
+            "school_name": school.name,
+            "teacher_name": teacher.first_name,
+            "guide_link": "https://testora-web.onrender.com",
+            "login_url": "https://testora-web.onrender.com",
+            "phone_number": "+233240126470"
+        }
+
+        html = mailer.generate_email_text('staff_signup.html', context)
+        mailer.send_email([teacher.email], "You're In!  Welcome to Your Preppee Classroom ", html, html=html)
         return success_response()
     return unauthorized_request("Invalid School Code")
 

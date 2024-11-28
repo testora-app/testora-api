@@ -4,7 +4,7 @@ from flask import jsonify, request, current_app as app
 
 from app._shared.schemas import SuccessMessage, ResetPasswordSchema, ChangePasswordSchema
 from app._shared.api_errors import bad_request, not_found, success_response, unauthorized_request
-from app._shared.services import generate_and_send_reset_password_email, hash_password
+from app._shared.services import generate_and_send_reset_password_email, hash_password, generate_and_send_password_changed
 from app.student.operations import student_manager
 from app.staff.operations import staff_manager
 
@@ -65,7 +65,7 @@ def change_password(json_data):
     if user:
         user.password_hash = hash_password(data['new_password'])
         user.save()
-
+        generate_and_send_password_changed(user.email, user.first_name)
     return success_response()
     
 
