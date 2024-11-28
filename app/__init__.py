@@ -82,7 +82,7 @@ def create_app():
         app.config.from_object('config.DevelopmentConfig')
 
     #initialize the extensions
-    cors.init_app(app)
+    cors.init_app(app, resources={r"/*": {"origins": "*"}})
     db.init_app(app)
     migrate.init_app(app, db)
 
