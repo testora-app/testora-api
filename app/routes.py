@@ -31,7 +31,7 @@ def contact_us(json_data):
 
     contact_html = mailer.generate_email_text('new_contact.html', data)
 
-    mailer.send_email(['support@wedidtech.com', 'info@wedidtech.com'], "We Have A New Contact!", contact_html, html=contact_html)
+    mailer.send_email(['support@wedidtech.com', 'info@wedidtech.com', 'sg.apawu@gmail.com', 'joseph3241@gmail.com'], "We Have A New Contact!", contact_html, html=contact_html)
     return success_response()
 
 @main.post('/account/reset-password/')
