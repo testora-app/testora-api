@@ -25,7 +25,7 @@ def index():
 def contact_us(json_data):
     data = json_data['data']
 
-    html = mailer.generate_email_text('support_response.html')
+    html = mailer.generate_email_text('support_response.html', context={'name': data['name']})
 
     mailer.send_email([data['email']], "We've Received Your Email ", html, html=html)
 
