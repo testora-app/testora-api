@@ -13,7 +13,7 @@ class RecipientManager(BaseManager):
             phone_number=phone_number
         )
 
-        self.save(new_recipient)
+        self.save(new_recipient, upsert=True)
         return new_recipient
 
     def get_recipients(self) -> List[Recipient]:

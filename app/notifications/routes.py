@@ -20,7 +20,7 @@ notification = APIBlueprint('notifications', __name__)
 @token_auth([UserTypes.staff, UserTypes.student, UserTypes.school_admin])
 def get_notifications():
     user_email = get_current_user()['user_email']
-    recipient = recipient_manager.get_recipient_by_email(user_email)
+    recipient = recipient_manager.get_recipient_by_email(user_email, get_current_user()['user_type'])
 
     if recipient:
         notifications = notification_manager.get_recipient_notifications(recipient.id)

@@ -5,8 +5,11 @@ from typing import List
 
 class BaseManager(object):
     @staticmethod
-    def save(entity: BaseModel):
-        db.session.add(entity)
+    def save(entity: BaseModel, upsert=False):
+        if upsert:
+            db.session.merge(entity)
+        else:
+            db.session.add(entity)
         db.session.commit()
 
     @staticmethod
