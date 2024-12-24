@@ -2,6 +2,7 @@ import traceback
 from logging import error as log_error
 from logging import info as log_info
 from logging.config import dictConfig
+from logging import getLogger, basicConfig
 
 from apiflask import APIFlask, HTTPError
 from apiflask.schemas import validation_error_detail_schema
@@ -43,22 +44,28 @@ def create_super_admin_if_not_exists():
         admin_manager.create_admin(admin_username, admin_email, admin_password, is_super_admin=True)
 
 def create_app():
-    dictConfig({
-        'version': 1,
-        'formatters': {'default': {
-            'format': '[%(asctime)s] %(levelname)s : %(message)s',
-        }},
-        'handlers': {'wsgi': {
-            'class': 'logging.StreamHandler',
-            'stream': 'ext://flask.logging.wsgi_errors_stream',
-            'formatter': 'default'
-        }},
-        'root': {
-            'level': 'INFO',
-            'handlers': ['wsgi']
-        }
-    })
 
+    # dictConfig({
+    #     'version': 1,
+    #     'formatters': {'default': {
+    #         'format': '[%(asctime)s] %(levelname)s : %(message)s',
+    #     }},
+    #     'handlers': {'wsgi': {
+    #         'class': 'logging.StreamHandler',
+    #         'stream': 'ext://flask.logging.wsgi_errors_stream',
+    #         'formatter': 'default'
+    #     }},
+    #     'root': {
+    #         'level': 'INFO',
+    #         'handlers': ['wsgi']
+    #     }
+    # })
+
+    # setting the logging level
+    basicConfig()
+    getLogger().setLevel('INFO')
+
+    
     # schema for validation error response
     validation_error_schema = {
         "properties": {
