@@ -101,12 +101,12 @@ class PushNotificationsService:
         Returns:
             bool -- True if the message was sent successfully
         """
-        print("\n")
-        print("*" * 40)
-        print("OneSignal PUSH Notification")
+        logging.info("\n")
+        logging.info("*" * 40)
+        logging.info("OneSignal PUSH Notification")
         logging.info(json.dumps(notification_data, indent=4))
-        print("*" * 40)
-        print("\n")
+        logging.info("*" * 40)
+        logging.info("\n")
 
         # if not is_in_development_environment():
         try:

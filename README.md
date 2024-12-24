@@ -21,7 +21,7 @@ To run the app and check if everything is working correctly
 
 
 Start the server with this command
-`python run.py runserver`
+`python run.py`
 
 Start the shell with the app context with
 

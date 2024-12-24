@@ -384,7 +384,7 @@ def bar_chart(query_data):
 @student.get("/students/averages/")
 @student.input(StudentAveragesQuerySchema, location='query')
 @student.output(Responses.StudentAverageSchema, 200)
-@token_auth([UserTypes.school_admin]) #TODO: update to allow for students and staff
+@token_auth([UserTypes.school_admin, UserTypes.staff, UserTypes.student]) #TODO: update to allow for students and staff
 def student_averages(query_data):
     school_id = get_current_user()["school_id"] 
     subject_id = query_data.get('subject_id', None)

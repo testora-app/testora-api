@@ -1,4 +1,5 @@
 from apiflask import APIBlueprint
+from flask import request
 
 from app._shared.schemas import SuccessMessage, UserTypes
 from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found
@@ -7,6 +8,8 @@ from app._shared.services import get_current_user
 
 from app.notifications.schemas import RecipientSchema, RecipientListSchema, NotificationSchema, NotificationListSchema, DeviceIDSchema
 from app.notifications.operations import notification_manager, recipient_manager
+
+from app.integrations.pusher import pusher
 
 
 notification = APIBlueprint('notifications', __name__)
@@ -50,3 +53,30 @@ def add_device_ids(json_data):
         None
     )
     return success_response(data=new_device.to_json(), status_code=201)
+
+
+@notification.get('/test-notifications/')
+def test_notifications():
+    if request.args.get('all'):
+        recipients = recipient_manager.get_recipients()
+    else:
+        staff = recipient_manager.get_recipient_by_email('naruto@testora.online', UserTypes.staff)
+        student = recipient_manager.get_recipient_by_email('bortuo@testora.online', UserTypes.student)
+
+        recipients = [staff, student]
+
+    for recipient in recipients:
+        if recipient:
+            pusher.notify_devices(
+                request.args.get('title', 'Test Notification'),
+                request.args.get('message','This is a test notification'),
+                recipient.device_ids,
+            )
+
+            notification_manager.create_notification(
+                request.args.get('title', 'Test Notification'),
+                request.args.get('message','This is a test notification'),
+                'test',
+                recipient.id
+            )
+    return success_response()
