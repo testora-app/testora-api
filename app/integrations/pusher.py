@@ -34,29 +34,28 @@ class PushNotificationsService:
 
         if not device_ids:
             logging.info(f'no device ids were provided')
-            pass
+            return
 
         for device_id in device_ids:
-            one_signal_client = self.__init_client()
-
             valid_device_ids = []
             for device_id in device_ids:
                 try:
                     uuid.UUID(device_id)
                     valid_device_ids.append(device_id)
                 except ValueError:
-                    pass
+                    logging.warning(f'Invalid device ID: {device_id}')
 
-            notification_data = {
-                "contents": {"en": content},
-                "headings": {"en": title},
-                "include_player_ids": valid_device_ids,
-            }
+        notification_data = {
+            "contents": {"en": content},
+            "headings": {"en": title},
+            "include_player_ids": valid_device_ids,
+        }
 
-            if metadata:
-                notification_data["data"] = metadata
+        if metadata:
+            notification_data["data"] = metadata
 
-            self.__send_notification(one_signal_client, notification_data)
+        one_signal_client = self.__init_client()
+        self.__send_notification(one_signal_client, notification_data)
 
     def notify_topic_subscribers(
         self, title, content, topics, metadata=None, sender=None
@@ -87,6 +86,7 @@ class PushNotificationsService:
                 "contents": {"en": content},
                 "headings": {"en": title},
                 "included_segments": topic_names,
+                "app_id": ONE_SIGNAL_APP_ID
             }
 
             if metadata:
@@ -111,9 +111,17 @@ class PushNotificationsService:
         # if not is_in_development_environment():
         try:
             response = one_signal_client.send_notification(notification_data)
-            logging.info("OneSignal Response: %s", response)
+            print("OneSignal Response: %s", response.body)
+            print(response.http_response)
+            print(response.status_code)
+            logging.info("OneSignal Response: %s", response.body)
         except ApiException as e:
+            print("Failed to send OneSignal push notification: %s", e.message)
             logging.error("Failed to send OneSignal push notification: %s", e.message)
+            return False
+        except Exception as e:
+            print("Failed to send OneSignal push notification: %s", e)
+            logging.error("Failed to send OneSignal push notification: %s", e)
             return False
 
         return True
