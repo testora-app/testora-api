@@ -36,6 +36,9 @@ def add_device_ids(json_data):
     curr_user = get_current_user()
     data = json_data['data']
 
+    title = 'Welcome To Preppee!'
+    content = 'You have subscribed to our notifications system. You can now receive notifications from us.'
+
     recipient = recipient_manager.get_recipient_by_email(curr_user['user_email'], curr_user['user_type'])
     if recipient:
         new_device = []
@@ -44,6 +47,8 @@ def add_device_ids(json_data):
         
         recipient.device_ids = new_device
         recipient.save()
+
+        pusher.notify_devices(title, content, recipient.device_ids)
         return success_response(data=recipient.to_json(), status_code=201)
     
     new_device = recipient_manager.create_recipient(
@@ -52,6 +57,7 @@ def add_device_ids(json_data):
         curr_user['user_email'],
         None
     )
+    pusher.notify_devices(title, content, new_device.device_ids)
     return success_response(data=new_device.to_json(), status_code=201)
 
 
