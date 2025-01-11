@@ -38,13 +38,13 @@ def add_device_ids(json_data):
 
     recipient = recipient_manager.get_recipient_by_email(curr_user['user_email'], curr_user['user_type'])
     if recipient:
-        devices = recipient.device_ids
+        new_device = []
         for id in data['device_ids']:
-            devices.append(id)
+            new_device.append(id)
         
-        recipient.device_ids = devices
+        recipient.device_ids = new_device
         recipient.save()
-
+        return success_response(data=recipient.to_json(), status_code=201)
     
     new_device = recipient_manager.create_recipient(
         curr_user['user_type'],
