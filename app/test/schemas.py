@@ -75,6 +75,11 @@ class SubmittedQuestionsSchema(BaseSchema):
     correct_answer = String(allow_none=True, required=False)
 
 
+class FlagQuestionSchema(Schema):
+    question_id = Integer(required=True)
+    flag_reason = String(required=True)
+
+
 class TestSchema(BaseSchema):
     id = Integer(dump_only=True)
     student_id = Integer(required=True)
@@ -127,4 +132,5 @@ class Requests:
     EditQuestionSchema = make_response_schema(QuestionSchema)
     CreateTestSchema = make_response_schema(CreateTestSchema)
     MarkTestSchema = make_response_schema(MarkTestSchema)
+    FlagQuestionSchema = make_response_schema(FlagQuestionSchema)
     

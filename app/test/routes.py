@@ -76,6 +76,29 @@ def delete_questions(question_id):
         question.delete()
     return success_response()
 
+
+@testr.post("/flag-questions/")
+@testr.input(Requests.FlagQuestionSchema)
+@testr.output(SuccessMessage)
+def flag_questions(json_data):
+    data = json_data["data"]
+    question_ids = [q["question_id"] for q in data]
+
+    objects = {
+        q["question_id"]: q["flag_reason"] for q in data
+    }
+
+    questions = question_manager.get_question_by_ids(question_ids)
+
+    for question in questions:
+        question.is_flagged = True
+        question.flag_reason = objects[question.id]
+        question.save()
+
+    return success_response()
+
+
+
 #endregion questions
 
 # region Tests

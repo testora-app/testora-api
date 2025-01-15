@@ -12,6 +12,8 @@ class Question(BaseModel):
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
     points = db.Column(db.Integer, nullable=True, default=None)
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
+    is_flagged = db.Column(db.Boolean, default=False, nullable=False)
+    flag_reason = db.Column(db.Text, nullable=True)
     
     sub_questions = db.relationship('SubQuestion', backref='parent_question', lazy=True)
     topic = db.relationship('Topic', back_populates='questions')
@@ -25,7 +27,9 @@ class Question(BaseModel):
             'points': self.points,
             'school_id': self.school_id,
             'sub_questions': [sub_question.to_json(include_correct_answer=include_correct_answer) for sub_question in self.sub_questions],
-            'level': self.topic.level
+            'level': self.topic.level,
+            'is_flagged': self.is_flagged,
+            'flag_reason': self.flag_reason
         }
 
         if include_correct_answer:

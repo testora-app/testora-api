@@ -18,7 +18,7 @@ class QuestionManager(BaseManager):
     def get_question_by_id(self, question_id) -> Question:
         return Question.query.filter_by(id=question_id).first()
     
-    def get_question_by_ids(self, question_ids) -> Question:
+    def get_question_by_ids(self, question_ids) -> List[Question]:
         return Question.query.filter(Question.id.in_(question_ids)).all()
     
     def get_subquestion_by_parent(self, question_id) -> List[SubQuestion]:
