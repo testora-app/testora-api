@@ -132,5 +132,5 @@ class Requests:
     EditQuestionSchema = make_response_schema(QuestionSchema)
     CreateTestSchema = make_response_schema(CreateTestSchema)
     MarkTestSchema = make_response_schema(MarkTestSchema)
-    FlagQuestionSchema = make_response_schema(FlagQuestionSchema)
+    FlagQuestionSchema = make_response_schema(FlagQuestionSchema, is_list=True)
     
