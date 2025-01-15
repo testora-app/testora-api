@@ -21,6 +21,8 @@ from app.subscriptions.constants import Features, FeatureStatus, SubscriptionLim
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
 
+import json
+
 
 testr = APIBlueprint('testr', __name__)
 
@@ -92,7 +94,7 @@ def flag_questions(json_data):
 
     for question in questions:
         question.is_flagged = True
-        question.flag_reason = objects[question.id]
+        question.flag_reason = json.dumps(objects[question.id])
         question.save()
     return success_response()
 

@@ -77,7 +77,7 @@ class SubmittedQuestionsSchema(BaseSchema):
 
 class FlagQuestionSchema(Schema):
     question_id = Integer(required=True)
-    flag_reason = String(required=True)
+    flag_reason = List(String(), required=True)
 
 
 class TestSchema(BaseSchema):
