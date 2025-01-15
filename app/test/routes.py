@@ -94,7 +94,6 @@ def flag_questions(json_data):
         question.is_flagged = True
         question.flag_reason = objects[question.id]
         question.save()
-
     return success_response()
 
 

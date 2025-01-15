@@ -12,7 +12,7 @@ class Question(BaseModel):
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
     points = db.Column(db.Integer, nullable=True, default=None)
     school_id = db.Column(db.Integer, db.ForeignKey('school.id'), nullable=True)
-    is_flagged = db.Column(db.Boolean, default=False, nullable=False)
+    is_flagged = db.Column(db.Boolean, default=False, nullable=True)
     flag_reason = db.Column(db.Text, nullable=True)
     
     sub_questions = db.relationship('SubQuestion', backref='parent_question', lazy=True)
