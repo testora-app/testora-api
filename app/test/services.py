@@ -74,7 +74,7 @@ class TestService:
             level_questions = (
                 db.session.query(Question)
                 .join(Topic, Question.topic_id == Topic.id)
-                .filter(Topic.level == level, Topic.subject_id == subject_id, Question.is_deleted==False)
+                .filter(Topic.level == level, Topic.subject_id == subject_id, Question.is_deleted==False, Question.is_flagged==False)
                 .order_by(db.func.random())
                 .limit(count)
                 .all()
