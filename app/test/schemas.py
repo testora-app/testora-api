@@ -11,6 +11,8 @@ class SubQuestionSchema(BaseSchema):
     correct_answer = String(required=True)
     possible_answers = List(String(), required=True)
     points = Integer(required=True)
+    flag_reason = String(allow_none=True, required=False)
+    is_flagged = Boolean(allow_none=True, required=False)
 
 
 class QuestionSchema(BaseSchema):
@@ -21,9 +23,9 @@ class QuestionSchema(BaseSchema):
     topic_id = Integer(required=True)
     points = Integer(required=True, allow_none=True)
     school_id = Integer(allow_none=True)
+    flag_reason = String(allow_none=True, required=False)
+    is_flagged = Boolean(allow_none=True, required=False)
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
-
-
 
 
 class QuestionListSchema(BaseSchema):
@@ -40,6 +42,8 @@ class TestQuestionsSchema(BaseSchema):
     possible_answers = List(String(), required=True)
     topic_id = Integer(required=True)
     school_id = Integer(allow_none=True)
+    flag_reason = String(allow_none=True, required=False)
+    is_flagged = Boolean(allow_none=True, required=False)
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
 
 
@@ -69,6 +73,8 @@ class SubmittedQuestionsSchema(BaseSchema):
     meta = Dict(allow_none=True, required=False)
     opened = Boolean(allow_none=True, required=False)
     options = Dict(allow_none=True, required=False)
+    flag_reason = String(allow_none=True, required=False)
+    is_flagged = Boolean(allow_none=True, required=False)
     sub_questions = List(Nested(SubmittedSubQuestionSchema), required=False, allow_none=True)
 
     #TODO: REMOVETHIS
