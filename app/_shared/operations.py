@@ -18,7 +18,11 @@ class BaseManager(object):
             for entity in entities:
                 db.session.merge(entity)
         else:
-            db.session.add_all(entities)
+            for entity in entities:
+                try:
+                    db.session.add(entity)
+                except:
+                    continue
         db.session.commit()
 
     @staticmethod
