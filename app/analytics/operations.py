@@ -37,7 +37,7 @@ class StudentTopicScoresManager(BaseManager):
                     **entity
                 )
             )
-        self.save_multiple(to_save, upsert=upsert)
+        self.save_multiple(to_save)
         return [entity.to_json() for entity in to_save]
     
     def get_averages_for_topics_by_subject_id(self, student_id, subject_id) -> List[StudentTopicScores]:
