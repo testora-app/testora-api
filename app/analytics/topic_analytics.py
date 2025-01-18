@@ -72,7 +72,7 @@ class TopicAnalytics:
                     'score_acquired': score
                 }
             )
-        return sts_manager.insert_multiple_student_topic_scores(scores_to_save)
+        return sts_manager.insert_multiple_student_topic_scores(scores_to_save, upsert=True)
     
 
     @staticmethod

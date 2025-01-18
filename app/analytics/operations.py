@@ -24,12 +24,12 @@ class StudentTopicScoresManager(BaseManager):
         )
 
         try:
-            self.save(new_score)
+            self.save(new_score, upsert=True)
         except Exception as e:
             print(e)
         return new_score
     
-    def insert_multiple_student_topic_scores(self, entities: List[Dict]):
+    def insert_multiple_student_topic_scores(self, entities: List[Dict], upsert=False):
         to_save: List[StudentTopicScores] = []
         for entity in entities:
             to_save.append(
@@ -37,7 +37,7 @@ class StudentTopicScoresManager(BaseManager):
                     **entity
                 )
             )
-        self.save_multiple(to_save)
+        self.save_multiple(to_save, upsert=upsert)
         return [entity.to_json() for entity in to_save]
     
     def get_averages_for_topics_by_subject_id(self, student_id, subject_id) -> List[StudentTopicScores]:

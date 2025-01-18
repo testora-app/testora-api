@@ -194,6 +194,9 @@ def create_test(json_data):
         school_id=student.school_id
     )
 
+    test_obj = new_test.to_json()
+    test_obj["duration"] = 300
+
     return success_response(data=new_test.to_json(), status_code=201)
 
 

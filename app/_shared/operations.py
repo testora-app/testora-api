@@ -13,8 +13,12 @@ class BaseManager(object):
         db.session.commit()
 
     @staticmethod
-    def save_multiple(entities: List[BaseModel]):
-        db.session.add_all(entities)
+    def save_multiple(entities: List[BaseModel], upsert=True):
+        if upsert:
+            for entity in entities:
+                db.session.merge(entity)
+        else:
+            db.session.add_all(entities)
         db.session.commit()
 
     @staticmethod

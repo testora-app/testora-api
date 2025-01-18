@@ -103,6 +103,7 @@ class TestSchema(BaseSchema):
     is_completed = Boolean(required=True)
     school_id = Integer(allow_none=True)
     created_at = DateTime(required=True)
+    duration = Integer(required=True, allow_none=False)
 
 
 class TestListSchema(BaseSchema):
