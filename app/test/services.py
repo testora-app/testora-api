@@ -61,6 +61,11 @@ class TestService:
         if main_correct:
             return (question['level'] + sub_questions_correct)  * question_multiplier[question['level']]
         return sub_questions_correct * question['level']
+    
+
+    @staticmethod
+    def determine_test_duration_in_seconds(max_duration, question_length) -> int:
+        return max_duration // question_length if max_duration else 300
 
     #NOTE: this already takes up sub questions
     @staticmethod

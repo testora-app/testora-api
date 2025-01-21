@@ -32,6 +32,7 @@ class Subject(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     curriculum = db.Column(db.String(20), nullable=False) # bece, igsce
+    max_duration = db.Column(db.Integer, nullable=True, default=300) # in seconds
 
     staff = db.relationship('Staff', secondary=staff_subjects, back_populates='subjects')
 
@@ -43,7 +44,8 @@ class Subject(BaseModel):
             'id': self.id,
             'name': self.name,
             'short_name': self.short_name,
-            'curriculum': self.curriculum
+            'curriculum': self.curriculum,
+            'max_duration': self.max_duration
         }
     
 
