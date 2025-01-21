@@ -99,7 +99,7 @@ class TopicAnalytics:
             # Check for minimum value
             if value < min_value:
                 min_value = value
-                min_keys = [key]
+                min_keys = {key}
             elif value == min_value:
                 min_keys.add(key)
 

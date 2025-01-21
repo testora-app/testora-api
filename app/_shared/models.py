@@ -16,3 +16,6 @@ class BaseModel(db.Model):
     def delete(self):
         self.is_deleted = 1
         db.session.commit()
+
+    def to_json(self):
+        pass

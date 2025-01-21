@@ -15,7 +15,7 @@ class StudentTopicScores(BaseModel):
     score_acquired = db.Column(db.Numeric(5,2))
 
     __table_args__ = (
-        UniqueConstraint('student_id', 'test_id', name='uq_topic_test_score'),
+        UniqueConstraint('student_id', 'test_id', 'topic_id', name='uq_topic_test_score'),
     )
     
     def to_json(self):

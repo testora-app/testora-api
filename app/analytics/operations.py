@@ -5,6 +5,7 @@ from sqlalchemy.sql import case, func as sqlfunc
 from typing import  List, Dict, Union
 
 from datetime import datetime, timedelta, timezone
+from logging import info as log_info
 
 
 class StudentTopicScoresManager(BaseManager):
@@ -13,6 +14,9 @@ class StudentTopicScoresManager(BaseManager):
         if topic_id:
             return StudentTopicScores.query.filter_by(student_id=student_id, topic_id=topic_id).all()
         return StudentTopicScores.query.filter_by(student_id=student_id).all()
+    
+    def select_student_topic_score_sepcific(self, student_id, subject_id, test_id, topic_id) -> StudentTopicScores:
+        return StudentTopicScores.query.filter_by(student_id=student_id, subject_id=subject_id, test_id=test_id, topic_id=topic_id).first()
     
     def insert_student_topic_score(self, student_id, subject_id, test_id, topic_id, score_acquired) -> StudentTopicScores:
         new_score = StudentTopicScores(
@@ -23,22 +27,22 @@ class StudentTopicScoresManager(BaseManager):
             score_acquired=score_acquired
         )
 
-        try:
-            self.save(new_score, upsert=True)
-        except Exception as e:
-            print(e)
+        self.save(new_score, upsert=True)
         return new_score
     
     def insert_multiple_student_topic_scores(self, entities: List[Dict], upsert=False):
-        to_save: List[StudentTopicScores] = []
-        for entity in entities:
-            to_save.append(
-                StudentTopicScores(
-                    **entity
-                )
-            )
+        to_check = [StudentTopicScores(**entity) for entity in entities] 
+        to_save = []
+        for entity in to_check:
+            topic_score = self.select_student_topic_score_sepcific(entity.student_id, entity.subject_id, entity.test_id, entity.topic_id)
+            if not topic_score:
+                to_save.append(entity)
+            else:
+                topic_score.score_acquired = entity.score_acquired
+                self.save(topic_score)
+
         self.save_multiple(to_save)
-        return [entity.to_json() for entity in to_save]
+        return [entity.to_json() for entity in to_save + to_check]
     
     def get_averages_for_topics_by_subject_id(self, student_id, subject_id) -> List[StudentTopicScores]:
         return \

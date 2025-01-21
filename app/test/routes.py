@@ -1,6 +1,7 @@
 from typing import Dict
 from datetime import datetime, timezone
 from apiflask import APIBlueprint
+from logging import info as log_info
 
 from app._shared.schemas import SuccessMessage, UserTypes, ExamModes
 from app._shared.api_errors import  success_response, bad_request, not_found, premium_only_feature
@@ -212,7 +213,7 @@ def mark_test(test_id, json_data):
     if not test:
         return not_found(message="The requested Test does not exist!")
 
-    if test and not test.is_completed:
+    if test :
         test.is_completed = True
         #TODO: Determine the level that'll deduct points
 
@@ -238,14 +239,14 @@ def mark_test(test_id, json_data):
         SubjectLevelManager.check_and_level_up(stu_sub_level=stusublvl)
         
 
-        print('Running analytics...')
+        log_info('Running analytics...')
         # adding topic_scores
         # TODO: probably pass the test metadata here and then handle saving it here when they all return their responses
         TopicAnalytics.save_topic_scores_for_student(student_id, test.subject_id, test.id, marked_test['topic_scores'])
         TopicAnalytics.test_level_topic_analytics(test.id, marked_test['topic_scores'])
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
         RemarksAnalyzer.add_remarks_to_test(test, last_test)
-        print('Analytics ran successfully...')
+        log_info('Analytics ran successfully...')
 
     return success_response(data=test.to_json())
 

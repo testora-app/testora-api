@@ -63,7 +63,7 @@ def create_app():
 
     # setting the logging level
     basicConfig()
-    getLogger().setLevel('INFO')
+    getLogger().setLevel('DEBUG')
 
     
     # schema for validation error response

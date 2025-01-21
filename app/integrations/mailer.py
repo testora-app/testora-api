@@ -2,6 +2,7 @@ import requests
 from globals import SMTP2GO_API_KEY
 
 from flask import render_template
+from logging import error as log_error
 
 class Mailer(object):
     def __init__(self):
@@ -38,7 +39,9 @@ class Mailer(object):
         }
 
         response = requests.post(self.api_url, headers=headers, json=payload)
+        log_error(response.json())
         response.raise_for_status()  # Raise an exception for HTTP errors
+        
         return response.json()
     
 
