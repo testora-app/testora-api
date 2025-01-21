@@ -2,12 +2,25 @@ from apiflask import APIBlueprint
 from datetime import datetime
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema
-from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found, bad_request, unapproved_account
+from app._shared.api_errors import (
+    response_builder,
+    unauthorized_request,
+    success_response,
+    not_found,
+    bad_request,
+    unapproved_account,
+)
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
 from app.admin.operations import subject_manager
-from app.staff.schemas import SchoolAdminRegister, StaffRegister, ApproveStaffSchema, GetStaffListSchema, Responses
+from app.staff.schemas import (
+    SchoolAdminRegister,
+    StaffRegister,
+    ApproveStaffSchema,
+    GetStaffListSchema,
+    Responses,
+)
 from app.staff.operations import staff_manager
 from app.subscriptions.constants import SubscriptionLimits, Features
 from app.integrations.mailer import mailer
@@ -15,21 +28,28 @@ from app.integrations.mailer import mailer
 
 from app.school.operations import school_manager
 
-staff = APIBlueprint('staff', __name__)
+staff = APIBlueprint("staff", __name__)
 
 
 @staff.post("/school-admin/register/")
 @staff.input(SchoolAdminRegister)
 @staff.output(SuccessMessage, 201)
 def register_school_admin(json_data):
-    existing = staff_manager.get_staff_by_email(json_data["school_admin"]["email"].strip())
+    existing = staff_manager.get_staff_by_email(
+        json_data["school_admin"]["email"].strip()
+    )
     if existing:
         return bad_request("User with the email already exists!")
 
     new_school = school_manager.create_school(**json_data["school"])
 
-    json_data["school_admin"].pop('school_code')
-    school_admin = staff_manager.create_staff(**json_data["school_admin"], is_admin=True, school_id=new_school.id, is_approved=True)
+    json_data["school_admin"].pop("school_code")
+    school_admin = staff_manager.create_staff(
+        **json_data["school_admin"],
+        is_admin=True,
+        school_id=new_school.id,
+        is_approved=True
+    )
     context = {
         "school_name": new_school.name,
         "institutional_code": new_school.code,
@@ -37,13 +57,16 @@ def register_school_admin(json_data):
         "year": datetime.now().year,
         "guide_link": "https://testora-web.onrender.com",
         "login_url": "https://testora-web.onrender.com",
-        "phone_number": "+233240126470"
+        "phone_number": "+233240126470",
     }
-    html_body = mailer.generate_email_text('school_admin_signup.html', context)
+    html_body = mailer.generate_email_text("school_admin_signup.html", context)
 
-    mailer.send_email([school_admin.email], 
-                      "Your School Is All Set For Preppee - Here's Your Access Code", 
-                      html_body, html=html_body)
+    mailer.send_email(
+        [school_admin.email],
+        "Your School Is All Set For Preppee - Here's Your Access Code",
+        html_body,
+        html=html_body,
+    )
     return success_response()
 
 
@@ -58,18 +81,25 @@ def register_staff(json_data):
     code = json_data.pop("school_code")
     school = school_manager.get_school_by_code(code)
     if school:
-        teacher = staff_manager.create_staff(**json_data, is_admin=False, school_id=school.id)
-        
+        teacher = staff_manager.create_staff(
+            **json_data, is_admin=False, school_id=school.id
+        )
+
         context = {
             "school_name": school.name,
             "teacher_name": teacher.first_name,
             "guide_link": "https://testora-web.onrender.com",
             "login_url": "https://testora-web.onrender.com",
-            "phone_number": "+233240126470"
+            "phone_number": "+233240126470",
         }
 
-        html = mailer.generate_email_text('staff_signup.html', context)
-        mailer.send_email([teacher.email], "You're In!  Welcome to Your Preppee Classroom ", html, html=html)
+        html = mailer.generate_email_text("staff_signup.html", context)
+        mailer.send_email(
+            [teacher.email],
+            "You're In!  Welcome to Your Preppee Classroom ",
+            html,
+            html=html,
+        )
         return success_response()
     return unauthorized_request("Invalid School Code")
 
@@ -86,14 +116,27 @@ def login(json_data):
         school = school_manager.get_school_by_id(staff.school_id)
 
         user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
-        access_token = generate_access_token(staff.id, user_type, staff.email, school_id=staff.school_id, 
-                                             is_school_suspended=school.is_suspended, school_package=school.subscription_package)
-        
+        access_token = generate_access_token(
+            staff.id,
+            user_type,
+            staff.email,
+            school_id=staff.school_id,
+            is_school_suspended=school.is_suspended,
+            school_package=school.subscription_package,
+        )
+
         school_data = school.to_json()
         if user_type == UserTypes.staff:
-            school_data.pop('code')
-        return success_response(data={'user': staff.to_json(), 'auth_token': access_token, 'school': school_data, 'user_type': user_type})
-    
+            school_data.pop("code")
+        return success_response(
+            data={
+                "user": staff.to_json(),
+                "auth_token": access_token,
+                "school": school_data,
+                "user_type": user_type,
+            }
+        )
+
     return unauthorized_request("Invalid Login")
 
 
@@ -107,9 +150,14 @@ def approve_staff(json_data):
 
     staff_number = len(staff_manager.get_staff_by_school(school_id, approved_only=True))
 
-    if staff_number >= SubscriptionLimits.get_limits(school.subscription_package)[Features.StaffLimit]:
+    if (
+        staff_number
+        >= SubscriptionLimits.get_limits(school.subscription_package)[
+            Features.StaffLimit
+        ]
+    ):
         return bad_request("You have reached your staff limit!")
-    
+
     for staff_id in json_data["staff_ids"]:
         staff = staff_manager.get_staff_by_id(staff_id)
         if staff:
@@ -142,7 +190,7 @@ def get_staff_list():
 
 @staff.get("/staff/<int:staff_id>/")
 @staff.output(Responses.StaffResponseSchema)
-@token_auth(['*'])
+@token_auth(["*"])
 def get_staff_details(staff_id):
     staff = staff_manager.get_staff_by_id(staff_id)
     if staff:
@@ -157,19 +205,21 @@ def get_staff_details(staff_id):
 def edit_staff_details(staff_id, json_data):
     staff = staff_manager.get_staff_by_id(staff_id)
 
-    data = json_data['data']
-    subjects = data.pop('subjects', [])
+    data = json_data["data"]
+    subjects = data.pop("subjects", [])
 
     if staff:
-        staff.first_name = data.get('first_name', staff.first_name)
-        staff.surname = data.get('surname', staff.surname)
-        staff.email = data.get('email', staff.email)
-        staff.other_names = data.get('other_names', staff.other_names)
-        staff.is_admin = data.get('is_admin', staff.is_admin)
+        staff.first_name = data.get("first_name", staff.first_name)
+        staff.surname = data.get("surname", staff.surname)
+        staff.email = data.get("email", staff.email)
+        staff.other_names = data.get("other_names", staff.other_names)
+        staff.is_admin = data.get("is_admin", staff.is_admin)
         staff.save()
 
         if subjects:
-            staff.subjects = [subject_manager.get_subject_by_id(subject_id) for subject_id in subjects]
+            staff.subjects = [
+                subject_manager.get_subject_by_id(subject_id) for subject_id in subjects
+            ]
         staff.save()
 
         return success_response(data=staff.to_json(include_batches=True))

@@ -4,7 +4,8 @@ from apiflask import PaginationSchema
 
 from app._shared.schemas import BaseSchema, CurriculumTypes, make_response_schema
 
-#region Admin Schema
+
+# region Admin Schema
 class AddAdminSchema(BaseSchema):
     email = String(required=True, allow_none=False)
     password = String(required=True, allow_none=False)
@@ -20,8 +21,6 @@ class AdminSchema(BaseSchema):
     is_super_admin = Boolean(required=True, allow_none=False)
 
 
-
-
 class AdminListSchema(BaseSchema):
     data = List(Nested(AdminSchema))
 
@@ -30,25 +29,31 @@ class VerifiedAdminSchema(BaseSchema):
     user = Nested(AdminSchema)
     auth_token = String(required=True, allow_none=False)
 
-#endregion Admin Schema
+
+# endregion Admin Schema
 
 
-#region Subject/Topic Schema
+# region Subject/Topic Schema
 class SubjectSchema(BaseSchema):
     id = Integer(required=True)
     name = String(required=True, allow_none=False)
     short_name = String(required=False, allow_none=True)
-    curriculum = String(required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)])
+    curriculum = String(
+        required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
+    )
 
 
 class AddSubjectSchema(BaseSchema):
     name = String(required=True, allow_none=False)
     short_name = String(required=False, allow_none=True)
-    curriculum = String(required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)])
+    curriculum = String(
+        required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
+    )
 
 
 class AddSubjectSchemaPost(BaseSchema):
     data = List(Nested(AddSubjectSchema), min=1)
+
 
 class SubjectSchemaList(BaseSchema):
     data = List(Nested(SubjectSchema))
@@ -75,9 +80,9 @@ class AddTopicSchema(BaseSchema):
 class AddTopicSchemaPost(BaseSchema):
     data = List(Nested(AddTopicSchema), min=1)
 
+
 class TopicSchemaList(BaseSchema):
     data = List(Nested(TopicSchema))
-
 
 
 class ThemeSchema(BaseSchema):
@@ -96,12 +101,15 @@ class AddThemeSchema(BaseSchema):
 class AddThemeSchemaPost(BaseSchema):
     data = List(Nested(AddThemeSchema), min=1)
 
+
 class ThemeSchemaList(BaseSchema):
     data = List(Nested(ThemeSchema))
 
-#endregion Subject/Topic Schema
 
-#region Nested Responses
+# endregion Subject/Topic Schema
+
+
+# region Nested Responses
 class Responses:
     AdminResponseSchema = make_response_schema(AddAdminSchema)
     VerifiedAdminResponse = make_response_schema(VerifiedAdminSchema)
@@ -115,6 +123,6 @@ class Requests:
     EditTopicSchema = make_response_schema(TopicSchema)
     EditThemeSchema = make_response_schema(ThemeSchema)
     AddAdminSchema = make_response_schema(AddAdminSchema)
-    
 
-#endregion 
+
+# endregion

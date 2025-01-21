@@ -30,7 +30,8 @@ class SchoolBillingPostSchema(BaseSchema):
 
 class Responses:
     SingleSchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema)
-    SchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema, is_list=True)
+    SchoolBillingHistorySchema = make_response_schema(
+        SchoolBillingHistorySchema, is_list=True
+    )
     PaymentInitSchema = make_response_schema(PaymentInitSchema)
-    SchoolBillingPostSchema = make_response_schema(SchoolBillingPostSchema) 
-
+    SchoolBillingPostSchema = make_response_schema(SchoolBillingPostSchema)

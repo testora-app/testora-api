@@ -18,8 +18,10 @@ class SchoolSchema(BaseSchema):
 class AddSchoolSchema(BaseSchema):
     data = Nested(SchoolSchema, exclude=("id", "code"))
 
+
 class GetSchoolSchema(BaseSchema):
     data = Nested(SchoolSchema)
+
 
 class GetSchoolListSchema(BaseSchema):
     data = List(Nested(SchoolSchema))

@@ -4,6 +4,7 @@ from app._shared.models import BaseModel
 from typing import List
 from logging import info as log_info
 
+
 class BaseManager(object):
     @staticmethod
     def save(entity: BaseModel, upsert=False):
@@ -23,9 +24,7 @@ class BaseManager(object):
             log_info(entities)
             db.session.rollback()
             raise e
-        
+
     @staticmethod
     def commit():
         db.session.commit()
-
-    

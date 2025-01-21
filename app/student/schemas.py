@@ -1,9 +1,17 @@
 from apiflask.schemas import Schema
-from apiflask.fields import Integer, String, Boolean, List, Nested, Date, Float, DateTime
+from apiflask.fields import (
+    Integer,
+    String,
+    Boolean,
+    List,
+    Nested,
+    Date,
+    Float,
+    DateTime,
+)
 from apiflask.validators import Email, Length, OneOf
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
-
 
 
 class StudentRegister(BaseSchema):
@@ -79,8 +87,10 @@ class LineChartSchema(BaseSchema):
     subject = String()
     scores = List(Float())
 
+
 class TotalTestsSchema(BaseSchema):
     tests_completed = Integer()
+
 
 class StudentQuerySchema(Schema):
     student_id = Integer(allow_none=True, required=False)
@@ -91,8 +101,14 @@ class StudentAveragesQuerySchema(Schema):
     subject_id = Integer(allow_none=True, required=False)
     batch_id = Integer(allow_none=True, required=False)
     num_limit = Integer(allow_none=True, required=False)
-    performance_filter = String(allow_none=True, required=False,
-                                validate=OneOf(["best", "worst"], error="Invalid value. Allowed values are 'best' or 'worst'."))
+    performance_filter = String(
+        allow_none=True,
+        required=False,
+        validate=OneOf(
+            ["best", "worst"],
+            error="Invalid value. Allowed values are 'best' or 'worst'.",
+        ),
+    )
 
 
 class StudentAverageSchema(Schema):

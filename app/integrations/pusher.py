@@ -18,7 +18,9 @@ from typing import List
 class PushNotificationsService:
     """Wraps functionality for sending push notifications"""
 
-    def notify_devices(self, title, content, device_ids: List, metadata=None, sender=None):
+    def notify_devices(
+        self, title, content, device_ids: List, metadata=None, sender=None
+    ):
         """
         Send push notification via OneSignal API.
 
@@ -33,7 +35,7 @@ class PushNotificationsService:
         """
 
         if not device_ids:
-            logging.info(f'no device ids were provided')
+            logging.info(f"no device ids were provided")
             return
 
         for device_id in device_ids:
@@ -43,7 +45,7 @@ class PushNotificationsService:
                     uuid.UUID(device_id)
                     valid_device_ids.append(device_id)
                 except ValueError:
-                    logging.warning(f'Invalid device ID: {device_id}')
+                    logging.warning(f"Invalid device ID: {device_id}")
 
         notification_data = {
             "contents": {"en": content},
@@ -86,7 +88,7 @@ class PushNotificationsService:
                 "contents": {"en": content},
                 "headings": {"en": title},
                 "included_segments": topic_names,
-                "app_id": ONE_SIGNAL_APP_ID
+                "app_id": ONE_SIGNAL_APP_ID,
             }
 
             if metadata:
@@ -134,10 +136,7 @@ class PushNotificationsService:
         :param category: ['STAFF' | 'GUARDIAN']
         :return: OneSignal client
         """
-        client = Client(
-            app_id=ONE_SIGNAL_APP_ID,
-            rest_api_key=ONE_SIGNAL_REST_API_KEY
-        )
+        client = Client(app_id=ONE_SIGNAL_APP_ID, rest_api_key=ONE_SIGNAL_REST_API_KEY)
         return client
 
 

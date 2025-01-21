@@ -5,13 +5,33 @@ from apiflask import APIBlueprint
 from flask import render_template
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
-from app._shared.api_errors import response_builder, unauthorized_request, success_response, not_found, bad_request, unapproved_account
+from app._shared.api_errors import (
+    response_builder,
+    unauthorized_request,
+    success_response,
+    not_found,
+    bad_request,
+    unapproved_account,
+)
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.student.schemas import StudentRegister, ApproveStudentSchema, GetStudentListSchema, BatchListSchema, Responses, Requests, StudentQuerySchema, StudentAveragesQuerySchema
+from app.student.schemas import (
+    StudentRegister,
+    ApproveStudentSchema,
+    GetStudentListSchema,
+    BatchListSchema,
+    Responses,
+    Requests,
+    StudentQuerySchema,
+    StudentAveragesQuerySchema,
+)
 from app.student.operations import student_manager, batch_manager
-from app.student.services import transform_data_for_averages, add_batch_to_student_data, sort_results
+from app.student.services import (
+    transform_data_for_averages,
+    add_batch_to_student_data,
+    sort_results,
+)
 from app.analytics.operations import ssm_manager
 from app.subscriptions.constants import SubscriptionLimits, Features
 
@@ -25,10 +45,10 @@ from app.integrations.pusher import pusher
 from app.integrations.mailer import mailer
 
 
-student = APIBlueprint('student', __name__)
+student = APIBlueprint("student", __name__)
 
 
-#region STUDENTS
+# region STUDENTS
 @student.post("/students/register/")
 @student.input(StudentRegister)
 @student.output(SuccessMessage, 201)
@@ -36,20 +56,25 @@ def student_register(json_data: Dict):
     existing_student = student_manager.get_student_by_email(json_data["email"].strip())
     if existing_student:
         return bad_request("Student with this email already exists!")
-    
+
     school = school_manager.get_school_by_code(json_data.pop("school_code"))
 
     if school:
         new_student = student_manager.create_student(**json_data, school_id=school.id)
         context = {
-            'student_name': new_student.first_name,
-            'school_name': school.name,
+            "student_name": new_student.first_name,
+            "school_name": school.name,
             "guide_link": "https://testora-web.onrender.com",
             "login_url": "https://testora-web.onrender.com",
-            "phone_number": "+233240126470"
+            "phone_number": "+233240126470",
         }
-        html = mailer.generate_email_text('student_signup.html', context)
-        mailer.send_email([new_student.email], "You're In- Let's Get You Exam Ready With Preppee", html, html=html)
+        html = mailer.generate_email_text("student_signup.html", context)
+        mailer.send_email(
+            [new_student.email],
+            "You're In- Let's Get You Exam Ready With Preppee",
+            html,
+            html=html,
+        )
         return success_response()
     return bad_request("Invalid School Code")
 
@@ -66,32 +91,51 @@ def login(json_data):
     if student and check_password(student.password_hash, json_data["password"]):
         school = school_manager.get_school_by_id(student.school_id)
 
-        access_token = generate_access_token(student.id, UserTypes.student, student.email, student.school_id, 
-                                             is_school_suspended=school.is_suspended, school_package=school.subscription_package)
-        
+        access_token = generate_access_token(
+            student.id,
+            UserTypes.student,
+            student.email,
+            student.school_id,
+            is_school_suspended=school.is_suspended,
+            school_package=school.subscription_package,
+        )
+
         school_data = school.to_json()
         school_data.pop("code")
 
-        recipient = recipient_manager.get_recipient_by_email(student.email, UserTypes.student)
+        recipient = recipient_manager.get_recipient_by_email(
+            student.email, UserTypes.student
+        )
         # handle streak
         current_login_time = datetime.now(timezone.utc)
         if student.last_login:
             # Calculate the difference in days between the current login and the last login
-            days_difference = (current_login_time.date() - student.last_login.date()).days
-            
+            days_difference = (
+                current_login_time.date() - student.last_login.date()
+            ).days
+
             if days_difference == 1:
                 # Logged in on the next day
                 student.current_streak += 1
-                student.highest_streak = max(student.current_streak, student.highest_streak)
-                
-                
+                student.highest_streak = max(
+                    student.current_streak, student.highest_streak
+                )
+
                 if recipient:
-                    pusher.notify_devices(title='Streak Increased', content=render_template('streak_added.txt'),  device_ids=recipient.device_ids)
+                    pusher.notify_devices(
+                        title="Streak Increased",
+                        content=render_template("streak_added.txt"),
+                        device_ids=recipient.device_ids,
+                    )
             else:
                 # More than one day has passed, or same day login, reset streak
                 student.current_streak = 1
                 if recipient:
-                    pusher.notify_devices(title='Streak Lost', content=render_template('streak_lost.txt'),  device_ids=recipient.device_ids)
+                    pusher.notify_devices(
+                        title="Streak Lost",
+                        content=render_template("streak_lost.txt"),
+                        device_ids=recipient.device_ids,
+                    )
         else:
             # First time login
             student.current_streak = 1
@@ -101,11 +145,20 @@ def login(json_data):
         student.save()
 
         # handle session
-        current_session = ssm_manager.select_student_session_history(student.id, current_login_time.date())
+        current_session = ssm_manager.select_student_session_history(
+            student.id, current_login_time.date()
+        )
         if not current_session:
             ssm_manager.add_new_student_session(student.id, current_login_time.date())
 
-        return success_response(data={'user': student.to_json(), 'auth_token': access_token, 'school': school_data, 'user_type': UserTypes.student})
+        return success_response(
+            data={
+                "user": student.to_json(),
+                "auth_token": access_token,
+                "school": school_data,
+                "user_type": UserTypes.student,
+            }
+        )
 
     return unauthorized_request("Invalid Login")
 
@@ -120,9 +173,13 @@ def approve_student(json_data):
     school = school_manager.get_school_by_id(school_id)
     student_number = len(student_manager.get_active_students_by_school(school_id))
 
-    if student_number >= SubscriptionLimits.get_limits(school.subscription_package)[Features.StudentLimit]:
+    if (
+        student_number
+        >= SubscriptionLimits.get_limits(school.subscription_package)[
+            Features.StudentLimit
+        ]
+    ):
         return bad_request("You have reached your student limit!")
-
 
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
@@ -172,18 +229,21 @@ def end_student_session(json_data):
     json_data = json_data["data"]
 
     for data in json_data:
-        session = ssm_manager.select_student_session_history(data['student_id'], date=data['date'])
-        
+        session = ssm_manager.select_student_session_history(
+            data["student_id"], date=data["date"]
+        )
+
         if session:
-            session.end_time = session.created_at + timedelta(seconds=data['duration'])
-            session.duration = data['duration']
+            session.end_time = session.created_at + timedelta(seconds=data["duration"])
+            session.duration = data["duration"]
             session.save()
     return success_response()
 
-#endregion STUDENTS
+
+# endregion STUDENTS
 
 
-#region BATCH
+# region BATCH
 @student.post("/batches/")
 @student.input(Requests.CreateBatchSchema)
 @student.output(Responses.BatchSchema)
@@ -191,16 +251,19 @@ def end_student_session(json_data):
 def create_batch(json_data):
     school_id = get_current_user()["school_id"]
     data = json_data["data"]
-    staff_ids = data.pop('staff')
+    staff_ids = data.pop("staff")
 
-    if data['curriculum'] not in CurriculumTypes.get_curriculum_types():
-        raise bad_request(f"{data['curriculum']} is not a valid curriculum: {CurriculumTypes.get_curriculum_types()}")
-    
+    if data["curriculum"] not in CurriculumTypes.get_curriculum_types():
+        raise bad_request(
+            f"{data['curriculum']} is not a valid curriculum: {CurriculumTypes.get_curriculum_types()}"
+        )
+
     new_batch = batch_manager.create_batch(**data, school_id=school_id)
     if staff_ids:
-        new_batch.staff = [staff_id for staff_id in staff_manager.get_staff_by_ids(staff_ids)]
+        new_batch.staff = [
+            staff_id for staff_id in staff_manager.get_staff_by_ids(staff_ids)
+        ]
     return success_response(data=new_batch.to_json())
-
 
 
 @student.put("/batches/<int:batch_id>/")
@@ -213,12 +276,13 @@ def edit_batch(batch_id, json_data):
     if batch:
         batch.batch_name = data["batch_name"]
         batch.curriculum = data["curriculum"]
-        batch.students = [student for student in student_manager.get_students_by_ids(data["students"])]
+        batch.students = [
+            student for student in student_manager.get_students_by_ids(data["students"])
+        ]
         batch.staff = [staff for staff in staff_manager.get_staff_by_ids(data["staff"])]
         batch.save()
-    
-    return success_response(data=batch.to_json())
 
+    return success_response(data=batch.to_json())
 
 
 @student.get("/batches/")
@@ -232,33 +296,36 @@ def get_batches():
     else:
         batches = batch_manager.get_all_batches()
 
-    batches = [batch.to_json(include_students=True) for batch in batches] if batches else []
+    batches = (
+        [batch.to_json(include_students=True) for batch in batches] if batches else []
+    )
     return success_response(data=batches)
 
-#endregion BATCH
+
+# endregion BATCH
 
 
-#region ANALYTICS
-@student.get('/students/dashboard/total-tests/')
-@student.input(StudentQuerySchema, location='query')
+# region ANALYTICS
+@student.get("/students/dashboard/total-tests/")
+@student.input(StudentQuerySchema, location="query")
 @student.output(Responses.TotalTestsSchema)
 @token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def total_tests(query_data):
     current_user = get_current_user()
 
-    if current_user['user_type'] == UserTypes.student:
-        student_id = current_user['user_id']
+    if current_user["user_type"] == UserTypes.student:
+        student_id = current_user["user_id"]
     else:
         try:
-            student_id = query_data['student_id']
+            student_id = query_data["student_id"]
         except:
             return bad_request("'student_id' is required query param")
     total_completed = test_manager.get_tests_by_student_ids([student_id])
-    return success_response(data={'tests_completed': len(total_completed)})
+    return success_response(data={"tests_completed": len(total_completed)})
 
 
-@student.get('/students/dashboard/line-chart/')
-@student.input(StudentQuerySchema, location='query')
+@student.get("/students/dashboard/line-chart/")
+@student.input(StudentQuerySchema, location="query")
 @student.output(Responses.LineChartSchema)
 @token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def line_chart(query_data):
@@ -268,18 +335,18 @@ def line_chart(query_data):
     """
     current_user = get_current_user()
 
-    if current_user['user_type'] == UserTypes.student:
-        student_id = current_user['user_id']
+    if current_user["user_type"] == UserTypes.student:
+        student_id = current_user["user_id"]
     else:
         try:
-            student_id = query_data['student_id']
+            student_id = query_data["student_id"]
         except:
             return bad_request("'student_id' is required query param")
 
     line_data = []
 
     student = student_manager.get_student_by_id(student_id)
-    subjects= []
+    subjects = []
 
     for batch in student.batches:
         subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
@@ -287,38 +354,41 @@ def line_chart(query_data):
     subject_scored = []
     for subject in subjects:
         if subject.short_name not in subject_scored:
-            recent_tests = test_manager.get_student_recent_tests(student.id, subject_id=subject.id, limit=7)
+            recent_tests = test_manager.get_student_recent_tests(
+                student.id, subject_id=subject.id, limit=7
+            )
             data = {"subject": subject.short_name}
             count = 0
             for test in recent_tests:
-                count +=1
+                count += 1
                 data["score" + str(count)] = test.score_acquired
-            
+
             line_data.append(data)
 
             subject_scored.append(subject.short_name)
 
     return success_response(data=line_data)
 
-@student.get('/students/dashboard/pie-chart/')
-@student.input(StudentQuerySchema, location='query')
+
+@student.get("/students/dashboard/pie-chart/")
+@student.input(StudentQuerySchema, location="query")
 @student.output(Responses.PieChartSchema)
 @token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def pie_chart(query_data):
     current_user = get_current_user()
 
-    if current_user['user_type'] == UserTypes.student:
-        student_id = current_user['user_id']
+    if current_user["user_type"] == UserTypes.student:
+        student_id = current_user["user_id"]
     else:
         try:
-            student_id = query_data['student_id']
+            student_id = query_data["student_id"]
         except:
             return bad_request("'student_id' is required query param")
 
     pie_data = []
 
     student = student_manager.get_student_by_id(student_id)
-    subjects= []
+    subjects = []
 
     for batch in student.batches:
         subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
@@ -326,37 +396,49 @@ def pie_chart(query_data):
     subject_scored = []
     for subject in subjects:
         if subject.short_name not in subject_scored:
-            tests_taken = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
-            percent_average = round(sum([test.score_acquired for test in tests_taken])/len(tests_taken), 1) if len(tests_taken) > 0 else 0.0
+            tests_taken = test_manager.get_tests_by_subject_and_student(
+                student.id, subject.id
+            )
+            percent_average = (
+                round(
+                    sum([test.score_acquired for test in tests_taken])
+                    / len(tests_taken),
+                    1,
+                )
+                if len(tests_taken) > 0
+                else 0.0
+            )
 
-            pie_data.append({
-                "subject": subject.short_name,
-                "tests_taken": len(tests_taken),
-                "percent_average": percent_average
-            })
+            pie_data.append(
+                {
+                    "subject": subject.short_name,
+                    "tests_taken": len(tests_taken),
+                    "percent_average": percent_average,
+                }
+            )
             subject_scored.append(subject.short_name)
     return success_response(data=pie_data)
 
 
-@student.get('/students/dashboard/bar-chart/')
-@student.input(StudentQuerySchema, location='query')
+@student.get("/students/dashboard/bar-chart/")
+@student.input(StudentQuerySchema, location="query")
 @student.output(Responses.BarChartSchema)
 @token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def bar_chart(query_data):
     current_user = get_current_user()
 
-    if current_user['user_type'] == UserTypes.student:
-        student_id = current_user['user_id']
+    if current_user["user_type"] == UserTypes.student:
+        student_id = current_user["user_id"]
     else:
         try:
-            student_id = query_data['student_id']
+            student_id = query_data["student_id"]
         except:
             return bad_request("'student_id' is required query param")
 
     bar_data = []
 
     student = student_manager.get_student_by_id(student_id)
-    subjects= []
+    subjects = []
 
     for batch in student.batches:
         subjects += subject_manager.get_subject_by_curriculum(batch.curriculum)
@@ -365,29 +447,38 @@ def bar_chart(query_data):
 
     for subject in subjects:
         if subject.short_name not in subject_scored:
-            tests = test_manager.get_tests_by_subject_and_student(student.id, subject.id)
+            tests = test_manager.get_tests_by_subject_and_student(
+                student.id, subject.id
+            )
 
             new_score = tests[0].score_acquired if len(tests) > 0 else 0.0
-            average_score = round(sum([test.score_acquired for test in tests])/len(tests), 1) if len(tests) > 0 else 0.0
+            average_score = (
+                round(sum([test.score_acquired for test in tests]) / len(tests), 1)
+                if len(tests) > 0
+                else 0.0
+            )
 
-            bar_data.append({
-                "subject": subject.short_name,
-                "new_score": new_score,
-                "average_score": average_score
-            })
+            bar_data.append(
+                {
+                    "subject": subject.short_name,
+                    "new_score": new_score,
+                    "average_score": average_score,
+                }
+            )
             subject_scored.append(subject.short_name)
 
     return success_response(data=bar_data)
 
 
-
 @student.get("/students/averages/")
-@student.input(StudentAveragesQuerySchema, location='query')
+@student.input(StudentAveragesQuerySchema, location="query")
 @student.output(Responses.StudentAverageSchema, 200)
-@token_auth([UserTypes.school_admin, UserTypes.staff, UserTypes.student]) #TODO: update to allow for students and staff
+@token_auth(
+    [UserTypes.school_admin, UserTypes.staff, UserTypes.student]
+)  # TODO: update to allow for students and staff
 def student_averages(query_data):
-    school_id = get_current_user()["school_id"] 
-    subject_id = query_data.get('subject_id', None)
+    school_id = get_current_user()["school_id"]
+    subject_id = query_data.get("subject_id", None)
 
     if subject_id:
         subject_name = subject_manager.get_subject_by_id(subject_id).short_name
@@ -395,40 +486,54 @@ def student_averages(query_data):
         subject_name = "All Subjects"
 
     # fetch one or all students
-    if query_data.get('student_id', None) is not None:
-        student_data = [student_manager.get_student_by_id(query_data['student_id']).to_json(include_batch=True)]
+    if query_data.get("student_id", None) is not None:
+        student_data = [
+            student_manager.get_student_by_id(query_data["student_id"]).to_json(
+                include_batch=True
+            )
+        ]
     else:
-        if query_data.get('batch_id', None) is not None:
-            batch_data = batch_manager.get_batch_by_id(query_data['batch_id'])
+        if query_data.get("batch_id", None) is not None:
+            batch_data = batch_manager.get_batch_by_id(query_data["batch_id"])
             if batch_data:
                 batch_data = batch_data.to_json(include_students=True)
-                student_data = [student for student in batch_data['students']]
-                student_data = add_batch_to_student_data(student_data, batch_data['batch_name'])
+                student_data = [student for student in batch_data["students"]]
+                student_data = add_batch_to_student_data(
+                    student_data, batch_data["batch_name"]
+                )
             else:
-                return bad_request(f"Batch with ID:{query_data['batch_id']} does not exist!")
+                return bad_request(
+                    f"Batch with ID:{query_data['batch_id']} does not exist!"
+                )
         else:
-            student_data = [student.to_json() for student in student_manager.get_active_students_by_school(school_id)]
+            student_data = [
+                student.to_json()
+                for student in student_manager.get_active_students_by_school(school_id)
+            ]
 
+    student_ids = [student["id"] for student in student_data]
+    student_data = {student["id"]: student for student in student_data}
 
-    student_ids= [student['id'] for student in student_data]
-    student_data = { student['id']: student for student in student_data }
-
-    students_tests = test_manager.get_tests_by_student_ids(student_ids, subject_id=subject_id)
+    students_tests = test_manager.get_tests_by_student_ids(
+        student_ids, subject_id=subject_id
+    )
     students_tests = [test.to_json() for test in students_tests]
 
-    results = transform_data_for_averages(student_data, students_tests, subject_name=subject_name)
-
+    results = transform_data_for_averages(
+        student_data, students_tests, subject_name=subject_name
+    )
 
     # apply performance filters if any
-    performance_filter = query_data.get('performance_filter', None)
+    performance_filter = query_data.get("performance_filter", None)
     if performance_filter:
         results = sort_results(results, performance_filter)
 
     # apply num limit if any
-    num_limit = query_data.get('num_limit', None)
+    num_limit = query_data.get("num_limit", None)
     if num_limit:
         results = results[:num_limit]
 
     return success_response(data=results)
 
-#endregion ANALYTICS
+
+# endregion ANALYTICS

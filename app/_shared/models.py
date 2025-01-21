@@ -8,7 +8,11 @@ class BaseModel(db.Model):
 
     is_deleted = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
-    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    updated_at = db.Column(
+        db.DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+    )
 
     def save(self):
         db.session.commit()

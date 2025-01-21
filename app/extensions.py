@@ -1,6 +1,6 @@
-'''
+"""
 This is a where all the extensions in use a placed
-'''
+"""
 
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy

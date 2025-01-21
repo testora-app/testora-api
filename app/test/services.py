@@ -9,25 +9,23 @@ from app.test.models import Question
 
 from typing import List, Dict
 
+
 class TestService:
 
     @staticmethod
     def is_mode_accessible(exam_mode, student_level):
         # the exam_mode and the level that it is accessible at
-        levels = {
-            ExamModes.level: 0,
-            ExamModes.exam: 6
-        }
+        levels = {ExamModes.level: 0, ExamModes.exam: 6}
         # if the student level is greater than or equal to the desired exam mode, allow them else nooo!
         return student_level >= levels[exam_mode]
-    
+
     @classmethod
     def __generate_level_counts(cls, total_questions, max_level) -> Dict[int, int]:
-        '''
+        """
         The code snippet efficiently distributes a specified number of questions (total_questions) randomly across different levels (1 to max_level)
         This approach ensures that questions are evenly distributed across levels based on the specified parameters.
         It returns a dictionary where each key represents a level, and the value represents the number of questions generated for that level.
-        '''
+        """
         levels = list(range(1, max_level + 1))
         level_counts = defaultdict(int)
 
@@ -38,7 +36,6 @@ class TestService:
             remaining_questions -= 1
 
         return dict(level_counts)
-    
 
     @staticmethod
     def determine_total_test_points(questions) -> int:
@@ -48,67 +45,80 @@ class TestService:
         total_points = 0
 
         for question in questions:
-            number_of_sub = len(question['sub_questions'])
-            total_points += (question['level'] * (1 + number_of_sub)) * question_multiplier[question['level']]
+            number_of_sub = len(question["sub_questions"])
+            total_points += (
+                question["level"] * (1 + number_of_sub)
+            ) * question_multiplier[question["level"]]
 
         return round(total_points, 2)
-    
 
     @staticmethod
-    def determine_question_points(question, main_correct=True, sub_questions_correct=0) -> int:
+    def determine_question_points(
+        question, main_correct=True, sub_questions_correct=0
+    ) -> int:
         question_multiplier = QuestionPoints.get_question_level_points()
 
         if main_correct:
-            return (question['level'] + sub_questions_correct)  * question_multiplier[question['level']]
-        return sub_questions_correct * question['level']
-    
+            return (question["level"] + sub_questions_correct) * question_multiplier[
+                question["level"]
+            ]
+        return sub_questions_correct * question["level"]
 
     @staticmethod
     def determine_test_duration_in_seconds(max_duration, question_length) -> int:
         return max_duration // question_length if max_duration else 300
 
-    #NOTE: this already takes up sub questions
+    # NOTE: this already takes up sub questions
     @staticmethod
     def generate_random_questions_by_level(subject_id, student_level) -> List[Question]:
-        total_questions = QuestionsNumberLimiter.get_question_limit_for_level(student_level)
-        level_counts = TestService.__generate_level_counts(total_questions, student_level) # max level is student_level
+        total_questions = QuestionsNumberLimiter.get_question_limit_for_level(
+            student_level
+        )
+        level_counts = TestService.__generate_level_counts(
+            total_questions, student_level
+        )  # max level is student_level
 
         questions = []
-        
+
         for level, count in level_counts.items():
             level_questions = (
                 db.session.query(Question)
                 .join(Topic, Question.topic_id == Topic.id)
-                .filter(Topic.level == level, Topic.subject_id == subject_id, Question.is_deleted==False, Question.is_flagged!= True)
+                .filter(
+                    Topic.level == level,
+                    Topic.subject_id == subject_id,
+                    Question.is_deleted == False,
+                    Question.is_flagged != True,
+                )
                 .order_by(db.func.random())
                 .limit(count)
                 .all()
             )
             questions.extend(level_questions)
-        
+
         # Shuffle the final list to ensure overall randomness
         random.shuffle(questions)
         return questions
-    
+
     @staticmethod
     def mark_test(questions, deduct_points=False):
         # we need a way to determine if we're deducting points lost or half points
 
         points_acquired = 0
-        score_acquired = 0 # correct/total * 100
+        score_acquired = 0  # correct/total * 100
 
         # recommended topic, recommendation_level = high
         # a break down of topics and the percentage acquired
         total_number = len(questions)
 
-        topic_scores = {question['topic_id'] : 0 for question in questions}
+        topic_scores = {question["topic_id"]: 0 for question in questions}
 
         for question in questions:
             # get the question
-            q = question_manager.get_question_by_id(question['id'])
+            q = question_manager.get_question_by_id(question["id"])
             main_question_correct = False
             no_subs_correct = 0
-            if q.correct_answer == question['student_answer']:
+            if q.correct_answer == question["student_answer"]:
                 main_question_correct = True
                 score_acquired += 1
                 topic_scores[q.topic_id] += 1
@@ -116,39 +126,43 @@ class TestService:
                 if deduct_points:
                     points_acquired -= TestService.determine_question_points(question)
 
-
             # mark sub questions if any
-            if len(question['sub_questions']) > 0:
-                total_number += len(question['sub_questions'])
-                for sub in question['sub_questions']:
-                    s = question_manager.get_sub_question_by_id(sub['id'])
-                    sub['correct_answer'] = s.correct_answer
-                    if s.correct_answer == sub['student_answer']:
+            if len(question["sub_questions"]) > 0:
+                total_number += len(question["sub_questions"])
+                for sub in question["sub_questions"]:
+                    s = question_manager.get_sub_question_by_id(sub["id"])
+                    sub["correct_answer"] = s.correct_answer
+                    if s.correct_answer == sub["student_answer"]:
                         no_subs_correct += 1
                         topic_scores[q.topic_id] += 1
                     else:
                         if deduct_points:
                             points_acquired -= 1
 
-
-            points = round(TestService.determine_question_points(question, main_correct=main_question_correct, \
-                                                                 sub_questions_correct=no_subs_correct), 2)
+            points = round(
+                TestService.determine_question_points(
+                    question,
+                    main_correct=main_question_correct,
+                    sub_questions_correct=no_subs_correct,
+                ),
+                2,
+            )
             points_acquired += points
-            question['correct_answer'] = q.correct_answer
-            question['points'] = points
+            question["correct_answer"] = q.correct_answer
+            question["points"] = points
             score_acquired += no_subs_correct
 
-        score_acquired = (score_acquired/total_number) * 100 # correct/total * 100
+        score_acquired = (score_acquired / total_number) * 100  # correct/total * 100
 
         return {
-            'questions': questions,
-            'points_acquired': round(points_acquired, 2),
-            'score_acquired': score_acquired,
-            'topic_scores': topic_scores
+            "questions": questions,
+            "points_acquired": round(points_acquired, 2),
+            "score_acquired": score_acquired,
+            "topic_scores": topic_scores,
         }
-            
-            
-'''
+
+
+"""
     
 def get_weighted_random_questions(n, subject_id, max_level):
     random_questions = (
@@ -161,7 +175,4 @@ def get_weighted_random_questions(n, subject_id, max_level):
     )
     return random_questions
 
-'''
-
-
-
+"""

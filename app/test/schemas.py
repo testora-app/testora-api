@@ -1,7 +1,15 @@
 from apiflask.schemas import Schema
-from apiflask.fields import Integer, String, Boolean, List, Nested, DateTime, Dict, Decimal
+from apiflask.fields import (
+    Integer,
+    String,
+    Boolean,
+    List,
+    Nested,
+    DateTime,
+    Dict,
+    Decimal,
+)
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
-
 
 
 class SubQuestionSchema(BaseSchema):
@@ -30,6 +38,7 @@ class QuestionSchema(BaseSchema):
 
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))
+
 
 class CreateTestSchema(BaseSchema):
     mode = String(required=True, allow_none=False)
@@ -75,9 +84,11 @@ class SubmittedQuestionsSchema(BaseSchema):
     options = Dict(allow_none=True, required=False)
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
-    sub_questions = List(Nested(SubmittedSubQuestionSchema), required=False, allow_none=True)
+    sub_questions = List(
+        Nested(SubmittedSubQuestionSchema), required=False, allow_none=True
+    )
 
-    #TODO: REMOVETHIS
+    # TODO: REMOVETHIS
     correct_answer = String(allow_none=True, required=False)
 
 
@@ -109,6 +120,7 @@ class TestSchema(BaseSchema):
 class TestListSchema(BaseSchema):
     data = List(Nested(TestSchema))
 
+
 class MarkTestSchema(BaseSchema):
     questions = List(Nested(SubmittedQuestionsSchema))
     meta = Dict(allow_none=True, required=False)
@@ -122,6 +134,7 @@ class SubjectPerformance(Schema):
     subject_id = Integer(allow_none=True, required=False)
     subject_name = String(allow_none=True, required=False)
     average_score = Decimal(allow_none=True, required=False)
+
 
 class SubjectPerformances(Schema):
     best_performing_subjects = List(Nested(SubjectPerformance))
@@ -140,4 +153,3 @@ class Requests:
     CreateTestSchema = make_response_schema(CreateTestSchema)
     MarkTestSchema = make_response_schema(MarkTestSchema)
     FlagQuestionSchema = make_response_schema(FlagQuestionSchema, is_list=True)
-    

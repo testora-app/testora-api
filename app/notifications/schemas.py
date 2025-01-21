@@ -21,11 +21,13 @@ class Recipient(BaseSchema):
     email = Email(allow_none=True)
     phone_number = String(allow_none=True)
 
+
 RecipientSchema = make_response_schema(Recipient)
 RecipientListSchema = make_response_schema(Recipient, is_list=True)
 
 
 class DeviceID(BaseSchema):
     device_ids = List(String(), required=True, allow_none=False)
+
 
 DeviceIDSchema = make_response_schema(DeviceID)

@@ -4,16 +4,23 @@ from globals import SMTP2GO_API_KEY
 from flask import render_template
 from logging import error as log_error
 
+
 class Mailer(object):
     def __init__(self):
         self.api_key = SMTP2GO_API_KEY
-        self.api_url = 'https://api.smtp2go.com/v3/email/send'
-
+        self.api_url = "https://api.smtp2go.com/v3/email/send"
 
     def generate_email_text(self, template_name, context={}):
         return render_template(template_name, **context)
 
-    def send_email(self, recipients, subject, text, sender='Preppee Support <support@wedidtech.com>', html=False):
+    def send_email(
+        self,
+        recipients,
+        subject,
+        text,
+        sender="Preppee Support <support@wedidtech.com>",
+        html=False,
+    ):
         """
         Sends an email using the SMTP2GO API.
 
@@ -25,24 +32,21 @@ class Mailer(object):
         :return: Response from the SMTP2GO API
         """
 
-        headers = {
-            "accept": "application/json",
-            "Content-Type": "application/json"
-        }
+        headers = {"accept": "application/json", "Content-Type": "application/json"}
         payload = {
-            'api_key': self.api_key,
-            'to': recipients,
-            'sender': sender,
-            'subject': subject,
-            'text_body': text if not html else None,
-            'html_body': text if html else None
+            "api_key": self.api_key,
+            "to": recipients,
+            "sender": sender,
+            "subject": subject,
+            "text_body": text if not html else None,
+            "html_body": text if html else None,
         }
 
         response = requests.post(self.api_url, headers=headers, json=payload)
         log_error(response.json())
         response.raise_for_status()  # Raise an exception for HTTP errors
-        
+
         return response.json()
-    
+
 
 mailer = Mailer()
