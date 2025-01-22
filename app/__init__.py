@@ -35,6 +35,7 @@ from app.test.routes import testr
 from app.notifications.routes import notification
 from app.analytics.routes import analytics
 from app.subscriptions.routes import subscription
+from app.achievements.routes import achievements
 
 
 load_dotenv()
@@ -132,6 +133,7 @@ def create_app():
         app.register_blueprint(notification)
         app.register_blueprint(analytics)
         app.register_blueprint(subscription)
+        app.register_blueprint(achievements)
 
         app.config["VALIDATION_ERROR_SCHEMA"] = validation_error_schema
 
