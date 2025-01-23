@@ -6,5 +6,6 @@ class AchievementService:
 
 
 REQUIREMENTS_WITH_FUNCTIONS = {
-    "reach_subject_level_10": AchievementService.reach_subject_level_10
+    "honour_badge": "",
+    "reach_subject_level_10": AchievementService.reach_subject_level_10,
 }

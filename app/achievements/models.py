@@ -25,6 +25,8 @@ class StudentHasAchievement(BaseModel):
     achievement_id = db.Column(
         db.Integer, db.ForeignKey("achievement.id"), nullable=False
     )
+    number_of_times = db.Column(db.Integer, nullable=True, default=1)
+
 
     def to_json(self):
-        return {"student_id": self.student_id, "achievement_id": self.achievement_id}
+        return {"student_id": self.student_id, "achievement_id": self.achievement_id, "number_of_times": self.number_of_times}
