@@ -305,7 +305,7 @@ def get_batches():
 # endregion BATCH
 
 #region LEVELS
-@student.get("/student/subject-levels/")
+@student.get("/students/subject-levels/")
 @student.input(StudentQuerySchema, location="query")
 @student.output(Responses.StudentSubjectLevelSchema)
 @token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
