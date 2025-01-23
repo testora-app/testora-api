@@ -6,7 +6,7 @@ class Achievement(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(1000), nullable=False)
-    image_url = db.Column(db.String(100), nullable=False)
+    image_url = db.Column(db.Text, nullable=False)
     requirements = db.Column(db.Text, nullable=True)
 
     def to_json(self, include_requirements=False):
