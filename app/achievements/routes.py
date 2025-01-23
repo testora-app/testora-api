@@ -6,6 +6,7 @@ from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
 from app.achievements.schemas import Responses, Requests
+from app.achievements.operations import achievement_manager, student_has_achievement_manager
 
 achievements = APIBlueprint("achievements", __name__)
 

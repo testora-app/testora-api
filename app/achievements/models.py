@@ -3,6 +3,7 @@ from app._shared.models import BaseModel
 
 
 class Achievement(BaseModel):
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(1000), nullable=False)
     image_url = db.Column(db.String(100), nullable=False)
@@ -21,11 +22,12 @@ class Achievement(BaseModel):
 
 
 class StudentHasAchievement(BaseModel):
-    student_id = db.Column(db.Integer, db.ForeignKey("student.id"), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey("student.id"), nullable=False, primary_key=True)
     achievement_id = db.Column(
-        db.Integer, db.ForeignKey("achievement.id"), nullable=False
+        db.Integer, db.ForeignKey("achievement.id"), nullable=False, primary_key=True
     )
     number_of_times = db.Column(db.Integer, nullable=True, default=1)
+
 
 
     def to_json(self):
