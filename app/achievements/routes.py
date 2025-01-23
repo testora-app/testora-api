@@ -14,7 +14,7 @@ achievements = APIBlueprint("achievements", __name__)
 @achievements.input(Requests.AchievementReport, location="query")
 @achievements.output(Responses.AchievementSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
-def get_student_achievements():
+def get_student_achievements(query_data):
     return success_response(
         data=[]
     )
