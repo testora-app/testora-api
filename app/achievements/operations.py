@@ -7,6 +7,9 @@ from typing import List
 class AchievementManager(BaseManager):
     def get_achievements(self) -> List[Achievement]:
         return Achievement.query.all()
+    
+    def get_achievement(self, achievement_id) -> Achievement:
+        return Achievement.query.filter_by(id=achievement_id).first()
 
     def add_achievement(
         self, name, description, image_url, requirements=None
