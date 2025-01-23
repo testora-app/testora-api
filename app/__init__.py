@@ -137,17 +137,7 @@ def create_app():
 
         app.config["VALIDATION_ERROR_SCHEMA"] = validation_error_schema
 
-        @app.errorhandler(HTTPError)
-        def handle_http_error(e):
-            db.session.rollback()
-            db.session.close()
-            log_error(traceback.format_exc())
-            return (
-                jsonify({"status_code": e.status_code, "message": e.message}),
-                e.status_code,
-                e.headers,
-            )
-
+        
         @app.errorhandler(BaseError)
         def handle_base_errors(error: BaseError):
             db.session.rollback()
@@ -158,17 +148,17 @@ def create_app():
             """
             error_as_dict = error.to_dict()
             # so that we can see the error in the app engine logs
-            return error_as_dict.get_json(), error.error_code
+            return error_as_dict, error.error_code
 
         @app.errorhandler(ValidationError)
-        def handle_validation_error(error):
+        def handle_validation_error(error: ValidationError):
             db.session.rollback()
             db.session.close()
             log_error(traceback.format_exc())
             return (
                 jsonify(
                     {
-                        "message": error.message,
+                        "message": error.messages,
                         "data": error.data,
                     }
                 ),
@@ -181,6 +171,7 @@ def create_app():
             db.session.close()
             log_error(traceback.format_exc())
             return jsonify({"error": str(error), "message": error._message()}), 500
+        
 
         @app.errorhandler(Exception)
         def handle_exceptions(exception):

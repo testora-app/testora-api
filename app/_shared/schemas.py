@@ -6,6 +6,7 @@ from apiflask.fields import Integer, String, Nested, Dict, List
 from apiflask.validators import Range
 from marshmallow.exceptions import ValidationError
 
+
 from .api_errors import BaseError
 
 ID_FIELD = Integer(allow_none=False, required=True)
@@ -13,7 +14,7 @@ ID_FIELD = Integer(allow_none=False, required=True)
 
 class BaseSchema(Schema):
     def handle_error(self, error: ValidationError, data: Any, *, many: bool, **kwargs):
-        raise BaseError("Validation Error", error_code=422, payload=error.messages_dict)
+        raise BaseError(error.normalized_messages(), error_code=422, payload=error.normalized_messages())
 
 
 def make_response_schema(schema: BaseSchema, is_list=False):
