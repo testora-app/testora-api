@@ -26,7 +26,7 @@ from app.student.schemas import (
     StudentQuerySchema,
     StudentAveragesQuerySchema,
 )
-from app.student.operations import student_manager, batch_manager
+from app.student.operations import student_manager, batch_manager, stusublvl_manager
 from app.student.services import (
     transform_data_for_averages,
     add_batch_to_student_data,
@@ -304,8 +304,39 @@ def get_batches():
 
 # endregion BATCH
 
+#region LEVELS
+@student.get("/student/subject-levels/")
+@student.input(StudentQuerySchema, location="query")
+@student.output(Responses.StudentSubjectLevelSchema)
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
+def student_subject_levels(query_data):
+    current_user = get_current_user()
+
+    if current_user["user_type"] == UserTypes.student:
+        student_id = current_user["user_id"]
+    else:
+        try:
+            student_id = query_data["student_id"]        
+        except:
+            return bad_request("'student_id' is required query param")
+        
+
+    subject_levels = stusublvl_manager.get_student_subject_level(student_id)
+
+    response = []
+
+    for subject_level in subject_levels:
+        response.append({
+            "subject_name": subject_manager.get_subject_by_id(subject_level.subject_id).name,
+            "level": subject_level.level
+        })
+
+    return success_response(data=response)
+# endregion LEVELS
+
 
 # region ANALYTICS
+
 @student.get("/students/dashboard/total-tests/")
 @student.input(StudentQuerySchema, location="query")
 @student.output(Responses.TotalTestsSchema)

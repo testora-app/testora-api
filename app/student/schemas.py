@@ -118,6 +118,10 @@ class StudentAverageSchema(Schema):
     average_score = Float(required=True)
 
 
+class StudentLevelSchema(Schema):
+    subject_name = String(required=True)
+    level = Integer(required=True)
+
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
     EndSessionSchema = make_response_schema(EndSessionSchema, is_list=True)
@@ -134,3 +138,4 @@ class Responses:
     TotalTestsSchema = make_response_schema(TotalTestsSchema)
 
     StudentAverageSchema = make_response_schema(StudentAverageSchema, is_list=True)
+    StudentSubjectLevelSchema = make_response_schema(StudentLevelSchema, is_list=True)

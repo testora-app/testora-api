@@ -8,13 +8,15 @@ class Achievement(BaseModel):
     description = db.Column(db.String(1000), nullable=False)
     image_url = db.Column(db.Text, nullable=False)
     requirements = db.Column(db.Text, nullable=True)
+    achievement_class = db.Column(db.String(100), nullable=True)
 
     def to_json(self, include_requirements=False):
         obj = {
             "id": self.id,
             "name": self.name,
             "description": self.description,
-            "image_url": self.image_url
+            "image_url": self.image_url,
+            "achievement_class": self.achievement_class
         }
         if include_requirements:
             obj["requirements"] = self.requirements
@@ -31,4 +33,4 @@ class StudentHasAchievement(BaseModel):
 
 
     def to_json(self):
-        return {"student_id": self.student_id, "achievement_id": self.achievement_id, "number_of_times": self.number_of_times}
+        return {"student_id": self.student_id, "achievement_id": self.achievement_id, "number_of_times": self.number_of_times, "created_at": self.created_at}
