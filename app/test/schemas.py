@@ -21,6 +21,7 @@ class SubQuestionSchema(BaseSchema):
     points = Integer(required=True)
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
+    year = Integer(allow_none=True, required=False)
 
 
 class QuestionSchema(BaseSchema):
@@ -34,6 +35,7 @@ class QuestionSchema(BaseSchema):
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
+    year = Integer(allow_none=True, required=False)
 
 
 class QuestionListSchema(BaseSchema):

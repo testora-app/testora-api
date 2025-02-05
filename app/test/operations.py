@@ -32,6 +32,7 @@ class QuestionManager(BaseManager):
         possible_answers,
         points,
         is_save_function=True,
+        **kwargs
     ):
         new_sub = SubQuestion(
             parent_question_id=parent_question_id,
@@ -39,6 +40,7 @@ class QuestionManager(BaseManager):
             correct_answer=correct_answer,
             possible_answers=str(possible_answers),
             points=points,
+            **kwargs
         )
 
         if is_save_function:
@@ -55,6 +57,7 @@ class QuestionManager(BaseManager):
         points,
         school_id=None,
         is_save_function=True,
+        **kwargs
     ) -> Question:
         new_question = Question(
             text=text,
@@ -63,6 +66,7 @@ class QuestionManager(BaseManager):
             topic_id=topic_id,
             points=points,
             school_id=school_id,
+            **kwargs
         )
 
         if is_save_function:
@@ -75,7 +79,7 @@ class QuestionManager(BaseManager):
         sub_questions_list = []
         for obj in questions:
             sub_obj = obj.pop("sub_questions", [])
-            new_question = self.create_question(**obj, is_save_function=False)
+            new_question = self.create_question(**obj, is_save_function=True)
             questions_list.append(new_question)
 
             if sub_obj:
@@ -83,12 +87,12 @@ class QuestionManager(BaseManager):
                     new_sub = self.create_subquestion(
                         parent_question_id=new_question.id,
                         **sub,
-                        is_save_function=False
+                        is_save_function=True
                     )
                     sub_questions_list.append(new_sub)
 
-        self.save_multiple(questions_list)
-        self.save_multiple(sub_questions_list)
+        # self.save_multiple(questions_list)
+        # self.save_multiple(sub_questions_list)
 
         return self.get_question_by_ids(question.id for question in questions_list)
 

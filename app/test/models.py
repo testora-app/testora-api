@@ -14,6 +14,7 @@ class Question(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=True)
     is_flagged = db.Column(db.Boolean, default=False, nullable=True)
     flag_reason = db.Column(db.Text, nullable=True)
+    year = db.Column(db.Integer, nullable=True)
 
     sub_questions = db.relationship("SubQuestion", backref="parent_question", lazy=True)
     topic = db.relationship("Topic", back_populates="questions")
@@ -33,6 +34,7 @@ class Question(BaseModel):
             "level": self.topic.level,
             "is_flagged": self.is_flagged,
             "flag_reason": self.flag_reason,
+            "year": self.year,
         }
 
         if include_correct_answer:
@@ -51,6 +53,9 @@ class SubQuestion(BaseModel):
     correct_answer = db.Column(db.Text, nullable=False)
     possible_answers = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, nullable=False)
+    is_flagged = db.Column(db.Boolean, default=False, nullable=True)
+    flag_reason = db.Column(db.Text, nullable=True)
+    year = db.Column(db.Integer, nullable=True)
 
     def to_json(self, include_correct_answer=True):
         question_json = {
@@ -59,6 +64,9 @@ class SubQuestion(BaseModel):
             "text": self.text,
             "possible_answers": ast.literal_eval(self.possible_answers),
             "points": self.points,
+            "is_flagged": self.is_flagged,
+            "flag_reason": self.flag_reason,
+            "year": self.year,
         }
 
         if include_correct_answer:
