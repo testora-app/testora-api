@@ -69,6 +69,9 @@ class SubmittedSubQuestionSchema(BaseSchema):
     possible_answers = List(String(), required=True)
     parent_question_id = Integer(required=False, allow_none=True)
     points = Integer(required=False, allow_none=True)
+    year = Integer(allow_none=True, required=False)
+    flag_reason = String(allow_none=True, required=False)
+    is_flagged = Boolean(allow_none=True, required=False)
 
 
 class SubmittedQuestionsSchema(BaseSchema):
@@ -86,6 +89,7 @@ class SubmittedQuestionsSchema(BaseSchema):
     options = Dict(allow_none=True, required=False)
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
+    year = Integer(allow_none=True, required=False)
     sub_questions = List(
         Nested(SubmittedSubQuestionSchema), required=False, allow_none=True
     )
