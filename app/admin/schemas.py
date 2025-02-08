@@ -34,30 +34,7 @@ class VerifiedAdminSchema(BaseSchema):
 
 
 # region Subject/Topic Schema
-class SubjectSchema(BaseSchema):
-    id = Integer(required=True)
-    name = String(required=True, allow_none=False)
-    short_name = String(required=False, allow_none=True)
-    curriculum = String(
-        required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
-    )
 
-
-class AddSubjectSchema(BaseSchema):
-    name = String(required=True, allow_none=False)
-    short_name = String(required=False, allow_none=True)
-    curriculum = String(
-        required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
-    )
-
-
-class AddSubjectSchemaPost(BaseSchema):
-    data = List(Nested(AddSubjectSchema), min=1)
-
-
-class SubjectSchemaList(BaseSchema):
-    data = List(Nested(SubjectSchema))
-    pagination = Nested(PaginationSchema)
 
 
 class TopicSchema(BaseSchema):
@@ -90,6 +67,7 @@ class ThemeSchema(BaseSchema):
     name = String(required=True, allow_none=False)
     short_name = String(required=False, allow_none=True)
     subject_id = Integer(required=True, allow_none=False)
+    topics = List(Nested(TopicSchema), required=False, allow_none=True)
 
 
 class AddThemeSchema(BaseSchema):
@@ -105,6 +83,32 @@ class AddThemeSchemaPost(BaseSchema):
 class ThemeSchemaList(BaseSchema):
     data = List(Nested(ThemeSchema))
 
+
+class SubjectSchema(BaseSchema):
+    id = Integer(required=True)
+    name = String(required=True, allow_none=False)
+    short_name = String(required=False, allow_none=True)
+    curriculum = String(
+        required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
+    )
+    themes = List(Nested(ThemeSchema), required=False, allow_none=True)
+
+
+class AddSubjectSchema(BaseSchema):
+    name = String(required=True, allow_none=False)
+    short_name = String(required=False, allow_none=True)
+    curriculum = String(
+        required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
+    )
+
+
+class AddSubjectSchemaPost(BaseSchema):
+    data = List(Nested(AddSubjectSchema), min=1)
+
+
+class SubjectSchemaList(BaseSchema):
+    data = List(Nested(SubjectSchema))
+    pagination = Nested(PaginationSchema)
 
 # endregion Subject/Topic Schema
 

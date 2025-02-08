@@ -81,7 +81,13 @@ def admin_login(json_data):
 # @token_auth(['*'])
 def get_subjects():
     subjects = subject_manager.get_subjects()
-    return success_response(data=[subject.to_json() for subject in subjects])
+    data = [subject.to_json() for subject in subjects]
+
+    for subject in data:
+        subject["themes"] = [theme.to_json() for theme in theme_manager.get_theme_by_subject(subject["id"])]
+        for theme in subject["themes"]:
+            theme["topics"] = [topic.to_json() for topic in topic_manager.get_topic_by_theme(theme["id"])]
+    return success_response(data=data)
 
 
 @admin.get("/subjects/<string:curriculum>/")

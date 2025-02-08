@@ -88,6 +88,9 @@ class TopicManager(BaseManager):
 
     def get_topic_by_subject(self, subject_id) -> List[Topic]:
         return Topic.query.filter_by(subject_id=subject_id).all()
+    
+    def get_topic_by_theme(self, theme_id) -> List[Topic]:
+        return Topic.query.filter_by(theme_id=theme_id).all()
 
     def get_topic_by_level(self, level) -> List[Topic]:
         return Topic.query.filter_by(level=level).all()
