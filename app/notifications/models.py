@@ -39,6 +39,7 @@ class Notification(BaseModel):
     attachments = db.Column(db.JSON, nullable=True)
     school_id = db.Column(db.Integer, nullable=True)
     recipient_id = db.Column(db.Integer, db.ForeignKey("recipient.id"), nullable=True)
+    is_read = db.Column(db.Boolean, nullable=True, default=False)
 
     def to_json(self):
         return {
@@ -48,4 +49,5 @@ class Notification(BaseModel):
             "alert_type": self.alert_type,
             "attachments": self.attachments if self.attachments else None,
             "school_id": self.school_id,
+            "is_read": self.is_read
         }

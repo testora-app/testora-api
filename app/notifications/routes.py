@@ -17,6 +17,7 @@ from app.notifications.schemas import (
     NotificationSchema,
     NotificationListSchema,
     DeviceIDSchema,
+    ReadNotificationsSchema
 )
 from app.notifications.operations import notification_manager, recipient_manager
 
@@ -39,6 +40,15 @@ def get_notifications():
         notifications = notification_manager.get_recipient_notifications(recipient.id)
         return success_response(data=[n.to_json() for n in notifications])
     return success_response(data=[])
+
+
+@notification.put("/notifications/read/")
+@notification.input(ReadNotificationsSchema)
+@notification.output(SuccessMessage, 200)
+@token_auth([UserTypes.staff, UserTypes.student, UserTypes.school_admin])
+def read_notifications(json_data):
+    notification_manager.update_read_status(json_data["data"]["notification_ids"])
+    return success_response()
 
 
 @notification.post("/device-ids/")

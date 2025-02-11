@@ -30,4 +30,10 @@ class DeviceID(BaseSchema):
     device_ids = List(String(), required=True, allow_none=False)
 
 
+class ReadNotification(BaseSchema):
+    notification_ids = List(Integer(), allow_none=False, required=True)
+
+
+ReadNotificationsSchema = make_response_schema(ReadNotification)
+
 DeviceIDSchema = make_response_schema(DeviceID)
