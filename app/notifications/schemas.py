@@ -9,6 +9,7 @@ class NotificationSchema(BaseSchema):
     alert_type = String(required=True)
     school_id = Integer(required=False, allow_none=True)
     recipient_id = Integer(required=True)
+    is_read = Boolean(required=False, allow_none=True)
 
 
 NotificationListSchema = make_response_schema(NotificationSchema, is_list=True)
