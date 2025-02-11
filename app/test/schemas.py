@@ -27,8 +27,8 @@ class SubQuestionSchema(BaseSchema):
 class QuestionSchema(BaseSchema):
     id = Integer(dump_only=True)
     text = String(required=True)
-    correct_answer = String(required=True)
-    possible_answers = List(String(), required=True)
+    correct_answer = String(required=True, allow_none=True)
+    possible_answers = List(String(), required=True, allow_none=True)
     topic_id = Integer(required=True)
     points = Integer(required=True, allow_none=True)
     school_id = Integer(allow_none=True)
@@ -36,6 +36,7 @@ class QuestionSchema(BaseSchema):
     is_flagged = Boolean(allow_none=True, required=False)
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
     year = Integer(allow_none=True, required=False)
+    is_instructional = Boolean(allow_none=True, required=False, missing=False)
 
 
 class QuestionListSchema(BaseSchema):

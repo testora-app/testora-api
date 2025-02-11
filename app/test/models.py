@@ -7,14 +7,15 @@ import ast
 class Question(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
-    correct_answer = db.Column(db.Text, nullable=False)
-    possible_answers = db.Column(db.Text, nullable=False)
+    correct_answer = db.Column(db.Text, nullable=True)
+    possible_answers = db.Column(db.Text, nullable=True)
     topic_id = db.Column(db.Integer, db.ForeignKey("topic.id"), nullable=False)
     points = db.Column(db.Integer, nullable=True, default=None)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=True)
     is_flagged = db.Column(db.Boolean, default=False, nullable=True)
     flag_reason = db.Column(db.Text, nullable=True)
     year = db.Column(db.Integer, nullable=True)
+    is_instructional = db.Column(db.Boolean, default=False, nullable=True)
 
     sub_questions = db.relationship("SubQuestion", backref="parent_question", lazy=True)
     topic = db.relationship("Topic", back_populates="questions")
