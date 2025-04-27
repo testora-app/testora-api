@@ -1,5 +1,5 @@
 """
-This is a where all the extensions in use a placed
+This is a where all the extensions in use are placed
 """
 
 from flask_cors import CORS
