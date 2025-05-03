@@ -13,6 +13,7 @@ from datetime import datetime, timedelta, timezone
 from logging import info as log_info
 
 
+
 class StudentTopicScoresManager(BaseManager):
 
     def select_student_topic_score_history(
@@ -75,7 +76,142 @@ class StudentTopicScoresManager(BaseManager):
             .filter_by(student_id=student_id, subject_id=subject_id)
             .group_by(StudentTopicScores.topic_id)
         )
+    
+    def get_score_distribution(self, total_students: int, subject_id: None, student_ids: None):
+        """
+        Calculate number and percentage of students in passing, credit, and failing categories
+        using Flask-SQLAlchemy ORM query.
 
+        Args:
+            total_students (int): Total number of students
+        Returns:
+            dict: Distribution summary by category
+        """
+        results = StudentTopicScores.query \
+            .with_entities(
+                case(
+                    (StudentTopicScores.score_acquired >= 80, 'passing'),
+                    (StudentTopicScores.score_acquired >= 50, 'credit'),
+                    else_='failing'
+                ).label('category'),
+                func.count(StudentTopicScores.student_id).label('student_number')
+            ) \
+            .group_by('category') \
+        
+        if student_ids:
+            results = results.filter(StudentTopicScores.student_id.in_(student_ids))
+
+        if subject_id:
+            results = results.filter(StudentTopicScores.subject_id == subject_id)
+        
+        results = results.all()
+
+        # Initialize default response structure
+        distribution = {
+            "passing": {"student_number": 0, "percent_number": 0.0},
+            "credit": {"student_number": 0, "percent_number": 0.0},
+            "failing": {"student_number": 0, "percent_number": 0.0},
+        }
+
+        for category, count in results:
+            distribution[category]["student_number"] = count
+            distribution[category]["percent_number"] = round((count / total_students) * 100, 2)
+
+        return distribution
+    
+    def get_average_and_failing_students_and_tests_completion(subject_id=None, student_ids=None):
+        """
+        Compute average score and get student IDs with scores below 50,
+        using ORM chaining to allow filtering.
+
+        Args:
+            subject_id (int, optional): Filter by subject ID
+            student_ids (list[int], optional): Filter by a list of student IDs
+
+        Returns:
+            dict: {
+                'average_score': float,
+                'failing_student_ids': list[int],
+                'test_completion': int
+            }
+        """
+        base_query = StudentTopicScores.query
+
+        # Apply optional filters
+        if subject_id is not None:
+            base_query = base_query.filter(StudentTopicScores.subject_id == subject_id)
+        if student_ids:
+            base_query = base_query.filter(StudentTopicScores.student_id.in_(student_ids))
+
+        # Average score using ORM
+        average_score = base_query.with_entities(func.avg(StudentTopicScores.score_acquired)).scalar()
+
+        # Get distinct student IDs with score < 50
+        failing_students: List[StudentTopicScores] = base_query \
+            .filter(StudentTopicScores.score_acquired < 50) \
+            .with_entities(StudentTopicScores.student_id) \
+            .distinct() \
+            .all()
+        
+        test_completion = base_query.all().count()
+
+        return {
+            "batch_average": round(float(average_score), 2) if average_score is not None else 0.0,
+            "failing_student_ids": [s.student_id for s in failing_students],
+            "test_completion": test_completion
+        }
+    
+    def get_top_and_bottom_topics(subject_id=None, student_ids=None):
+        """
+        Retrieve top 3 and bottom 2 topics by average score, with optional filters.
+
+        Args:
+            subject_id (int, optional): Filter by subject ID
+            student_ids (list[int], optional): Filter by list of student IDs
+
+        Returns:
+            dict: {
+                "top_topics": List[dict],
+                "bottom_topics": List[dict]
+            }
+        """
+        # Base query with filtering
+        base_query = StudentTopicScores.query
+
+        if subject_id is not None:
+            base_query = base_query.filter(StudentTopicScores.subject_id == subject_id)
+
+        if student_ids:
+            base_query = base_query.filter(StudentTopicScores.student_id.in_(student_ids))
+
+        # Build the grouped average query
+        grouped_query = base_query \
+            .with_entities(
+                StudentTopicScores.topic_id,
+                func.avg(StudentTopicScores.score_acquired).label('average_score')
+            ) \
+            .group_by(StudentTopicScores.topic_id)
+
+        # Top 3 topics
+        top_topics = grouped_query.order_by(func.avg(StudentTopicScores.score_acquired).desc()) \
+            .limit(3) \
+            .all()
+
+        # Bottom 2 topics
+        bottom_topics = grouped_query.order_by(func.avg(StudentTopicScores.score_acquired).asc()) \
+            .limit(2) \
+            .all()
+
+        return {
+            "strong_topics": [
+                {"topic_id": t.topic_id, "average_score": round(float(t.average_score), 2)}
+                for t in top_topics
+            ],
+            "weak_topics": [
+                {"topic_id": t.topic_id, "average_score": round(float(t.average_score), 2)}
+                for t in bottom_topics
+            ]
+        }
 
 class StudentBestSubjectManager(BaseManager):
     def select_student_best(

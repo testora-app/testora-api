@@ -6,9 +6,11 @@ from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
 
 from app.analytics.schemas import Responses, Requests
-from app.analytics.operations import ssm_manager, ssr_manager
+from app.analytics.operations import ssm_manager, ssr_manager, sts_manager
 
 from app.admin.operations import topic_manager, subject_manager
+from app.student.operations import student_manager, batch_manager
+from app.test.operations import test_manager
 
 
 analytics = APIBlueprint("analytics", __name__)
@@ -29,6 +31,8 @@ def weekly_report():
         data={"hours_spent": this_week_time, "percentage": difference}
     )
 
+
+#TODO: add the checks and balances so people can't get data that does not belong to them
 
 @analytics.get("/students/topic-performance/")
 @analytics.input(Requests.TopicPerformanceQuerySchema, location="query")
@@ -67,3 +71,87 @@ def topic_performance(query_data):
             "worst_performing_topics": worst_performing,
         }
     )
+
+
+@analytics.get("/student-performance/")
+@analytics.input(Requests.TopicPerformanceQuerySchema, location="query")
+@analytics.output(Responses.StudentPerformanceSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def student_performance(query_data):
+    '''
+    Get the general performance of the students in the school
+    Query params:
+    - student_id: int, optional, the id of the student to get performance for
+    - subject_id: int, optional, the id of the subject to get performance for
+    - batch_id: int, optional, the id of the batch to get performance for
+
+    If the query params are not provided, the performance of all students in the school is returned.
+
+    Returns:
+    - performance: dict, the performance of the students in the school
+    '''
+
+    school_id = get_current_user()["school_id"]
+    subject_id = query_data.get("subject_id", None)
+    batch_id = query_data.get("batch_id", None)
+
+    ## we need to get the students in the school or batch
+    if batch_id:
+        batch = batch_manager.get_batch_by_id(batch_id)
+        students = batch.to_json()["students"]
+        student_ids = [student["id"] for student in students]
+    else:
+        students = student_manager.get_active_students_by_school(school_id)
+        student_ids = [student.id for student in students]
+
+    results = sts_manager.get_score_distribution(
+        total_students=len(students), subject_id=subject_id, student_ids=student_ids
+    )
+    return success_response(data=results)
+
+
+@analytics.get("/performance-summary/")
+@analytics.input(Requests.TopicPerformanceQuerySchema, location="query")
+@analytics.output(Responses.PerformanceSummarySchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def performance_summary(query_data):
+    school_id = get_current_user()["school_id"]
+    subject_id = query_data.get("subject_id", None)
+    batch_id = query_data.get("batch_id", None)
+
+    if batch_id:
+        batch = batch_manager.get_batch_by_id(batch_id)
+        students = batch.to_json()["students"]
+        student_ids = [student["id"] for student in students]
+    else:
+        students = student_manager.get_active_students_by_school(school_id)
+        student_ids = [student.id for student in students]
+
+    performance = sts_manager.get_average_and_failing_students_and_tests_completion(
+        total_students=len(students), subject_id=subject_id, student_ids=student_ids
+    )
+    return success_response(data=performance)
+
+
+@analytics.get("/topic-mastery/")
+@analytics.input(Requests.TopicPerformanceQuerySchema, location="query")
+@analytics.output(Responses.TopicMasteryDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def topic_mastery(query_data):
+    school_id = get_current_user()["school_id"]
+    subject_id = query_data.get("subject_id", None)
+    batch_id = query_data.get("batch_id", None)
+
+    if batch_id:
+        batch = batch_manager.get_batch_by_id(batch_id)
+        students = batch.to_json()["students"]
+        student_ids = [student["id"] for student in students]
+    else:
+        students = student_manager.get_active_students_by_school(school_id)
+        student_ids = [student.id for student in students]
+
+    performance = sts_manager.get_top_and_bottom_topics(
+        subject_id=subject_id, student_ids=student_ids
+    )
+
+    return success_response(data=performance)
