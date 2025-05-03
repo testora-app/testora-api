@@ -1,4 +1,4 @@
-from apiflask.fields import Integer, String, Boolean, List, Nested, Dict
+from apiflask.fields import Integer, String, Boolean, List, Nested, Dict, Float
 from apiflask.validators import Email, Length
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 from app.school.schemas import SchoolSchema
@@ -83,7 +83,16 @@ class ApproveStaffSchema(BaseSchema):
     staff_ids = List(ID_FIELD)
 
 
+class DashboardGeneralSchema(BaseSchema):
+    total_students = Integer(required=True)
+    total_staff = Integer(required=True)
+    total_batches = Integer(required=True)
+    average_score = Float(required=True)
+    average_session = Integer(required=True)
+
+
 class Responses:
     VerifiedStaffSchema = make_response_schema(VerifiedStaffSchema)
     StaffSchema = make_response_schema(StaffSchema)
     StaffResponseSchema = make_response_schema(StaffResponseSchema)
+    DashboardGeneralSchema = make_response_schema(DashboardGeneralSchema)

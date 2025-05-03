@@ -224,3 +224,42 @@ def edit_staff_details(staff_id, json_data):
 
         return success_response(data=staff.to_json(include_batches=True))
     return not_found(message="Staff does not exist")
+
+
+
+#region ANALYTICS
+@staff.get("/staff/dashboard-general/")
+@staff.output(Responses.DashboardGeneralSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+def dashboard_general():
+    from app.student.operations import student_manager, batch_manager
+    from app.analytics.operations import sts_manager, ssm_manager
+    '''
+    Get the general dashboard data for the staff
+    Returns:
+        total_students (int): Total number of students
+        total_staff (int): Total number of staff
+        total_batches (int): Total number of batches
+        average_score (int): Average score
+        average_session (int): Average session
+    '''
+
+    school_id = get_current_user()["school_id"]
+    students = student_manager.get_active_students_by_school(school_id)
+    total_students = len(students)
+    total_staff = len(staff_manager.get_staff_by_school(school_id))
+    total_batches = len(batch_manager.get_batches_by_school_id(school_id))
+    average_score = sts_manager.get_average_score(student_ids=[student.id for student in students])
+    average_session = ssm_manager.get_average_session_duration(
+        student_ids=[student.id for student in students]
+    )
+
+    return success_response(
+        data={
+            "total_students": total_students,
+            "total_staff": total_staff,
+            "total_batches": total_batches,
+            "average_score": average_score,
+            "average_session": average_session
+        }
+    )

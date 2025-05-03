@@ -212,6 +212,30 @@ class StudentTopicScoresManager(BaseManager):
                 for t in bottom_topics
             ]
         }
+    
+    def get_average_score(subject_id=None, student_ids=None):
+        """
+        Compute the average score across StudentTopicScores with optional filters.
+
+        Args:
+            subject_id (int, optional): Filter by subject ID
+            student_ids (list[int], optional): Filter by list of student IDs
+
+        Returns:
+            float: Average score rounded to 2 decimal places
+        """
+        query = StudentTopicScores.query
+
+        if subject_id is not None:
+            query = query.filter(StudentTopicScores.subject_id == subject_id)
+
+        if student_ids:
+            query = query.filter(StudentTopicScores.student_id.in_(student_ids))
+
+        average_score = query.with_entities(func.avg(StudentTopicScores.score_acquired)).scalar()
+
+        return round(float(average_score), 2) if average_score is not None else 0.0
+    
 
 class StudentBestSubjectManager(BaseManager):
     def select_student_best(
@@ -362,6 +386,25 @@ class StudentSessionManager(BaseManager):
         )
 
         return last_week_time, time_spent_this_week
+    
+    def get_average_session_duration(student_ids=None):
+        """
+        Computes average session duration for the given list of student IDs.
+
+        Args:
+            student_ids (list[int], optional): Filter sessions by these student IDs.
+
+        Returns:
+            float: Average duration in seconds, rounded to 2 decimal places.
+        """
+        query = StudentSession.query
+
+        if student_ids:
+            query = query.filter(StudentSession.student_id.in_(student_ids))
+
+        avg_duration = query.with_entities(func.avg(StudentSession.duration)).scalar()
+
+        return round(float(avg_duration), 2) if avg_duration is not None else 0.0
 
 
 # endregion session
