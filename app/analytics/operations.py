@@ -387,7 +387,7 @@ class StudentSessionManager(BaseManager):
 
         return last_week_time, time_spent_this_week
     
-    def get_average_session_duration(student_ids=None):
+    def get_average_session_duration(self, student_ids=None):
         """
         Computes average session duration for the given list of student IDs.
 
