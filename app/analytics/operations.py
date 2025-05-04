@@ -5,7 +5,7 @@ from app.analytics.models import (
     StudentSubjectRecommendation,
     StudentSession,
 )
-from sqlalchemy import func
+from sqlalchemy import func, distinct
 from sqlalchemy.sql import case, func as sqlfunc
 from typing import List, Dict, Union
 
@@ -87,26 +87,23 @@ class StudentTopicScoresManager(BaseManager):
         Returns:
             dict: Distribution summary by category
         """
-        results = StudentTopicScores.query \
-            .with_entities(
-                case(
-                    (StudentTopicScores.score_acquired >= 80, 'passing'),
-                    (StudentTopicScores.score_acquired >= 50, 'credit'),
-                    else_='failing'
-                ).label('category'),
-                func.count(StudentTopicScores.student_id).label('student_number')
-            ) \
-            .group_by('category') \
-        
+        query = StudentTopicScores.query
+
         if student_ids:
-            results = results.filter(StudentTopicScores.student_id.in_(student_ids))
+            query = query.filter(StudentTopicScores.student_id.in_(student_ids))
 
         if subject_id:
-            results = results.filter(StudentTopicScores.subject_id == subject_id)
-        
-        results = results.all()
+            query = query.filter(StudentTopicScores.subject_id == subject_id)
 
-        # Initialize default response structure
+        results = query.with_entities(
+            case(
+                (StudentTopicScores.score_acquired >= 80, 'passing'),
+                (StudentTopicScores.score_acquired >= 50, 'credit'),
+                else_='failing'
+            ).label('category'),
+            func.count(distinct(StudentTopicScores.student_id)).label('student_number')
+        ).group_by('category').all()
+
         distribution = {
             "passing": {"student_number": 0, "percent_number": 0.0},
             "credit": {"student_number": 0, "percent_number": 0.0},
@@ -115,11 +112,12 @@ class StudentTopicScoresManager(BaseManager):
 
         for category, count in results:
             distribution[category]["student_number"] = count
-            distribution[category]["percent_number"] = round((count / total_students) * 100, 2)
+            distribution[category]["percent_number"] = round((count / total_students) * 100, 2) if total_students else 0.0
 
         return distribution
+
     
-    def get_average_and_failing_students_and_tests_completion(subject_id=None, student_ids=None):
+    def get_average_and_failing_students_and_tests_completion(self, subject_id=None, student_ids=None):
         """
         Compute average score and get student IDs with scores below 50,
         using ORM chaining to allow filtering.
@@ -153,7 +151,9 @@ class StudentTopicScoresManager(BaseManager):
             .distinct() \
             .all()
         
-        test_completion = base_query.all().count()
+        test_completion = base_query.with_entities(func.count(distinct(StudentTopicScores.test_id))).scalar()
+        if test_completion is None:
+            test_completion = 0
 
         return {
             "batch_average": round(float(average_score), 2) if average_score is not None else 0.0,
@@ -161,7 +161,7 @@ class StudentTopicScoresManager(BaseManager):
             "test_completion": test_completion
         }
     
-    def get_top_and_bottom_topics(subject_id=None, student_ids=None):
+    def get_top_and_bottom_topics(self, subject_id=None, student_ids=None):
         """
         Retrieve top 3 and bottom 2 topics by average score, with optional filters.
 
@@ -201,19 +201,19 @@ class StudentTopicScoresManager(BaseManager):
         bottom_topics = grouped_query.order_by(func.avg(StudentTopicScores.score_acquired).asc()) \
             .limit(2) \
             .all()
+        
+        strong_topics = [{"topic_id": t.topic_id, "average_score": round(float(t.average_score), 2)}
+                for t in top_topics if t.average_score > 60]
+        
+        weak_topics = [{"topic_id": t.topic_id, "average_score": round(float(t.average_score), 2)}
+                for t in bottom_topics if t.topic_id not in [top.topic_id for top in strong_topics]]
 
         return {
-            "strong_topics": [
-                {"topic_id": t.topic_id, "average_score": round(float(t.average_score), 2)}
-                for t in top_topics
-            ],
-            "weak_topics": [
-                {"topic_id": t.topic_id, "average_score": round(float(t.average_score), 2)}
-                for t in bottom_topics
-            ]
+            "strong_topics": strong_topics,
+            "weak_topics": weak_topics
         }
     
-    def get_average_score(subject_id=None, student_ids=None):
+    def get_average_score(self, subject_id=None, student_ids=None):
         """
         Compute the average score across StudentTopicScores with optional filters.
 

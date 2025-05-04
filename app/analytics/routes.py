@@ -126,9 +126,9 @@ def performance_summary(query_data):
     else:
         students = student_manager.get_active_students_by_school(school_id)
         student_ids = [student.id for student in students]
-
+        
     performance = sts_manager.get_average_and_failing_students_and_tests_completion(
-        total_students=len(students), subject_id=subject_id, student_ids=student_ids
+       subject_id=subject_id, student_ids=student_ids
     )
     return success_response(data=performance)
 
