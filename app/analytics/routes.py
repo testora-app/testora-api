@@ -10,7 +10,6 @@ from app.analytics.operations import ssm_manager, ssr_manager, sts_manager
 
 from app.admin.operations import topic_manager, subject_manager
 from app.student.operations import student_manager, batch_manager
-from app.test.operations import test_manager
 
 
 analytics = APIBlueprint("analytics", __name__)
@@ -153,5 +152,11 @@ def topic_mastery(query_data):
     performance = sts_manager.get_top_and_bottom_topics(
         subject_id=subject_id, student_ids=student_ids
     )
+
+    for topic in performance["strong_topics"]:
+        topic["topic_name"] = topic_manager.get_topic_by_id(topic["topic_id"]).name
+
+    for topic in performance["weak_topics"]:
+        topic["topic_name"] = topic_manager.get_topic_by_id(topic["topic_id"]).name
 
     return success_response(data=performance)
