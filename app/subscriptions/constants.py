@@ -9,7 +9,7 @@ class Features:
 class FeatureStatus:
     ENABLED = "enabled"
     DISABLED = "disabled"
-    UNLIMITED = "unlimited"
+    UNLIMITED = 100000
 
 
 class SubscriptionPackages:
