@@ -1,5 +1,6 @@
 from app._shared.models import BaseModel
-from app.extensions import db
+from app.extensions import db, admin
+from flask_admin.contrib.sqla import ModelView
 
 
 class Recipient(BaseModel):
@@ -51,3 +52,7 @@ class Notification(BaseModel):
             "school_id": self.school_id,
             "is_read": self.is_read
         }
+
+
+# admin.add_view(ModelView(Recipient, db.session, name="Recipients"))
+# admin.add_view(ModelView(Notification, db.session, name="Notifications"))

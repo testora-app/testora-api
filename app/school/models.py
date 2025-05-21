@@ -1,5 +1,6 @@
-from app.extensions import db
+from app.extensions import db, admin
 from app._shared.models import BaseModel
+from flask_admin.contrib.sqla import ModelView
 
 
 class School(BaseModel):
@@ -39,3 +40,6 @@ class School(BaseModel):
             ),
             "is_suspended": self.is_suspended,
         }
+
+
+# admin.add_view(ModelView(School, db.session, name="Schools"))

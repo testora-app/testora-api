@@ -1,5 +1,6 @@
-from app.extensions import db
+from app.extensions import db, admin
 from app._shared.models import BaseModel
+from flask_admin.contrib.sqla import ModelView
 
 
 # Association table for many-to-many relationship
@@ -51,3 +52,6 @@ class Staff(BaseModel):
                 [batch.to_json() for batch in self.batches] if self.batches else []
             )
         return data
+
+
+# admin.add_view(ModelView(Staff, db.session, name="Staff"))

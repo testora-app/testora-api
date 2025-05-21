@@ -3,7 +3,7 @@ from collections import defaultdict
 
 from app._shared.schemas import ExamModes, QuestionsNumberLimiter, QuestionPoints
 from app.test.operations import question_manager
-from app.admin.models import Topic
+from app.app_admin.models import Topic
 from app.extensions import db
 from app.test.models import Question
 

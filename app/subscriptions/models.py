@@ -1,7 +1,9 @@
-from app.extensions import db
+from app.extensions import db, admin
 from app._shared.models import BaseModel
 
 from app.subscriptions.constants import PaymentStatus
+
+from flask_admin.contrib.sqla import ModelView
 
 
 class SchoolBillingHistory(BaseModel):
@@ -42,3 +44,6 @@ class SchoolBillingHistory(BaseModel):
             ),
             "payment_status": self.payment_status,
         }
+
+
+admin.add_view(ModelView(SchoolBillingHistory, db.session, name="BillingHistory"))

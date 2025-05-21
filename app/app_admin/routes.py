@@ -10,13 +10,13 @@ from app._shared.api_errors import (
 from app._shared.services import check_password, generate_access_token
 from app._shared.decorators import token_auth
 
-from app.admin.operations import (
+from app.app_admin.operations import (
     admin_manager,
     subject_manager,
     topic_manager,
     theme_manager,
 )
-from app.admin.schemas import (
+from app.app_admin.schemas import (
     AdminListSchema,
     SubjectSchemaList,
     TopicSchemaList,
@@ -28,21 +28,21 @@ from app.admin.schemas import (
     Requests,
 )
 
-admin = APIBlueprint("admin", __name__)
+app_admin = APIBlueprint("app_admin", __name__)
 
 
 # region admin
-@admin.get("/admins/")
-@admin.output(AdminListSchema)
+@app_admin.get("/app-admins/")
+@app_admin.output(AdminListSchema)
 # @token_auth([UserTypes.admin]))
 def get_admins():
     admins = admin_manager.get_admins()
     return success_response(data=[admin.to_json() for admin in admins])
 
 
-@admin.post("/admins/")
-@admin.input(Requests.AddAdminSchema)
-@admin.output(Responses.AdminResponseSchema)
+@app_admin.post("/app-admins/")
+@app_admin.input(Requests.AddAdminSchema)
+@app_admin.output(Responses.AdminResponseSchema)
 # @token_auth([UserTypes.admin]))
 def add_admin(json_data):
     if admin_manager.get_admin_by_email(json_data["email"]):
@@ -52,9 +52,9 @@ def add_admin(json_data):
     return success_response(data=new_admin.to_json())
 
 
-@admin.post("/admins/authenticate/")
-@admin.input(LoginSchema)
-@admin.output(Responses.VerifiedAdminResponse)
+@app_admin.post("/app-admins/authenticate/")
+@app_admin.input(LoginSchema)
+@app_admin.output(Responses.VerifiedAdminResponse)
 def admin_login(json_data):
     admin = admin_manager.get_admin_by_email(json_data["email"])
     if not admin:
@@ -76,8 +76,8 @@ def admin_login(json_data):
 # region subjects
 
 
-@admin.get("/subjects/")
-@admin.output(SubjectSchemaList)
+@app_admin.get("/subjects/")
+@app_admin.output(SubjectSchemaList)
 # @token_auth(['*'])
 def get_subjects():
     subjects = subject_manager.get_subjects()
@@ -90,17 +90,17 @@ def get_subjects():
     return success_response(data=data)
 
 
-@admin.get("/subjects/<string:curriculum>/")
-@admin.output(SubjectSchemaList)
+@app_admin.get("/subjects/<string:curriculum>/")
+@app_admin.output(SubjectSchemaList)
 # @token_auth(['*'])
 def get_subjects_by_curriculum(curriculum):
     subjects = subject_manager.get_subject_by_curriculum(curriculum)
     return success_response(data=[subject.to_json() for subject in subjects])
 
 
-@admin.post("/subjects/")
-@admin.input(AddSubjectSchemaPost)
-@admin.output(SubjectSchemaList)
+@app_admin.post("/subjects/")
+@app_admin.input(AddSubjectSchemaPost)
+@app_admin.output(SubjectSchemaList)
 # @token_auth([UserTypes.admin]))
 def add_subjects(json_data):
     for subject in json_data["data"]:
@@ -112,9 +112,9 @@ def add_subjects(json_data):
     return success_response(data=[s.to_json() for s in new_subjects])
 
 
-@admin.put("/subjects/<int:subject_id>/")
-@admin.input(Requests.EditSubjectSchema)
-@admin.output(Responses.SubjectSchema)
+@app_admin.put("/subjects/<int:subject_id>/")
+@app_admin.input(Requests.EditSubjectSchema)
+@app_admin.output(Responses.SubjectSchema)
 # @token_auth([UserTypes.admin]))
 def edit_subject(subject_id, json_data):
     json_data = json_data["data"]
@@ -128,8 +128,8 @@ def edit_subject(subject_id, json_data):
     return not_found()
 
 
-@admin.delete("/subjects/<int:subject_id>/")
-@admin.output(SuccessMessage)
+@app_admin.delete("/subjects/<int:subject_id>/")
+@app_admin.output(SuccessMessage)
 # @token_auth([UserTypes.admin]))
 def delete_subject(subject_id):
     subject = subject_manager.get_subject_by_id(subject_id)
@@ -139,8 +139,8 @@ def delete_subject(subject_id):
     return not_found()
 
 
-@admin.get("/subjects/<int:subject_id>/topics")
-@admin.output(TopicSchemaList)
+@app_admin.get("/subjects/<int:subject_id>/topics")
+@app_admin.output(TopicSchemaList)
 # @token_auth(['*'])
 def get_subject_topics(subject_id):
     topics = topic_manager.get_topic_by_subject(subject_id)
@@ -153,26 +153,26 @@ def get_subject_topics(subject_id):
 # region themes
 
 
-@admin.get("/themes/")
-@admin.output(ThemeSchemaList)
+@app_admin.get("/themes/")
+@app_admin.output(ThemeSchemaList)
 # @token_auth(['*'])
 def get_themes():
     themes = theme_manager.get_themes()
     return success_response(data=[theme.to_json() for theme in themes])
 
 
-@admin.post("/themes/")
-@admin.input(AddThemeSchemaPost)
-@admin.output(ThemeSchemaList)
+@app_admin.post("/themes/")
+@app_admin.input(AddThemeSchemaPost)
+@app_admin.output(ThemeSchemaList)
 # @token_auth([UserTypes.admin]))
 def add_themes(json_data):
     new_themes = theme_manager.create_themes(json_data["data"])
     return success_response(data=[theme.to_json() for theme in new_themes])
 
 
-@admin.put("/themes/<int:theme_id>/")
-@admin.input(Requests.EditThemeSchema)
-@admin.output(Responses.ThemeSchema)
+@app_admin.put("/themes/<int:theme_id>/")
+@app_admin.input(Requests.EditThemeSchema)
+@app_admin.output(Responses.ThemeSchema)
 # @token_auth([UserTypes.admin]))
 def edit_theme(theme_id, json_data):
     json_data = json_data["data"]
@@ -186,8 +186,8 @@ def edit_theme(theme_id, json_data):
     return not_found()
 
 
-@admin.delete("/themes/<int:theme_id>/")
-@admin.output(SuccessMessage)
+@app_admin.delete("/themes/<int:theme_id>/")
+@app_admin.output(SuccessMessage)
 # @token_auth([UserTypes.admin]))
 def delete_theme(theme_id):
     theme = theme_manager.get_theme_by_id(theme_id)
@@ -203,26 +203,26 @@ def delete_theme(theme_id):
 # region topics
 
 
-@admin.get("/topics/")
-@admin.output(TopicSchemaList)
+@app_admin.get("/topics/")
+@app_admin.output(TopicSchemaList)
 # @token_auth(['*'])
 def get_topics():
     topics = topic_manager.get_topics()
     return success_response(data=[topic.to_json() for topic in topics])
 
 
-@admin.post("/topics/")
-@admin.input(AddTopicSchemaPost)
-@admin.output(TopicSchemaList)
+@app_admin.post("/topics/")
+@app_admin.input(AddTopicSchemaPost)
+@app_admin.output(TopicSchemaList)
 # @token_auth([UserTypes.admin]))
 def add_topics(json_data):
     new_topics = topic_manager.create_topics(json_data["data"])
     return success_response(data=[topic.to_json() for topic in new_topics])
 
 
-@admin.put("/topics/<int:topic_id>/")
-@admin.input(Requests.EditTopicSchema)
-@admin.output(Responses.TopicSchema)
+@app_admin.put("/topics/<int:topic_id>/")
+@app_admin.input(Requests.EditTopicSchema)
+@app_admin.output(Responses.TopicSchema)
 # @token_auth([UserTypes.admin]))
 def edit_topic(topic_id, json_data):
     json_data = json_data["data"]
@@ -236,8 +236,8 @@ def edit_topic(topic_id, json_data):
     return not_found()
 
 
-@admin.delete("/topics/<int:topic_id>/")
-@admin.output(SuccessMessage)
+@app_admin.delete("/topics/<int:topic_id>/")
+@app_admin.output(SuccessMessage)
 # @token_auth([UserTypes.admin]))
 def delete_topic(topic_id):
     topic = topic_manager.get_topic_by_id(topic_id)

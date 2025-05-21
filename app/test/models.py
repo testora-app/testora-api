@@ -3,7 +3,6 @@ from app._shared.models import BaseModel
 from datetime import datetime
 import ast
 
-
 class Question(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)

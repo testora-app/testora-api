@@ -13,7 +13,7 @@ from app._shared.api_errors import (
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
 
-from app.admin.operations import subject_manager
+from app.app_admin.operations import subject_manager
 from app.staff.schemas import (
     SchoolAdminRegister,
     StaffRegister,

@@ -37,7 +37,7 @@ from app.subscriptions.constants import SubscriptionLimits, Features
 
 from app.school.operations import school_manager
 from app.staff.operations import staff_manager
-from app.admin.operations import subject_manager
+from app.app_admin.operations import subject_manager
 from app.test.operations import test_manager
 from app.notifications.operations import recipient_manager
 

@@ -8,7 +8,7 @@ from app._shared.services import get_current_user
 from app.analytics.schemas import Responses, Requests
 from app.analytics.operations import ssm_manager, ssr_manager, sts_manager
 
-from app.admin.operations import topic_manager, subject_manager
+from app.app_admin.operations import topic_manager, subject_manager
 from app.student.operations import student_manager, batch_manager
 
 

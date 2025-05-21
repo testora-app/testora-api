@@ -155,7 +155,7 @@ class TopicAnalytics:
     @staticmethod
     def test_level_topic_analytics(test_id, test_scores: Dict):
         from app.test.operations import test_manager
-        from app.admin.operations import topic_manager
+        from app.app_admin.operations import topic_manager
 
         test = test_manager.get_test_by_id(test_id)
 

@@ -2,7 +2,7 @@
 
 from flask_sqlalchemy.pagination import Pagination
 
-from app.admin.models import Admin, Subject, Topic, Theme
+from app.app_admin.models import Admin, Subject, Topic, Theme
 from app._shared.operations import BaseManager
 from app._shared.services import hash_password
 

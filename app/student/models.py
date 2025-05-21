@@ -1,6 +1,7 @@
-from app.extensions import db
+from app.extensions import db, admin
 from app._shared.models import BaseModel
 from app.staff.models import staff_batches
+from flask_admin.contrib.sqla import ModelView
 
 from datetime import datetime
 
@@ -123,3 +124,9 @@ class StudentLevellingHistory(BaseModel):
             "levelled_at": self.levelled_at,
             "meta": self.meta,
         }
+
+
+# admin.add_view(ModelView(Student, db.session, name="AdminStudent"))
+# admin.add_view(ModelView(StudentSubjectLevel, db.session, name="AdminStudentSubjectLevel"))
+# admin.add_view(ModelView(StudentLevellingHistory, db.session, name="AdminStudentLevellingHistory"))
+# admin.add_view(ModelView(Batch, db.session, name="AdminBatch"))

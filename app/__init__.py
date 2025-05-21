@@ -23,11 +23,11 @@ from app.errorhandlers import (
     method_not_allowed,
     page_not_found,
 )
-from app.extensions import cors, db, migrate
+from app.extensions import cors, db, migrate, admin as admin_extension
 
 # importing the routes
 from .routes import main
-from app.admin.routes import admin
+from app.app_admin.routes import app_admin
 from app.school.routes import school
 from app.staff.routes import staff
 from app.student.routes import student
@@ -37,14 +37,13 @@ from app.analytics.routes import analytics
 from app.subscriptions.routes import subscription
 from app.achievements.routes import achievements
 
-
 load_dotenv()
 
 
 def create_super_admin_if_not_exists():
     import os
 
-    from app.admin.operations import admin_manager
+    from app.app_admin.operations import admin_manager
 
     admin_email, admin_username, admin_password = (
         os.getenv("ADMIN_EMAIL"),
@@ -102,6 +101,7 @@ def create_app():
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
     db.init_app(app)
     migrate.init_app(app, db)
+    admin_extension.init_app(app)
 
     # security settings
     app.security_schemes = {  # equals to use config SECURITY_SCHEMES
@@ -125,7 +125,7 @@ def create_app():
 
         # registering blueprints
         app.register_blueprint(main)
-        app.register_blueprint(admin)
+        app.register_blueprint(app_admin)
         app.register_blueprint(school)
         app.register_blueprint(staff)
         app.register_blueprint(student)
