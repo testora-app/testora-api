@@ -11,6 +11,7 @@ charset-normalizer==3.3.2
 click==8.1.7
 colorama==0.4.6
 Flask==3.0.3
+Flask-Admin==1.6.1
 Flask-Bcrypt==1.0.1
 Flask-Cors==4.0.0
 Flask-HTTPAuth==4.8.0
@@ -51,6 +52,7 @@ typing_extensions==4.11.0
 urllib3==2.2.2
 webargs==8.4.0
 Werkzeug==3.0.2
+WTForms==3.2.1
 zipp==3.18.1
 zope.event==5.0
 zope.interface==6.3
