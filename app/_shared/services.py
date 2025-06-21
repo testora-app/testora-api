@@ -26,7 +26,7 @@ def is_in_staging_environment():
 
 
 def generate_and_send_reset_password_email(
-    user_id, user_type, user_email, school_id, name, email
+    user_id, user_type, user_email, school_id, name
 ):
     payload_data = {
         "user_id": user_id,
@@ -54,7 +54,7 @@ def generate_and_send_reset_password_email(
         print(text_body)
 
     mailer.send_email(
-        [email], "You Requested A Password Change", text_body, html=html_body
+        [user_email], "You Requested A Password Change", text_body, html=html_body
     )
 
 
