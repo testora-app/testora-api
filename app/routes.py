@@ -84,7 +84,7 @@ def reset_password(json_data):
 
     if user:
         generate_and_send_reset_password_email(
-            user.id, user_type, user.school_id, user.first_name, user.email
+            user.id, user_type, user.email, user.school_id, user.first_name
         )
     return success_response()
 
