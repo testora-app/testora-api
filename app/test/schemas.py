@@ -24,6 +24,11 @@ class SubQuestionSchema(BaseSchema):
     year = Integer(allow_none=True, required=False)
 
 
+class QuestionImageSchema(Schema):
+    image_url = String(required=True)
+    label = String(allow_none=True, required=False)
+    is_for_answer = Boolean(allow_none=True, required=False)
+
 class QuestionSchema(BaseSchema):
     id = Integer(dump_only=True)
     text = String(required=True)
@@ -37,7 +42,7 @@ class QuestionSchema(BaseSchema):
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
     year = Integer(allow_none=True, required=False)
     is_instructional = Boolean(allow_none=True, required=False, missing=False)
-
+    images = List(Nested(QuestionImageSchema), required=False, allow_none=True)
 
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))

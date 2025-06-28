@@ -1,4 +1,4 @@
-from app.test.models import Question, SubQuestion, Test
+from app.test.models import Question, SubQuestion, Test, QuestionImage
 from app._shared.operations import BaseManager
 import json
 
@@ -79,6 +79,7 @@ class QuestionManager(BaseManager):
         sub_questions_list = []
         for obj in questions:
             sub_obj = obj.pop("sub_questions", [])
+            images = obj.pop("images", [])
             new_question = self.create_question(**obj, is_save_function=True)
             questions_list.append(new_question)
 
@@ -91,6 +92,13 @@ class QuestionManager(BaseManager):
                     )
                     sub_questions_list.append(new_sub)
 
+            if images:
+                for image in images:
+                    self.create_question_image(
+                        question_id=new_question.id,
+                        **image,
+                    )
+
         # self.save_multiple(questions_list)
         # self.save_multiple(sub_questions_list)
 
@@ -98,6 +106,16 @@ class QuestionManager(BaseManager):
 
     def get_sub_question_by_id(self, sub_id) -> SubQuestion:
         return SubQuestion.query.filter_by(id=sub_id).first()
+
+    def create_question_image(self, question_id, image_url, label=None, is_for_answer=False):
+        new_image = QuestionImage(
+            question_id=question_id,
+            image_url=image_url,
+            label=label,
+            is_for_answer=is_for_answer,
+        )
+        self.save(new_image)
+        return new_image
 
 
 # endregion Question Manager
@@ -223,6 +241,17 @@ class TestManager(BaseManager):
 
 # endregion TestManager
 
+
+class QuestionImageManager(BaseManager):
+    def create_question_image(self, question_id, image_url, label=None, is_for_answer=False):
+        new_image = QuestionImage(
+            question_id=question_id,
+            image_url=image_url,
+            label=label,
+            is_for_answer=is_for_answer,
+        )
+        self.save(new_image)
+        return new_image
 
 question_manager = QuestionManager()
 test_manager = TestManager()

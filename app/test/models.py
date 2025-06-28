@@ -15,9 +15,11 @@ class Question(BaseModel):
     flag_reason = db.Column(db.Text, nullable=True)
     year = db.Column(db.Integer, nullable=True)
     is_instructional = db.Column(db.Boolean, default=False, nullable=True)
+    
 
     sub_questions = db.relationship("SubQuestion", backref="parent_question", lazy=True)
     topic = db.relationship("Topic", back_populates="questions")
+    images = db.relationship("QuestionImage", backref="question", lazy=True)
 
     def to_json(self, include_correct_answer=True):
         question_json = {
@@ -35,6 +37,14 @@ class Question(BaseModel):
             "is_flagged": self.is_flagged,
             "flag_reason": self.flag_reason,
             "year": self.year,
+            "question_images": {
+                image.label: image.image_url
+                for image in self.images if not image.is_for_answer
+            },
+            "answer_images": {
+                image.label: image.image_url
+                for image in self.images if image.is_for_answer
+            }
         }
 
         if include_correct_answer:
@@ -72,6 +82,14 @@ class SubQuestion(BaseModel):
         if include_correct_answer:
             question_json["correct_answer"] = self.correct_answer
         return question_json
+
+
+class QuestionImage(BaseModel):
+    id = db.Column(db.Integer, primary_key=True)
+    question_id = db.Column(db.Integer, db.ForeignKey("question.id"), nullable=False)
+    image_url = db.Column(db.String, nullable=False)
+    label = db.Column(db.String, nullable=True)  # e.g., "main", "the various options"
+    is_for_answer = db.Column(db.Boolean, default=False)
 
 
 class Test(BaseModel):
