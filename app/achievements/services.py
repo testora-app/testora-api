@@ -1,11 +1,10 @@
 class AchievementService:
-
-    @staticmethod
-    def reach_subject_level_10(student_id, subject_id):
-        return
-
-
-REQUIREMENTS_WITH_FUNCTIONS = {
-    "honour_badge": "",
-    "reach_subject_level_10": AchievementService.reach_subject_level_10,
-}
+    # every time a student does something with particular actions
+    # - LOGIN (streaks)
+    # - TESTS (marks)
+    # we check whether they have that achievement already, or not
+    # if they have, we do nothing
+    # if they don't, we check if they meet the requirements
+    # if they do, we give them the achievement
+    # if they don't, we do nothing
+    pass
