@@ -62,6 +62,8 @@ class TestQuestionsSchema(BaseSchema):
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
+    answer_images = Dict(allow_none=True, required=False)
+    question_images = Dict(allow_none=True, required=False)
 
 
 class TestQuestionsListSchema(BaseSchema):
