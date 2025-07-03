@@ -46,7 +46,7 @@ class StaffManager(BaseManager):
     def get_staff_by_school(self, school_id, approved_only=True) -> List[Staff]:
         if approved_only:
             return Staff.query.filter_by(
-                school_id=school_id, is_approved=True, is_deleted=False
+                school_id=school_id, is_deleted=False
             ).all()
         return Staff.query.filter_by(school_id=school_id, is_deleted=False).all()
 
