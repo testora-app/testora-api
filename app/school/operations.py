@@ -38,7 +38,7 @@ class SchoolManager(BaseManager):
             datetime.now(timezone.utc) + timedelta(days=30)
         ).date()
 
-        new_school.subscription_package = SubscriptionPackages.free
+        new_school.subscription_package = SubscriptionPackages.premium
 
         self.save(new_school)
         return new_school
