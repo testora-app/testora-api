@@ -79,7 +79,9 @@ class QuestionManager(BaseManager):
         sub_questions_list = []
         for obj in questions:
             sub_obj = obj.pop("sub_questions", [])
-            images = obj.pop("images", [])
+            answer_images = obj.pop("answer_images", [])
+            question_images = obj.pop("question_images", [])
+
             new_question = self.create_question(**obj, is_save_function=True)
             questions_list.append(new_question)
 
@@ -92,12 +94,13 @@ class QuestionManager(BaseManager):
                     )
                     sub_questions_list.append(new_sub)
 
-            if images:
-                for image in images:
+            if question_images + answer_images:
+                for image in question_images + answer_images:
                     self.create_question_image(
                         question_id=new_question.id,
-                        **image,
+                        **image
                     )
+
 
         # self.save_multiple(questions_list)
         # self.save_multiple(sub_questions_list)

@@ -42,7 +42,9 @@ class QuestionSchema(BaseSchema):
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
     year = Integer(allow_none=True, required=False)
     is_instructional = Boolean(allow_none=True, required=False, missing=False)
-    images = List(Nested(QuestionImageSchema), required=False, allow_none=True)
+    answer_images = List(Nested(QuestionImageSchema), required=False, allow_none=True)
+    question_images = List(Nested(QuestionImageSchema), required=False, allow_none=True)
+    
 
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))

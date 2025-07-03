@@ -73,7 +73,7 @@ def get_single_billing_history(billing_id):
     return success_response(data=billing_history.to_json())
 
 
-@subscription.get("/subscribe")
+@subscription.post("/subscribe")
 @subscription.input(Requests.SchoolSubscriptionSchema)
 @subscription.output(Responses.PaymentInitSchema, 201)
 @token_auth([UserTypes.school_admin])
@@ -188,6 +188,43 @@ def confirm_payment(reference):
         return success_response(data=billing_history.to_json())
 
     return bad_request("Payment verification failed")
+
+@subscription.post("/paystack-webhook/")
+@subscription.output(SuccessMessage, 200)
+def paystack_webhook():
+    # Process event
+    event = request.get_json()
+    event_type = event.get('event')
+
+    billing_history = sb_history_manager.get_school_billing_history_by_payment_ref(
+            event['data']['reference']
+        )
+
+    if not billing_history:
+        return not_found("Bill not found")
+
+    # Example: handle successful payment
+    if event_type == 'charge.success':
+
+        if billing_history.payment_status == PaymentStatus.success:
+            return success_response()
+        
+        billing_history.payment_status = PaymentStatus.success
+        billing_history.settled_on = datetime.now(timezone.utc).date()
+        billing_history.save()
+
+        school = school_manager.get_school_by_id(billing_history.school_id)
+        school.subscription_expiry_date = school.subscription_expiry_date + timedelta(
+            days=31
+        )
+        school.subscription_package = "premium"
+        school.save()
+    
+    elif event_type == 'charge.failed':
+        billing_history.payment_status = PaymentStatus.failed
+        billing_history.save()
+    
+    return success_response()
 
 
 # an endpoint that will be hit everyday to run billing process

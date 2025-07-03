@@ -304,7 +304,7 @@ class StudentSubjectRecommendationManager(BaseManager):
         self.save_multiple(to_save)
         return [entity.to_json() for entity in to_save]
 
-    def get_topic_performance(self, student_id=None, subject_id=None) -> List[Dict]:
+    def get_topic_performance(self, student_id=None, subject_id=None, school_id=None) -> List[Dict]:
         query = StudentSubjectRecommendation.query.with_entities(
             StudentSubjectRecommendation.topic_id,
             StudentSubjectRecommendation.subject_id,

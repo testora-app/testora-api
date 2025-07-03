@@ -42,8 +42,9 @@ def topic_performance(query_data):
     student_id, subject_id = query_data.get("student_id", None), query_data.get(
         "subject_id", None
     )
+    school_id = get_current_user()["school_id"]
     results = ssr_manager.get_topic_performance(
-        student_id=student_id, subject_id=subject_id
+        student_id=student_id, subject_id=subject_id, school_id=school_id
     )
 
     performance = [
