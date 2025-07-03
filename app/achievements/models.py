@@ -1,5 +1,6 @@
-from app.extensions import db
+from app.extensions import db, admin
 from app._shared.models import BaseModel
+from flask_admin.contrib.sqla import ModelView
 
 
 class Achievement(BaseModel):
@@ -34,3 +35,7 @@ class StudentHasAchievement(BaseModel):
 
     def to_json(self):
         return {"student_id": self.student_id, "achievement_id": self.achievement_id, "number_of_times": self.number_of_times, "created_at": self.created_at}
+
+
+admin.add_view(ModelView(Achievement, db.session, name="Achievements"))
+admin.add_view(ModelView(StudentHasAchievement, db.session, name="Student Has Achievements"))

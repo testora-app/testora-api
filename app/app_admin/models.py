@@ -1,10 +1,9 @@
 from datetime import datetime
 
-from app.extensions import db, admin
+from app.extensions import db
 from app._shared.models import BaseModel
 
 from app.staff.models import staff_subjects
-from flask_admin.contrib.sqla import ModelView
 
 
 
@@ -98,9 +97,3 @@ class Topic(BaseModel):
             "theme_id": self.theme_id,
             "subject_id": self.subject_id,
         }
-
-
-# admin.add_view(ModelView(Admin, db.session, name="Administrators"))
-# admin.add_view(ModelView(Subject, db.session, name="Subjects"))
-# admin.add_view(ModelView(Theme, db.session, name="Themes"))
-# admin.add_view(ModelView(Topic, db.session, name="Topics"))

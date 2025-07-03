@@ -15,10 +15,10 @@ from app._shared.decorators import token_auth
 
 from app.integrations.paystack import paystack
 
-from app.subscriptions.schemas import Responses
+from app.subscriptions.schemas import Responses, Requests
 from app.subscriptions.operations import sb_history_manager
 from app.subscriptions.services import run_billing_process
-from app.subscriptions.constants import PaymentStatus
+from app.subscriptions.constants import PaymentStatus, PackagePrices, SubscriptionPackages
 
 from app.school.operations import school_manager
 
@@ -72,6 +72,52 @@ def get_single_billing_history(billing_id):
     )
     return success_response(data=billing_history.to_json())
 
+
+@subscription.get("/subscribe")
+@subscription.input(Requests.SchoolSubscriptionSchema)
+@subscription.output(Responses.PaymentInitSchema, 201)
+@token_auth([UserTypes.school_admin])
+def subscribe(json_data):
+    school_id = get_current_user()["school_id"]
+    data = json_data["data"]
+
+    now = datetime.now(timezone.utc).date()
+
+    amount_due = PackagePrices.calculate_subscription_price(
+        data["subscription_package"], data["students_number"]
+    )
+
+
+    new_bill = sb_history_manager.add_school_billing_history(
+        school_id=school_id,
+        amount_due=amount_due,
+        date_due=now,
+        billed_on=now,
+        settled_on=None,
+        payment_reference=None,
+        subscription_package=data["subscription_package"],
+        subscription_start_date=now,
+        subscription_end_date=now + timedelta(days=31),
+    )
+    user_email = get_current_user()["user_email"]
+
+    resp = paystack.create_payment(email=user_email, amount=amount_due)
+
+    if resp["status"] == True:
+        new_bill.payment_reference = resp["data"]["reference"]
+        new_bill.payment_status = PaymentStatus.pending
+        new_bill.save()
+
+        return success_response(
+            data={
+                "status": True,
+                "authorization_url": resp["data"]["authorization_url"],
+                "reference": resp["data"]["reference"],
+                "access_code": resp["data"]["access_code"],
+            }
+        )
+
+    return response_builder(400, "Payment initialization failed")
 
 # an endpoint to settle the bill
 @subscription.get("/billing-history/<int:billing_id>/settle/")
@@ -136,6 +182,7 @@ def confirm_payment(reference):
         school.subscription_expiry_date = school.subscription_expiry_date + timedelta(
             days=31
         )
+        school.subscription_package = "premium"
         school.save()
 
         return success_response(data=billing_history.to_json())
