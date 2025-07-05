@@ -29,7 +29,7 @@ from app.test.services import TestService
 from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
 from app.school.operations import school_manager
-from app.subscriptions.constants import Features, FeatureStatus, SubscriptionLimits
+from app.subscriptions.constants import SubscriptionPackages
 
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
@@ -166,11 +166,7 @@ def create_test(json_data):
     # get the name of the course, check if it's in the school's subscription thingy or not
     subject = subject_manager.get_subject_by_id(subject_id)
 
-    subject_limits = SubscriptionLimits.get_limits(school.subscription_package)[
-        Features.SubjectsAllowedForBECE
-    ]
-
-    if isinstance(subject_limits, list) and subject.short_name not in subject_limits:
+    if subject.is_premium and school.subscription_package != SubscriptionPackages.premium:
         return premium_only_feature()
 
     # validate the mode of the exam
