@@ -1,9 +1,11 @@
 from datetime import datetime
 
-from app.extensions import db
+from app.extensions import db, admin
 from app._shared.models import BaseModel
 
 from app.staff.models import staff_subjects
+
+from flask_admin.contrib.sqla import ModelView
 
 
 
@@ -34,6 +36,7 @@ class Subject(BaseModel):
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     curriculum = db.Column(db.String(20), nullable=False)  # bece, igsce
     max_duration = db.Column(db.Integer, nullable=True, default=300)  # in seconds
+    is_premium = db.Column(db.Boolean, default=False)
 
     staff = db.relationship(
         "Staff", secondary=staff_subjects, back_populates="subjects"
@@ -49,6 +52,7 @@ class Subject(BaseModel):
             "short_name": self.short_name,
             "curriculum": self.curriculum,
             "max_duration": self.max_duration,
+            "is_premium": self.is_premium,
         }
 
 
@@ -97,3 +101,9 @@ class Topic(BaseModel):
             "theme_id": self.theme_id,
             "subject_id": self.subject_id,
         }
+
+
+class MinimalSubjectAdmin(ModelView):
+    form_columns = ['name', 'is_premium']
+
+admin.add_view(MinimalSubjectAdmin(Subject, db.session, name="Subjects", endpoint='subject_admin'))
