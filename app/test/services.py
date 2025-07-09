@@ -66,7 +66,9 @@ class TestService:
 
     @staticmethod
     def determine_test_duration_in_seconds(max_duration, question_length) -> int:
-        return max_duration // question_length if max_duration else 300
+        if max_duration:
+            return max_duration // question_length
+        return 3000
 
     # NOTE: this already takes up sub questions
     @staticmethod

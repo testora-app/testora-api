@@ -149,7 +149,7 @@ def login(json_data):
             student.id, current_login_time.date()
         )
         if not current_session:
-            ssm_manager.add_new_student_session(student.id, current_login_time.date())
+            ssm_manager.add_new_student_session(student.id, current_login_time.date(), 0)
 
         return success_response(
             data={
@@ -234,9 +234,11 @@ def end_student_session(json_data):
         )
 
         if session:
-            session.end_time = session.created_at + timedelta(seconds=data["duration"])
-            session.duration = data["duration"]
+            session.end_time = session.created_at + timedelta(seconds=data["duration"] / 1000)
+            session.duration = data["duration"] / 1000
             session.save()
+        else:
+            ssm_manager.add_new_student_session(data["student_id"], data["date"], data["duration"] / 1000)
     return success_response()
 
 

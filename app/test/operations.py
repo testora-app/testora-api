@@ -149,13 +149,14 @@ class TestManager(BaseManager):
                     Test.student_id.in_(student_ids),
                     Test.is_completed == True,
                     Test.subject_id == subject_id,
+                    Test.is_deleted == False
                 )
                 .order_by(Test.created_at.desc())
                 .all()
             )
         return (
             Test.query.filter(
-                Test.student_id.in_(student_ids), Test.is_completed == True
+                Test.student_id.in_(student_ids), Test.is_completed == True, Test.is_deleted == False
             )
             .order_by(Test.created_at.desc())
             .all()

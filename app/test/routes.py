@@ -29,7 +29,7 @@ from app.test.services import TestService
 from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
 from app.school.operations import school_manager
-from app.subscriptions.constants import SubscriptionPackages
+from app.subscriptions.constants import SubscriptionPackages, SubscriptionLimits, Features, FeatureStatus
 
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
@@ -233,8 +233,6 @@ def mark_test(test_id, json_data):
     test = test_manager.get_test_by_id(test_id)
     student_id = get_current_user()["user_id"]
 
-    test_count = test_manager.get_tests_by_student_ids([student_id]).count()
-
     if not test:
         return not_found(message="The requested Test does not exist!")
 
@@ -275,6 +273,8 @@ def mark_test(test_id, json_data):
         TopicAnalytics.test_level_topic_analytics(test.id, marked_test["topic_scores"])
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
         RemarksAnalyzer.add_remarks_to_test(test, last_test)
+
+        test_count = len(test_manager.get_tests_by_student_ids([student_id]))
 
         engine = AchievementEngine(student_id)
         engine.check_test_achievements(test.subject_id, test.score_acquired, test_count)

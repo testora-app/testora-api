@@ -347,8 +347,8 @@ class StudentSessionManager(BaseManager):
             ).first()
         return StudentSession.query.filter_by(student_id=student_id).all()
 
-    def add_new_student_session(self, student_id, date) -> StudentSession:
-        new_session = StudentSession(student_id=student_id, date=date)
+    def add_new_student_session(self, student_id, date, duration) -> StudentSession:
+        new_session = StudentSession(student_id=student_id, date=date, duration=duration)
         self.save(new_session)
         return new_session
 
@@ -398,11 +398,12 @@ class StudentSessionManager(BaseManager):
             float: Average duration in seconds, rounded to 2 decimal places.
         """
         query = StudentSession.query
+        avg_duration = None
 
         if student_ids:
             query = query.filter(StudentSession.student_id.in_(student_ids))
 
-        avg_duration = query.with_entities(func.avg(StudentSession.duration)).scalar()
+            avg_duration = query.with_entities(func.avg(StudentSession.duration)).scalar()
 
         return round(float(avg_duration), 2) if avg_duration is not None else 0.0
 

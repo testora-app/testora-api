@@ -35,7 +35,7 @@ class Subject(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     curriculum = db.Column(db.String(20), nullable=False)  # bece, igsce
-    max_duration = db.Column(db.Integer, nullable=True, default=300)  # in seconds
+    max_duration = db.Column(db.Integer, nullable=True, default=3000)  # in seconds
     is_premium = db.Column(db.Boolean, default=False)
 
     staff = db.relationship(

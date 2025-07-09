@@ -103,6 +103,9 @@ class SubmittedQuestionsSchema(BaseSchema):
     sub_questions = List(
         Nested(SubmittedSubQuestionSchema), required=False, allow_none=True
     )
+    answer_images = Dict(allow_none=True, required=False)
+    question_images = Dict(allow_none=True, required=False)
+
 
     # TODO: REMOVETHIS
     correct_answer = String(allow_none=True, required=False)
