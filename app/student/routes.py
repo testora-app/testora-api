@@ -214,7 +214,7 @@ def get_student_list():
 
 @student.get("/students/<int:student_id>/")
 @student.output(Responses.StudentSchema)
-@token_auth()
+@token_auth(['*'])
 def get_student_details(student_id):
     student = student_manager.get_student_by_id(student_id)
     if student:
@@ -225,7 +225,7 @@ def get_student_details(student_id):
 @student.post("/students/end-session/")
 @student.input(Requests.EndSessionSchema)
 @student.output(SuccessMessage)
-@token_auth()
+@token_auth(['*'])
 def end_student_session(json_data):
     json_data = json_data["data"]
 
