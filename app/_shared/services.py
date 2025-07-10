@@ -74,7 +74,7 @@ def generate_access_token(
     school_id=None,
     permissions=None,
     is_school_suspended=False,
-    school_package="free",
+    school_package="Free",
 ):
     payload_data = {
         "user_id": user_id,

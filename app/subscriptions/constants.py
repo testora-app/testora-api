@@ -13,8 +13,8 @@ class FeatureStatus:
 
 
 class SubscriptionPackages:
-    free = "free"
-    premium = "premium"
+    free = "Free"
+    premium = "Premium"
 
 
 class PaymentStatus:

@@ -15,7 +15,7 @@ class School(BaseModel):
     phone_number = db.Column(db.String, nullable=True)
     email = db.Column(db.String, nullable=True)
     code = db.Column(db.String, nullable=False, unique=True)
-    subscription_package = db.Column(db.String, nullable=True, default="free")
+    subscription_package = db.Column(db.String, nullable=True, default="Free")
     subscription_expiry_date = db.Column(db.Date, nullable=True, default=None)
     is_suspended = db.Column(db.Boolean, default=False)
 
