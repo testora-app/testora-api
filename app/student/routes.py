@@ -225,20 +225,23 @@ def get_student_details(student_id):
 @student.post("/students/end-session/")
 @student.input(Requests.EndSessionSchema)
 @student.output(SuccessMessage)
+@token_auth()
 def end_student_session(json_data):
     json_data = json_data["data"]
 
-    for data in json_data:
-        session = ssm_manager.select_student_session_history(
-            data["student_id"], date=data["date"]
-        )
+    current_user_type = get_current_user()["user_type"]
+    if current_user_type == UserTypes.student:
+        for data in json_data:
+            session = ssm_manager.select_student_session_history(
+                data["student_id"], date=data["date"]
+            )
 
-        if session:
-            session.end_time = session.created_at + timedelta(seconds=data["duration"] / 1000)
-            session.duration = data["duration"] / 1000
-            session.save()
-        else:
-            ssm_manager.add_new_student_session(data["student_id"], data["date"], data["duration"] / 1000)
+            if session:
+                session.end_time = session.created_at + timedelta(seconds=data["duration"] / 1000)
+                session.duration = data["duration"] / 1000
+                session.save()
+            else:
+                ssm_manager.add_new_student_session(data["student_id"], data["date"], data["duration"] / 1000)
     return success_response()
 
 
