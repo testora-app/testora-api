@@ -17,9 +17,11 @@ class AchievementEngine:
             achievement_id=achievement.id
         ).first()
 
-        if exists and repeatable:
-            exists.number_of_times += 1
-            db.session.commit()
+        if exists:
+            if repeatable:
+                exists.number_of_times += 1
+                db.session.commit()
+                return
             return
 
         new_achievement = StudentHasAchievement(
