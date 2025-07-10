@@ -73,13 +73,13 @@ def add_device_ids(json_data):
         recipient.device_ids = new_device
         recipient.save()
 
-        pusher.notify_devices(title, content, recipient.device_ids)
+        pusher.notify_devices(title, content, emails=[recipient.email])
         return success_response(data=recipient.to_json(), status_code=201)
 
     new_device = recipient_manager.create_recipient(
         curr_user["user_type"], data["device_ids"], curr_user["user_email"], None
     )
-    pusher.notify_devices(title, content, new_device.device_ids)
+    pusher.notify_devices(title, content, emails=[new_device.email])
     return success_response(data=new_device.to_json(), status_code=201)
 
 
@@ -102,7 +102,7 @@ def test_notifications():
             pusher.notify_devices(
                 request.args.get("title", "Test Notification"),
                 request.args.get("message", "This is a test notification"),
-                recipient.device_ids,
+                emails=[recipient.email],
             )
 
             notification_manager.create_notification(

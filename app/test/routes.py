@@ -231,7 +231,9 @@ def create_test(json_data):
 def mark_test(test_id, json_data):
     json_data = json_data["data"]
     test = test_manager.get_test_by_id(test_id)
-    student_id = get_current_user()["user_id"]
+    student = get_current_user()
+
+    student_id = student["user_id"]
 
     if not test:
         return not_found(message="The requested Test does not exist!")
@@ -277,8 +279,8 @@ def mark_test(test_id, json_data):
         test_count = len(test_manager.get_tests_by_student_ids([student_id]))
 
         engine = AchievementEngine(student_id)
-        engine.check_test_achievements(test.subject_id, test.score_acquired, test_count)
-        engine.check_level_achievements()
+        engine.check_test_achievements(test.subject_id, test.score_acquired, test_count, email=student["user_email"])
+        engine.check_level_achievements(email=student["user_email"])
 
         log_info("Analytics ran successfully...")
 

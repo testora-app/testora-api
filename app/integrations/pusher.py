@@ -19,7 +19,7 @@ class PushNotificationsService:
     """Wraps functionality for sending push notifications"""
 
     def notify_devices(
-        self, title, content, device_ids: List, metadata=None, sender=None
+        self, title, content, device_ids: List = None, emails: List = [], metadata=None, sender=None
     ):
         """
         Send push notification via OneSignal API.
@@ -50,7 +50,8 @@ class PushNotificationsService:
         notification_data = {
             "contents": {"en": content},
             "headings": {"en": title},
-            "include_player_ids": valid_device_ids,
+            # "include_player_ids": valid_device_ids,
+            "include_aliases": {"external_id": emails},
         }
 
         if metadata:
