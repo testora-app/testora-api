@@ -75,6 +75,14 @@ def admin_login(json_data):
 
 # region subjects
 
+@app_admin.get('/curriculum/')
+@app_admin.output(Responses.CurriculumSchema)
+def get_curriculums():
+    data = [{
+        'name': 'bece',
+        'display_name': 'BECE'
+    }]
+    return success_response(data=data)
 
 @app_admin.get("/subjects/")
 @app_admin.output(SubjectSchemaList)

@@ -112,6 +112,10 @@ class SubjectSchemaList(BaseSchema):
 
 # endregion Subject/Topic Schema
 
+class CurriculumSchema(BaseSchema):
+    name = String(required=True, allow_none=False)
+    display_name = String(required=True, allow_none=False)
+
 
 # region Nested Responses
 class Responses:
@@ -120,7 +124,7 @@ class Responses:
     SubjectSchema = make_response_schema(SubjectSchema)
     TopicSchema = make_response_schema(TopicSchema)
     ThemeSchema = make_response_schema(ThemeSchema)
-
+    CurriculumSchema = make_response_schema(CurriculumSchema, is_list=True)
 
 class Requests:
     EditSubjectSchema = make_response_schema(SubjectSchema)
