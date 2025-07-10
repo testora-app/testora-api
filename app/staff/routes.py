@@ -246,7 +246,6 @@ def dashboard_general():
 
     school_id = get_current_user()["school_id"]
     students = student_manager.get_active_students_by_school(school_id)
-    total_students = len(students)
     total_staff = len(staff_manager.get_staff_by_school(school_id))
     total_batches = len(batch_manager.get_batches_by_school_id(school_id))
     average_score = sts_manager.get_average_score(student_ids=[student.id for student in students])
@@ -256,7 +255,7 @@ def dashboard_general():
 
     return success_response(
         data={
-            "total_students": total_students,
+            "total_students": len(students),
             "total_staff": total_staff,
             "total_batches": total_batches,
             "average_score": average_score,

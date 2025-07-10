@@ -192,7 +192,7 @@ class TestManager(BaseManager):
 
         return q.order_by(Test.created_at.desc()).limit(limit).all()
 
-    def get_average_test_scores(self) -> List[Dict]:
+    def get_average_test_scores(self, student_ids=None) -> List[Dict]:
         return (
             Test.query.filter(Test.is_completed == True)  # Filter for completed tests
             .with_entities(
@@ -202,6 +202,7 @@ class TestManager(BaseManager):
                 ),  # Calculate average score
             )
             .group_by(Test.subject_id)  # Group by subject_id
+            .filter(Test.student_id.in_(student_ids))
             .all()
         )
 

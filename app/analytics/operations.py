@@ -89,8 +89,8 @@ class StudentTopicScoresManager(BaseManager):
         """
         query = StudentTopicScores.query
 
-        if student_ids:
-            query = query.filter(StudentTopicScores.student_id.in_(student_ids))
+        # if student_ids:
+        query = query.filter(StudentTopicScores.student_id.in_(student_ids))
 
         if subject_id:
             query = query.filter(StudentTopicScores.subject_id == subject_id)
@@ -140,6 +140,13 @@ class StudentTopicScoresManager(BaseManager):
             base_query = base_query.filter(StudentTopicScores.subject_id == subject_id)
         if student_ids:
             base_query = base_query.filter(StudentTopicScores.student_id.in_(student_ids))
+        else:
+            return {
+                "batch_average": 0.0,
+                "failing_student_ids": [],
+                "test_completion": 0
+            }
+
 
         # Average score using ORM
         average_score = base_query.with_entities(func.avg(StudentTopicScores.score_acquired)).scalar()
@@ -183,6 +190,11 @@ class StudentTopicScoresManager(BaseManager):
 
         if student_ids:
             base_query = base_query.filter(StudentTopicScores.student_id.in_(student_ids))
+        else:
+            return {
+                "strong_topics": [],
+                "weak_topics": []
+            }
 
         # Build the grouped average query
         grouped_query = base_query \
@@ -225,14 +237,14 @@ class StudentTopicScoresManager(BaseManager):
             float: Average score rounded to 2 decimal places
         """
         query = StudentTopicScores.query
+        average_score = None
 
         if subject_id is not None:
             query = query.filter(StudentTopicScores.subject_id == subject_id)
 
         if student_ids:
             query = query.filter(StudentTopicScores.student_id.in_(student_ids))
-
-        average_score = query.with_entities(func.avg(StudentTopicScores.score_acquired)).scalar()
+            average_score = query.with_entities(func.avg(StudentTopicScores.score_acquired)).scalar()
 
         return round(float(average_score), 2) if average_score is not None else 0.0
     

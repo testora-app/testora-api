@@ -290,19 +290,26 @@ def mark_test(test_id, json_data):
 @testr.output(Responses.SubjectPerformances, 200)
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 def subject_performance():
-    test_performances = test_manager.get_average_test_scores()
+    school_id = get_current_user()["school_id"]
+    students = student_manager.get_active_students_by_school(school_id)
+    student_ids = [student.id for student in students]
+    test_performances = test_manager.get_average_test_scores(student_ids=student_ids)
 
     average_scores = [
         {"subject_id": subject_id, "average_score": round(average_score, 2)}
-        for subject_id, average_score in test_performances
+        for subject_id, average_score in test_performances if test_performances
     ]
+
+    if not average_scores:
+        return success_response(data={"best_performing_subjects": [], "worst_performing_subjects": []})
+
 
     # Sort scores to identify best and worst performing subjects
     sorted_scores = sorted(
         average_scores, key=lambda x: x["average_score"], reverse=True
     )
 
-    best_performing_subjects = sorted_scores[:1]
+    best_performing_subjects = sorted_scores[:1] 
     worst_performing_subjects = sorted_scores[-3:]
 
     best_performing = [
