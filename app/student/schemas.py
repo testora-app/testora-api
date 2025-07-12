@@ -36,6 +36,7 @@ class StudentSchema(BaseSchema):
     is_approved = Boolean(required=False, allow_none=False)
     is_archived = Boolean(required=False, allow_none=False)
     school_id = ID_FIELD
+    tests_completed = Integer(required=False, allow_none=True)
 
 
 class VerifiedStudentSchema(BaseSchema):

@@ -151,9 +151,13 @@ def login(json_data):
         if not current_session:
             ssm_manager.add_new_student_session(student.id, current_login_time.date(), 0)
 
+
+        student_json = student.to_json()
+        student_json["tests_completed"] = len(test_manager.get_tests_by_student_ids([student.id]))
+
         return success_response(
             data={
-                "user": student.to_json(),
+                "user": student_json,
                 "auth_token": access_token,
                 "school": school_data,
                 "user_type": UserTypes.student,
