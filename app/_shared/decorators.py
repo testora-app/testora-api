@@ -10,6 +10,38 @@ from app._shared.services import set_current_user, get_current_user
 from threading import Thread
 
 
+def require_params_by_usertype(param_rules):
+    """
+    param_rules: dict mapping user_type -> list of required params
+    Example:
+    {
+        "admin": ["school_id", "term_id"],
+        "teacher": ["class_id", "subject_id"],
+        "student": ["student_id"]
+    }
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # Example: Get user_type from query param or header
+            user_type = get_current_user()["user_type"]
+
+            if not user_type:
+                return permissioned_denied("Missing user type")
+
+            required_params = param_rules.get(user_type)
+            if not required_params:
+                return permissioned_denied(f"Unsupported user type: {user_type}")
+
+            missing = [p for p in required_params if p not in request.args]
+            if missing:
+                return permissioned_denied(f"Missing query parameters for {user_type}")
+
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 # we are going to have a wrapper to check tokens
 def token_auth(user_types: List[str] = None):
     def decorator(func):
