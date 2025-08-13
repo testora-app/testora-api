@@ -1,3 +1,4 @@
+from flask import render_template
 from app.student.models import (
     Student,
     Batch,
@@ -56,6 +57,50 @@ class StudentManager(BaseManager):
     @staticmethod
     def get_students_by_ids(student_ids) -> List[Student]:
         return Student.query.filter(Student.id.in_(student_ids)).all()
+
+    def update_streak(self, student_id, current_login_time):
+        student: Student = Student.query.get(student_id)
+        title = ""
+        content = ""
+        streak_modified = False
+        if student and student.last_login:
+            # Calculate the difference in days between the current login and the last login
+            days_difference = (
+                current_login_time.date() - student.last_login.date()
+            ).days
+
+            if days_difference == 1:
+                # Logged in on the next day
+                student.current_streak += 1
+                student.highest_streak = max(
+                    student.current_streak, student.highest_streak
+                )
+
+                title = "Streak Increased"
+                content = render_template("streak_added.txt")
+                streak_modified = True
+            else:
+                # More than one day has passed, or same day login, reset streak
+                student.current_streak = 1
+                title = "Streak Reset"
+                content = render_template("streak_reset.txt")
+                streak_modified = True
+        else:
+            # First time login
+            student.current_streak = 1
+            student.highest_streak = 1
+
+        student.last_login = current_login_time
+        student.save()
+
+        return {
+            "message": {
+                "title": title,
+                "content": content
+            },
+            "streak_modified": streak_modified
+        }
+
 
 
 class BatchManager(BaseManager):

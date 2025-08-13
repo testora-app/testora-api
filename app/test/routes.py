@@ -30,10 +30,13 @@ from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
 from app.school.operations import school_manager
 from app.subscriptions.constants import SubscriptionPackages, SubscriptionLimits, Features, FeatureStatus
+from app.notifications.operations import recipient_manager
+
 
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
 from app.achievements.services import AchievementEngine
+from app.integrations.pusher import pusher
 
 import json
 
@@ -281,6 +284,19 @@ def mark_test(test_id, json_data):
         engine = AchievementEngine(student_id)
         engine.check_test_achievements(test.subject_id, test.score_acquired, test_count, email=student["user_email"])
         engine.check_level_achievements(email=student["user_email"])
+
+        streak_update = student_manager.update_streak(student_id, datetime.now(timezone.utc))
+
+        if streak_update["streak_modified"]:
+            recipient = recipient_manager.get_recipient_by_email(
+                student.email, UserTypes.student
+            )
+            if recipient:
+                pusher.notify_devices(
+                    title=streak_update["message"]["title"],
+                    content=streak_update["message"]["content"],
+                    device_ids=recipient.device_ids,
+                )
 
         log_info("Analytics ran successfully...")
 

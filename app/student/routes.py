@@ -102,56 +102,7 @@ def login(json_data):
 
         school_data = school.to_json()
         school_data.pop("code")
-
-        recipient = recipient_manager.get_recipient_by_email(
-            student.email, UserTypes.student
-        )
-        # handle streak
-        current_login_time = datetime.now(timezone.utc)
-        if student.last_login:
-            # Calculate the difference in days between the current login and the last login
-            days_difference = (
-                current_login_time.date() - student.last_login.date()
-            ).days
-
-            if days_difference == 1:
-                # Logged in on the next day
-                student.current_streak += 1
-                student.highest_streak = max(
-                    student.current_streak, student.highest_streak
-                )
-
-                if recipient:
-                    pusher.notify_devices(
-                        title="Streak Increased",
-                        content=render_template("streak_added.txt"),
-                        device_ids=recipient.device_ids,
-                    )
-            else:
-                # More than one day has passed, or same day login, reset streak
-                student.current_streak = 1
-                if recipient:
-                    pusher.notify_devices(
-                        title="Streak Lost",
-                        content=render_template("streak_lost.txt"),
-                        device_ids=recipient.device_ids,
-                    )
-        else:
-            # First time login
-            student.current_streak = 1
-            student.highest_streak = 1
-
-        student.last_login = current_login_time
-        student.save()
-
-        # handle session
-        current_session = ssm_manager.select_student_session_history(
-            student.id, current_login_time.date()
-        )
-        if not current_session:
-            ssm_manager.add_new_student_session(student.id, current_login_time.date(), 0)
-
-
+        
         student_json = student.to_json()
         student_json["tests_completed"] = len(test_manager.get_tests_by_student_ids([student.id]))
 
