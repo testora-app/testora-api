@@ -2,19 +2,49 @@ from apiflask import APIBlueprint
 
 from app._shared.schemas import UserTypes
 from app._shared.api_errors import success_response
-from app._shared.decorators import token_auth
+from app._shared.decorators import token_auth, require_params_by_usertype
 from app._shared.services import get_current_user
 
 from app.analytics.schemas import Responses, Requests
 from app.analytics.operations import ssm_manager, ssr_manager, sts_manager
+from app.analytics.services import analytics_service
+
 
 from app.app_admin.operations import topic_manager, subject_manager
 from app.student.operations import student_manager, batch_manager
 
-
 analytics = APIBlueprint("analytics", __name__)
 
 
+#region NEW ANALYTICS
+
+@analytics.get("/analytics/practice-rate")
+@analytics.input(Requests.RateDistributionQuerySchema, location="query")
+@analytics.output(Responses.PracticeRateDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def practice_rate(query_data):
+    school_id = get_current_user()["school_id"]
+    practice_rate_results = analytics_service.get_practice_rate(school_id, **query_data)
+    return success_response(data=practice_rate_results)
+
+
+@analytics.get("/analytics/performance-distribution")
+@analytics.input(Requests.RateDistributionQuerySchema, location="query")
+@analytics.output(Responses.PerformanceDistributionDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def performance_distribution(query_data):
+    school_id = get_current_user()["school_id"]
+    performance_distribution_results = analytics_service.get_performance_distribution(school_id, **query_data)
+    return success_response(data=performance_distribution_results)
+
+
+
+
+
+
+#region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)
 @token_auth([UserTypes.student])

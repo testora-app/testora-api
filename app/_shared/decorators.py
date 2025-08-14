@@ -31,7 +31,7 @@ def require_params_by_usertype(param_rules):
 
             required_params = param_rules.get(user_type)
             if not required_params:
-                return permissioned_denied(f"Unsupported user type: {user_type}")
+                return f(*args, **kwargs)
 
             missing = [p for p in required_params if p not in request.args]
             if missing:
