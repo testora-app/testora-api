@@ -40,7 +40,26 @@ def performance_distribution(query_data):
     return success_response(data=performance_distribution_results)
 
 
+@analytics.get("/analytics/subject-performance")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.SubjectPerformanceDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def subject_performance(query_data):
+    school_id = get_current_user()["school_id"]
+    subject_performance_results = analytics_service.get_subject_performance(school_id, **query_data)
+    return success_response(data=subject_performance_results)
 
+
+@analytics.get("/analytics/recent-tests-activities")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.RecentTestActivitiesSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def recent_tests_activities(query_data):
+    school_id = get_current_user()["school_id"]
+    recent_tests_activities_results = analytics_service.get_recent_tests_activities(school_id, **query_data)
+    return success_response(data=recent_tests_activities_results)
 
 
 

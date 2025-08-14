@@ -5,6 +5,7 @@ from typing import List, Dict, Tuple, Any, Optional, Iterable
 from app.student.operations import student_manager, batch_manager
 from app.test.operations import test_manager
 from app.app_admin.operations import subject_manager
+from app.student.operations import student_manager
 
 class AnalyticsService:
 
@@ -268,7 +269,6 @@ class AnalyticsService:
             }
         }
 
-
         return {
             "subject_name": subject_name,
             "proficiency_percent": proficiency_percent,
@@ -278,6 +278,78 @@ class AnalyticsService:
             "last_updated": self.most_recent_created_at(tests)
         }
 
+    def get_subject_performance(self, batch_id, subject_id):
+        if batch_id:
+            batch = batch_manager.get_batch_by_id(batch_id)
+            students = batch.to_json()["students"]
+            student_ids = [student["id"] for student in students]
+        else:
+            students = student_manager.get_active_students_by_school(school_id)
+            student_ids = [student.id for student in students]
+
+        tests = test_manager.get_tests_by_student_ids(student_ids)
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+        
+
+        subjects_in_tests = set([test.subject_id for test in tests])
+        subjects = subject_manager.get_subjects_by_ids(list(subjects_in_tests))
+
+        subject_distribution = []
+
+        for subject in subjects:
+            students_with_highly_proficient = len([test for test in tests if test.subject_id == subject.id and self.get_performance_band(test.score_acquired) == "highly_proficient"])
+            students_with_proficient = len([test for test in tests if test.subject_id == subject.id and self.get_performance_band(test.score_acquired) == "proficient"])
+
+            student_readiness_number = students_with_highly_proficient + students_with_proficient
+            student_readiness_percent = student_readiness_number / len(student_ids) * 100
+
+            number_of_subject_tests = len([test for test in tests if test.subject_id == subject.id])
+            average_subject_score = sum(test.score_acquired for test in tests if test.subject_id == subject.id) / number_of_subject_tests
+
+            subject_distribution.append({
+                "subject_name": subject.name,
+                "student_readiness_number": student_readiness_number,
+                "student_readiness_percent": student_readiness_percent,
+                "status": self.get_performance_band(average_subject_score)
+            })
+
+        return subject_distribution
+
+
+    def get_recent_tests_activities(self, school_id, batch_id, subject_id=None):
+        if batch_id:
+            batch = batch_manager.get_batch_by_id(batch_id)
+            students = batch.to_json()["students"]
+            student_ids = [student["id"] for student in students]
+        else:
+            students = student_manager.get_active_students_by_school(school_id)
+            student_ids = [student.id for student in students]
+
+        tests = test_manager.get_tests_by_student_ids(student_ids)
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+
+        sorted_tests = sorted(tests, key=lambda test: test.created_at, reverse=True)[:10]
+        student_ids = [test.student_id for test in sorted_tests]
+        students = student_manager.get_students_by_ids(student_ids)
+        subjects = subject_manager.get_subjects_by_ids(list(set([test.subject_id for test in sorted_tests])))
+
+        student_dict = {student.id: student for student in students}
+        subject_dict = {subject.id: subject for subject in subjects}
+
+        now = datetime.now(timezone.utc)
+
+        tests_info = []
+
+        for test in sorted_tests:
+            tests_info.append({
+                "description": f"{student_dict[test.student_id].first_name} completed a test in '{subject_dict[test.subject_id].name}' ",
+                "time": now.hour - test.created_at.hour,
+            })
+        
+        return tests_info
+            
         
 
         

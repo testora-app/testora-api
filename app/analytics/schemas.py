@@ -54,6 +54,11 @@ class PracticeRateQuerySchema(BaseSchema):
     time_range = String(required=True, allow_none=False, validate=[OneOf(['this_week', 'this_month', 'all_time'])])
 
 
+class AnalyticsQuerySchema(BaseSchema):
+    batch_id = Integer(required=True, allow_none=False)
+    subject_id = Integer(required=False, allow_none=True)
+
+
 class BandStatSchema(Schema):
     class Meta:
         ordered = True
@@ -130,6 +135,21 @@ class PracticeRateDataSchema(BaseSchema):
     tier_distribution = Nested(PracticeTierDistributionSchema, required=True)
 
 
+class SubjectPerformanceDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    subject_name = String(required=True, example="Mathematics")
+    student_readiness_number = Integer(required=True, validate=Range(min=0), example=86)
+    student_readiness_percent = Float(required=True, validate=Range(min=0, max=100), example=28.0)
+    status = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+
+
+class RecentTestActivitiesSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    description = String(required=True, example="John Doe completed a test in 'Mathematics'")
+    time = Integer(required=True, example=2)
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -138,7 +158,10 @@ class Responses:
     TopicMasteryDataSchema = make_response_schema(TopicMasteryDataSchema)
     PracticeRateDataSchema = make_response_schema(PracticeRateDataSchema)
     PerformanceDistributionDataSchema = make_response_schema(PerformanceDistributionDataSchema)
+    SubjectPerformanceDataSchema = make_response_schema(SubjectPerformanceDataSchema, is_list=True)
+    RecentTestActivitiesSchema = make_response_schema(RecentTestActivitiesSchema, is_list=True)
 
 class Requests:
     TopicPerformanceQuerySchema = TopicPerformanceQuerySchema
     RateDistributionQuerySchema = PracticeRateQuerySchema
+    AnalyticsQuerySchema = AnalyticsQuerySchema
