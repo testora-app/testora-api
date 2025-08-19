@@ -87,8 +87,8 @@ class DashboardGeneralSchema(BaseSchema):
     total_students = Integer(required=True)
     total_staff = Integer(required=True)
     total_batches = Integer(required=True)
-    average_score = Float(required=True)
-    average_session = Integer(required=True)
+    total_tests = Integer(required=True)
+    package_information = Dict(required=True)
 
 
 class Responses:

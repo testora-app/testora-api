@@ -228,37 +228,42 @@ def edit_staff_details(staff_id, json_data):
 
 
 #region ANALYTICS
-@staff.get("/staff/dashboard-general/")
+@staff.get("/school-admin/dashboard-general/")
 @staff.output(Responses.DashboardGeneralSchema)
-@token_auth([UserTypes.school_admin, UserTypes.staff])
+@token_auth([UserTypes.school_admin])
 def dashboard_general():
     from app.student.operations import student_manager, batch_manager
-    from app.analytics.operations import sts_manager, ssm_manager
+    from app.test.operations import test_manager
     '''
     Get the general dashboard data for the staff
     Returns:
         total_students (int): Total number of students
         total_staff (int): Total number of staff
         total_batches (int): Total number of batches
-        average_score (int): Average score
-        average_session (int): Average session
+        total_tests (int): Total number of tests
+        package_information (dict): Package information
+            subscription_package (str): Subscription package
+            subscription_expiry (str): Subscription expiry date
     '''
 
     school_id = get_current_user()["school_id"]
     students = student_manager.get_active_students_by_school(school_id)
     total_staff = len(staff_manager.get_staff_by_school(school_id))
     total_batches = len(batch_manager.get_batches_by_school_id(school_id))
-    average_score = sts_manager.get_average_score(student_ids=[student.id for student in students])
-    average_session = ssm_manager.get_average_session_duration(
-        student_ids=[student.id for student in students]
-    )
+    total_tests = len(test_manager.get_tests_by_school_id(school_id))
+    school = school_manager.get_school_by_id(school_id)
+    subscription_package = school.subscription_package
+    subscription_expiry = school.subscription_expiry_date
 
     return success_response(
         data={
             "total_students": len(students),
             "total_staff": total_staff,
             "total_batches": total_batches,
-            "average_score": average_score,
-            "average_session": average_session
+            "total_tests": total_tests,
+            "package_information": {
+                "subscription_package": subscription_package,
+                "subscription_expiry": subscription_expiry,
+            },
         }
     )
