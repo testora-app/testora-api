@@ -49,7 +49,7 @@ class TopicMasteryDataSchema(BaseSchema):
 
 
 class PracticeRateQuerySchema(BaseSchema):
-    subject_id = Integer(required=True, allow_none=True)
+    subject_id = Integer(required=False, allow_none=True)
     batch_id = Integer(required=True, allow_none=False)
     time_range = String(required=True, allow_none=False, validate=[OneOf(['this_week', 'this_month', 'all_time'])])
 
