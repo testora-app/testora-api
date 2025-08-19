@@ -150,6 +150,19 @@ class RecentTestActivitiesSchema(BaseSchema):
     description = String(required=True, example="John Doe completed a test in 'Mathematics'")
     time = Integer(required=True, example=2)
 
+
+class ProficiencyDistributionDataSchema(BaseSchema):
+    name = String(required=True, example="Highly Proficient")
+    students = Integer(required=True, validate=Range(min=0), example=86)
+    percentage = Float(required=True, validate=Range(min=0, max=100), example=28.0)
+    
+
+class AverageScoreTrendSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    average_score = Float(required=True, example=28.0)
+    month = String(required=True, example="August")
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -160,6 +173,9 @@ class Responses:
     PerformanceDistributionDataSchema = make_response_schema(PerformanceDistributionDataSchema)
     SubjectPerformanceDataSchema = make_response_schema(SubjectPerformanceDataSchema, is_list=True)
     RecentTestActivitiesSchema = make_response_schema(RecentTestActivitiesSchema, is_list=True)
+    ProficiencyDistributionDataSchema = make_response_schema(ProficiencyDistributionDataSchema, is_list=True)
+    AverageScoreTrendSchema = make_response_schema(AverageScoreTrendSchema, is_list=True)
+    
 
 class Requests:
     TopicPerformanceQuerySchema = TopicPerformanceQuerySchema

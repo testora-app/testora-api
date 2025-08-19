@@ -62,6 +62,27 @@ def recent_tests_activities(query_data):
     return success_response(data=recent_tests_activities_results)
 
 
+@analytics.get("/analytics/proficiency-distribution")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.ProficiencyDistributionDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def proficiency_distribution(query_data):
+    school_id = get_current_user()["school_id"]
+    proficiency_distribution_results = analytics_service.get_proficiency_distribution(school_id, **query_data)
+    return success_response(data=proficiency_distribution_results)
+
+
+@analytics.get("/analytics/average-score-trend")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.AverageScoreTrendSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def average_score_trend(query_data):
+    school_id = get_current_user()["school_id"]
+    average_score_trend_results = analytics_service.get_average_score_trend(school_id, **query_data)
+    return success_response(data=average_score_trend_results)
+
 
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
