@@ -46,10 +46,17 @@ class VerifiedStudentSchema(BaseSchema):
     user_type = String(required=True)
 
 
+class SubjectSchema(BaseSchema):
+    id = Integer(required=True, allow_none=False, dump_only=True)
+    name = String(required=True, allow_none=False)
+    short_name = String(required=True, allow_none=False)
+
+
 class BatchSchema(BaseSchema):
     id = Integer(required=True, allow_none=False, dump_only=True)
     batch_name = String(required=True, allow_none=False)
     curriculum = String(required=True, allow_none=False)
+    subjects = List(Nested(SubjectSchema), required=False)
     students = List(Integer(), allow_none=True, required=False)
     staff = List(Integer(), allow_none=True, required=False)
 

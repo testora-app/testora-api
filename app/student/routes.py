@@ -259,6 +259,15 @@ def get_batches():
     batches = (
         [batch.to_json(include_students=True) for batch in batches] if batches else []
     )
+
+    for batch in batches:
+        batch_subjects = subject_manager.get_subject_by_curriculum(batch["curriculum"])
+        batch["subjects"] = [{
+            "id": subject.id,
+            "name": subject.name,
+            "short_name": subject.short_name
+        } for subject in batch_subjects]
+
     return success_response(data=batches)
 
 
