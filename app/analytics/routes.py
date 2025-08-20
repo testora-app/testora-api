@@ -84,6 +84,16 @@ def average_score_trend(query_data):
     return success_response(data=average_score_trend_results)
 
 
+@analytics.get("/analytics/performance-general")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.PerformanceGeneralDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id"]})
+def performance_general(query_data):
+    school_id = get_current_user()["school_id"]
+    performance_general_results = analytics_service.get_performance_general(school_id, **query_data)
+    return success_response(data=performance_general_results)
+
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)

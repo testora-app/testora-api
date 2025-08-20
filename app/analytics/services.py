@@ -559,5 +559,32 @@ class AnalyticsService:
 
         return month_scores_named
 
+    def get_performance_general(self, school_id, batch_id, subject_id=None):
+        if batch_id:
+            batch = batch_manager.get_batch_by_id(batch_id)
+            students = batch.to_json()["students"]
+            student_ids = [student["id"] for student in students]
+        else:
+            students = student_manager.get_active_students_by_school(school_id)
+            student_ids = [student.id for student in students]
+
+        tests = test_manager.get_tests_by_student_ids(student_ids)
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+
+        average_score = round(sum(test.score_acquired for test in tests) / len(tests), 2)
+
+        highly_proficient_students = len(
+            [test for test in tests if self.get_performance_band(test.score_acquired) == "highly_proficient"]
+        )
+
+        total_students = len(student_ids)
+
+        return {
+            "average_score": average_score,
+            "highly_proficient_students": highly_proficient_students,
+            "total_students": total_students,
+        }
+
 
 analytics_service = AnalyticsService()
