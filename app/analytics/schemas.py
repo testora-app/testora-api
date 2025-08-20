@@ -149,6 +149,7 @@ class RecentTestActivitiesSchema(BaseSchema):
         ordered = True
     description = String(required=True, example="John Doe completed a test in 'Mathematics'")
     time = Integer(required=True, example=2)
+    type = String(required=True, example="user_activity")
 
 
 class ProficiencyDistributionDataSchema(BaseSchema):

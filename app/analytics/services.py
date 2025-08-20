@@ -453,7 +453,8 @@ class AnalyticsService:
             tests_info.append(
                 {
                     "description": f"{student_dict[test.student_id].first_name} completed a test in '{subject_dict[test.subject_id].name}' ",
-                    "time": now.hour - test.created_at.hour,
+                    "time": test.created_at,
+                    "type": "user_activity"
                 }
             )
 
@@ -497,27 +498,27 @@ class AnalyticsService:
             {
                 "name": "Highly Proficient",
                 "students": band_counts["highly_proficient"],
-                "percentage": band_counts["highly_proficient"] / total_students,
+                "percentage": band_counts["highly_proficient"] / total_students if total_students > 0 else 0,
             },
             {
                 "name": "Proficient",
                 "students": band_counts["proficient"],
-                "percentage": band_counts["proficient"] / total_students,
+                "percentage": band_counts["proficient"] / total_students if total_students > 0 else 0,
             },
             {
                 "name": "Approaching",
                 "students": band_counts["approaching"],
-                "percentage": band_counts["approaching"] / total_students,
+                "percentage": band_counts["approaching"] / total_students if total_students > 0 else 0,
             },
             {
                 "name": "Developing",
                 "students": band_counts["developing"],
-                "percentage": band_counts["developing"] / total_students,
+                "percentage": band_counts["developing"] / total_students if total_students > 0 else 0,
             },
             {
                 "name": "Emerging",
                 "students": band_counts["emerging"],
-                "percentage": band_counts["emerging"] / total_students,
+                "percentage": band_counts["emerging"] / total_students if total_students > 0 else 0,
             },
         ]
 
