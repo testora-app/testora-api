@@ -337,10 +337,10 @@ class AnalyticsService:
             "at_risk": {"count": at_risk, "percentage": at_risk_percent},
             "average_tests": {"value": len(tests), "unit": "/week"},
             "average_time_spent": {
-                "value": sum(
+                "value": round(sum(
                     (test.finished_on.minute - test.started_on.minute) for test in tests
                 )
-                / len(tests),
+                / len(tests), 2),
                 "unit": "min/student",
             },
         }
@@ -604,7 +604,7 @@ class AnalyticsService:
                 {
                     "student_id": test.student_id,
                     "student_name": students_dict[test.student_id].surname + " " + students_dict[test.student_id].first_name,
-                    "average_score": sum(test.score_acquired for test in student_tests) / len(student_tests),
+                    "average_score": round(sum(test.score_acquired for test in student_tests) / len(student_tests), 2),
                     "batch_name": batch.name,
                     "proficiency": self.get_performance_band(sum(test.score_acquired for test in student_tests) / len(student_tests)),
                 }
