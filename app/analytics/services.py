@@ -1,3 +1,4 @@
+import calendar
 from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from typing import List, Dict, Tuple, Any, Optional, Iterable
@@ -353,7 +354,7 @@ class AnalyticsService:
             "last_updated": self.most_recent_created_at(tests),
         }
 
-    def get_subject_performance(self, batch_id, subject_id):
+    def get_subject_performance(self, school_id, batch_id, subject_id):
         if batch_id:
             batch = batch_manager.get_batch_by_id(batch_id)
             students = batch.to_json()["students"]
@@ -528,9 +529,10 @@ class AnalyticsService:
     def group_average_scores_by_month(self, tests):
         month_counts = defaultdict(list)
         for test in tests:
-            month_counts[test.created_at.month].append(test.score_acquired)
+            key = (test.created_at.year, test.created_at.month)  # (year, month)
+            month_counts[key].append(test.score_acquired)
         return month_counts
-    
+
 
     def get_average_score_trend(self, school_id, batch_id, subject_id=None):
         if batch_id:
@@ -546,10 +548,16 @@ class AnalyticsService:
             tests = [test for test in tests if test.subject_id == subject_id]
 
         average_scores = self.group_average_scores_by_month(tests)
-        for month, scores in average_scores.items():
-            average_scores[month] = sum(scores) / len(scores)
-        
-        return average_scores
+
+        month_scores_named = {}
+        for (year, month) in sorted(average_scores.keys()):
+            scores = average_scores[(year, month)]
+            avg_score = sum(scores) / len(scores)
+            avg_score = round(avg_score, 2)  # 2 decimal places
+            month_name = f"{calendar.month_name[month]} {year}"  # e.g. "January 2025"
+            month_scores_named[month_name] = avg_score
+
+        return month_scores_named
 
 
 analytics_service = AnalyticsService()
