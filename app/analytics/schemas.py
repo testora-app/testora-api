@@ -194,6 +194,27 @@ class PerformanceIndicatorsDataSchema(BaseSchema):
     total_tests_taken = Integer(required=True, validate=Range(min=0), example=86)
     practice_tier = String(required=True, validate=OneOf(["no_practice", "minimal_practice", "consistent_practice", "high_practice"]), example="no_practice")
     total_time_spent = Integer(required=True, validate=Range(min=0), example=86)
+
+
+class SubjectProficiencyDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    subject_id = Integer(required=True, validate=Range(min=0), example=86)
+    subject_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    
+
+class TestHistoryDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    test_id = Integer(required=True, validate=Range(min=0), example=86)
+    subject_id = Integer(required=True, validate=Range(min=0), example=86)
+    subject_name = String(required=True, example="English")
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    score = Float(required=True, example=28.0)
+    points = Integer(required=True, validate=Range(min=0), example=86)
+    
     
 
 class Responses:
@@ -211,6 +232,8 @@ class Responses:
     PerformanceGeneralDataSchema = make_response_schema(PerformanceGeneralDataSchema)
     StudentsProficiencyDataSchema = make_response_schema(StudentsProficiencyDataSchema, is_list=True)
     PerformanceIndicatorsDataSchema = make_response_schema(PerformanceIndicatorsDataSchema)
+    SubjectProficiencyDataSchema = make_response_schema(SubjectProficiencyDataSchema, is_list=True)
+    TestHistoryDataSchema = make_response_schema(TestHistoryDataSchema, is_list=True)
 
 class Requests:
     TopicPerformanceQuerySchema = TopicPerformanceQuerySchema

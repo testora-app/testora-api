@@ -114,6 +114,22 @@ def performance_indicators(student_id, query_data):
     return success_response(data=performance_indicators_results)
 
 
+@analytics.get('/analytics/<student_id>/subject-proficiency')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.SubjectProficiencyDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def subject_proficiency(student_id, query_data):
+    subject_proficiency_results = analytics_service.get_subject_proficiency(student_id, **query_data)
+    return success_response(data=subject_proficiency_results)
+
+
+@analytics.get('/analytics/<student_id>/test-history')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.TestHistoryDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def test_history(student_id, query_data):
+    test_history_results = analytics_service.get_test_history(student_id, **query_data)
+    return success_response(data=test_history_results)
 
 
 #region OLD ANALYTICS

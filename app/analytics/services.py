@@ -644,9 +644,62 @@ class AnalyticsService:
             "average_proficiency": average_score
         }
         
+    def get_subject_proficiency(self, student_id, subject_id=None, batch_id=None):
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        subject_ids = []
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+            subject_ids.append(subject_id)
+        else:
+            subject_ids = [test.subject_id for test in tests]
+
+        subject_ids = set(subject_ids)
+        subjects = subject_manager.get_subjects_by_ids(list(subject_ids))
+
+        subjects = {subject.id: subject for subject in subjects}
+
+        subject_performance = []
+
+        for subject_id in subject_ids:
+            tests = [test for test in tests if test.subject_id == subject_id]
+
+            average_score = round(sum(test.score_acquired for test in tests) / len(tests), 2)
+            proficiency  = self.get_performance_band(average_score)
+
+            subject_performance.append({
+                "subject_id": subject_id,
+                "subject_name": subjects[subject_id].name,
+                "average_score": average_score,
+                "proficiency": proficiency,
+            })
+
+        return subject_performance
 
         
+    def get_test_history(self, student_id, subject_id=None, batch_id=None):
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
 
+        tests = sorted(tests, key=lambda test: test.created_at, reverse=True)
+
+        subject_ids = set(test.subject_id for test in tests)
+        subjects = subject_manager.get_subjects_by_ids(list(subject_ids))
+
+        subjects = {subject.id: subject for subject in subjects}
+
+        test_history = []
+        for test in tests:
+            test_history.append({
+                "test_id": test.id,
+                "subject_id": test.subject_id,
+                "subject_name": subjects[test.subject_id].name,
+                "proficiency": self.get_performance_band(test.score_acquired),
+                "score": test.score_acquired,
+                "points": test.points_acquired,
+            })
+
+        return test_history
 
 
         
