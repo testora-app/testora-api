@@ -94,6 +94,16 @@ def performance_general(query_data):
     performance_general_results = analytics_service.get_performance_general(school_id, **query_data)
     return success_response(data=performance_general_results)
 
+
+@analytics.get("/analytics/students-proficiency")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.StudentsProficiencyDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def students_proficiency(query_data):
+    students_proficiency_results = analytics_service.get_students_proficiency(**query_data)
+    return success_response(data=students_proficiency_results)
+
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)

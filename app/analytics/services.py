@@ -587,4 +587,29 @@ class AnalyticsService:
         }
 
 
+    def get_students_proficiency(self, batch_id, subject_id=None):
+        batch = batch_manager.get_batch_by_id(batch_id)
+        students = batch.to_json()["students"]
+        students_dict = {student["id"]: student for student in students}
+        student_ids = [student["id"] for student in students]
+
+        tests = test_manager.get_tests_by_student_ids(student_ids)
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+
+        students_proficiency = []
+        for test in tests:
+            student_tests = [test for test in tests if test.student_id == test.student_id]
+            students_proficiency.append(
+                {
+                    "student_id": test.student_id,
+                    "student_name": students_dict[test.student_id].surname + " " + students_dict[test.student_id].first_name,
+                    "average_score": sum(test.score_acquired for test in student_tests) / len(student_tests),
+                    "batch_name": batch.name,
+                    "proficiency": self.get_performance_band(sum(test.score_acquired for test in student_tests) / len(student_tests)),
+                }
+            )
+
+        return students_proficiency
+
 analytics_service = AnalyticsService()
