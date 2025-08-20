@@ -104,6 +104,18 @@ def students_proficiency(query_data):
     students_proficiency_results = analytics_service.get_students_proficiency(**query_data)
     return success_response(data=students_proficiency_results)
 
+
+@analytics.get('/analytics/<student_id>/performance-indicators')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.PerformanceIndicatorsDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def performance_indicators(student_id, query_data):
+    performance_indicators_results = analytics_service.get_performance_indicators(student_id, **query_data)
+    return success_response(data=performance_indicators_results)
+
+
+
+
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)

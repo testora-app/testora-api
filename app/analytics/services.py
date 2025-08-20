@@ -612,4 +612,44 @@ class AnalyticsService:
 
         return students_proficiency
 
+    def get_practice_tier(self, total_time_spent):
+        if total_time_spent == 0 or total_time_spent is None:
+            return "no_practice"
+        elif total_time_spent <= 60:
+            return "minimal_practice"
+        elif total_time_spent <= 120:
+            return "consistent_practice"
+        else:
+            return "high_practice"
+
+    def get_performance_indicators(self, student_id, subject_id=None, batch_id=None):
+        student = student_manager.get_student_by_id(student_id)
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+
+        average_score = round(sum(test.score_acquired for test in tests) / len(tests), 2)
+        proficiency  = self.get_performance_band(average_score)
+        total_time_spent = round(sum((test.finished_on - test.started_on).total_seconds() for test in tests) / 60, 2)
+        practice_tier = self.get_practice_tier(total_time_spent)
+
+        return {
+            "student_id": student_id,
+            "student_name": student.surname + " " + student.first_name,
+            "average_score": average_score,
+            "proficiency": proficiency,
+            "total_tests_taken": len(tests),
+            "practice_tier": practice_tier,
+            "total_time_spent": total_time_spent,
+            "average_proficiency": average_score
+        }
+        
+
+        
+
+
+
+        
+        
+
 analytics_service = AnalyticsService()
