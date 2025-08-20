@@ -255,6 +255,10 @@ def dashboard_general():
     subscription_package = school.subscription_package
     subscription_expiry = school.subscription_expiry_date
 
+    subscription_description = "You have full access to advanced analytics, unlimited student capacity, and dedicated support for your institution."
+    if subscription_package == "free":
+        subscription_description = "You have limited access to advanced analytics, 10 student capacity, and dedicated support for your institution."
+
     return success_response(
         data={
             "total_students": len(students),
@@ -264,6 +268,7 @@ def dashboard_general():
             "package_information": {
                 "subscription_package": subscription_package,
                 "subscription_expiry": subscription_expiry,
+                "subscription_description": subscription_description,
             },
         }
     )
