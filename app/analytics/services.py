@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from typing import List, Dict, Tuple, Any, Optional, Iterable
 
+from apiflask.exceptions import HTTPError
+
 from app.student.operations import student_manager, batch_manager
 from app.test.operations import test_manager
 from app.app_admin.operations import subject_manager
@@ -104,7 +106,7 @@ class AnalyticsService:
         }
 
         qualifying_objects = sum(1 for r in records if r.get(id_key) in qualifying_ids)
-        pct = qualifying_objects * 100.0 / len(records)
+        pct = (qualifying_objects / len(records)) * 100
         return qualifying_objects, round(pct, 2)
 
     def configure_performance_requirements(
@@ -119,6 +121,8 @@ class AnalyticsService:
         # get the batch in question
         if batch_id:
             batch = batch_manager.get_batch_by_id(batch_id)
+            if not batch:
+                raise HTTPError(status_code=404, detail="Batch not found")
             students = batch.to_json()["students"]
             student_ids = [student["id"] for student in students]
         else:
@@ -187,16 +191,21 @@ class AnalyticsService:
 
         number_of_test_per_student = len(this_tests) / len(all_student_ids)
         comparison = (
-            len(these_students_took_tests_this_param)
-            - len(these_students_took_tests_last_param)
-        ) / len(these_students_took_tests_last_param) if len(these_students_took_tests_last_param) > 0 else 0
+            (
+                len(these_students_took_tests_this_param)
+                - len(these_students_took_tests_last_param)
+            )
+            / len(these_students_took_tests_last_param)
+            if len(these_students_took_tests_last_param) > 0
+            else 0
+        )
 
         practiced_percent = len(these_students_took_tests_this_param) / len(
             all_student_ids
         )
         practiced_number = len(these_students_took_tests_this_param)
 
-        not_practiced_percent = 1 - practiced_percent
+        not_practiced_percent = 100 - practiced_percent
         not_practiced_number = len(all_student_ids) - practiced_number
 
         minimal_practice_number, minimal_practice_percent = self.count_in_range(
@@ -292,7 +301,11 @@ class AnalyticsService:
         else:
             subject_name = "Overall"
 
-        average_score = sum(test.score_acquired for test in tests) / len(tests) if len(tests) > 0 else 0
+        average_score = (
+            sum(test.score_acquired for test in tests) / len(tests)
+            if len(tests) > 0
+            else 0
+        )
 
         proficiency_percent = average_score
         proficiency_status = self.get_performance_band(average_score)
@@ -321,7 +334,9 @@ class AnalyticsService:
             tier_distribution["highly_proficient"]["count"]
             + tier_distribution["proficient"]["count"]
         )
-        proficiency_above_percent = proficiency_above / total_students if total_students > 0 else 0
+        proficiency_above_percent = (
+            proficiency_above / total_students if total_students > 0 else 0
+        )
         at_risk = (
             tier_distribution["approaching"]["count"]
             + tier_distribution["emerging"]["count"]
@@ -337,10 +352,18 @@ class AnalyticsService:
             "at_risk": {"count": at_risk, "percentage": at_risk_percent},
             "average_tests": {"value": len(tests), "unit": "/week"},
             "average_time_spent": {
-                "value": round(sum(
-                    (test.finished_on.minute - test.started_on.minute) for test in tests
-                )
-                / len(tests), 2),
+                "value": round(
+                    (
+                        sum(
+                            (test.finished_on.minute - test.started_on.minute)
+                            for test in tests
+                        )
+                        / len(tests)
+                        if len(tests) > 0
+                        else 0
+                    ),
+                    2,
+                ),
                 "unit": "min/student",
             },
         }
@@ -367,8 +390,7 @@ class AnalyticsService:
         if subject_id:
             tests = [test for test in tests if test.subject_id == subject_id]
 
-        subjects_in_tests = set([test.subject_id for test in tests])
-        subjects = subject_manager.get_subjects_by_ids(list(subjects_in_tests))
+        subjects = subject_manager.get_subject_by_curriculum("bece")
 
         subject_distribution = []
 
@@ -408,6 +430,8 @@ class AnalyticsService:
                     if test.subject_id == subject.id
                 )
                 / number_of_subject_tests
+                if number_of_subject_tests > 0
+                else 0
             )
 
             subject_distribution.append(
@@ -439,9 +463,7 @@ class AnalyticsService:
         ]
         student_ids = [test.student_id for test in sorted_tests]
         students = student_manager.get_students_by_ids(student_ids)
-        subjects = subject_manager.get_subjects_by_ids(
-            list(set([test.subject_id for test in sorted_tests]))
-        )
+        subjects = subject_manager.get_subject_by_curriculum("bece")
 
         student_dict = {student.id: student for student in students}
         subject_dict = {subject.id: subject for subject in subjects}
@@ -455,7 +477,7 @@ class AnalyticsService:
                 {
                     "description": f"{student_dict[test.student_id].first_name} completed a test in '{subject_dict[test.subject_id].name}' ",
                     "time": test.created_at,
-                    "type": "user_activity"
+                    "type": "user_activity",
                 }
             )
 
@@ -499,40 +521,58 @@ class AnalyticsService:
             {
                 "name": "Highly Proficient",
                 "students": band_counts["highly_proficient"],
-                "percentage": band_counts["highly_proficient"] / total_students if total_students > 0 else 0,
+                "percentage": (
+                    band_counts["highly_proficient"] / total_students
+                    if total_students > 0
+                    else 0
+                ),
             },
             {
                 "name": "Proficient",
                 "students": band_counts["proficient"],
-                "percentage": band_counts["proficient"] / total_students if total_students > 0 else 0,
+                "percentage": (
+                    band_counts["proficient"] / total_students
+                    if total_students > 0
+                    else 0
+                ),
             },
             {
                 "name": "Approaching",
                 "students": band_counts["approaching"],
-                "percentage": band_counts["approaching"] / total_students if total_students > 0 else 0,
+                "percentage": (
+                    band_counts["approaching"] / total_students
+                    if total_students > 0
+                    else 0
+                ),
             },
             {
                 "name": "Developing",
                 "students": band_counts["developing"],
-                "percentage": band_counts["developing"] / total_students if total_students > 0 else 0,
+                "percentage": (
+                    band_counts["developing"] / total_students
+                    if total_students > 0
+                    else 0
+                ),
             },
             {
                 "name": "Emerging",
                 "students": band_counts["emerging"],
-                "percentage": band_counts["emerging"] / total_students if total_students > 0 else 0,
+                "percentage": (
+                    band_counts["emerging"] / total_students
+                    if total_students > 0
+                    else 0
+                ),
             },
         ]
 
         return distribution
 
-    
     def group_average_scores_by_month(self, tests):
         month_counts = defaultdict(list)
         for test in tests:
             key = (test.created_at.year, test.created_at.month)  # (year, month)
             month_counts[key].append(test.score_acquired)
         return month_counts
-
 
     def get_average_score_trend(self, school_id, batch_id, subject_id=None):
         if batch_id:
@@ -550,7 +590,7 @@ class AnalyticsService:
         average_scores = self.group_average_scores_by_month(tests)
 
         month_scores_named = {}
-        for (year, month) in sorted(average_scores.keys()):
+        for year, month in sorted(average_scores.keys()):
             scores = average_scores[(year, month)]
             avg_score = sum(scores) / len(scores)
             avg_score = round(avg_score, 2)  # 2 decimal places
@@ -572,11 +612,23 @@ class AnalyticsService:
         if subject_id:
             tests = [test for test in tests if test.subject_id == subject_id]
 
-        average_score = round(sum(test.score_acquired for test in tests) / len(tests), 2)
+        average_score = round(
+            (
+                sum(test.score_acquired for test in tests) / len(tests)
+                if len(tests) > 0
+                else 0
+            ),
+            2,
+        )
 
         highly_proficient_students = len(
-            [test for test in tests if self.get_performance_band(test.score_acquired) == "highly_proficient"]
-        )
+            [
+                test
+                for test in tests
+                if self.get_performance_band(test.score_acquired) == "highly_proficient"
+                and test.student_id in student_ids
+            ]
+        )  # filter to make sure deleted students are not part of the count
 
         total_students = len(student_ids)
 
@@ -585,7 +637,6 @@ class AnalyticsService:
             "highly_proficient_students": highly_proficient_students,
             "total_students": total_students,
         }
-
 
     def get_students_proficiency(self, batch_id, subject_id=None):
         batch = batch_manager.get_batch_by_id(batch_id)
@@ -598,15 +649,31 @@ class AnalyticsService:
             tests = [test for test in tests if test.subject_id == subject_id]
 
         students_proficiency = []
-        for test in tests:
-            student_tests = [test for test in tests if test.student_id == test.student_id]
+
+        for student_id in student_ids:
+            student_tests = [test for test in tests if test.student_id == student_id]
             students_proficiency.append(
                 {
-                    "student_id": test.student_id,
-                    "student_name": students_dict[test.student_id]["surname"] + " " + students_dict[test.student_id]["first_name"],
-                    "average_score": round(sum(test.score_acquired for test in student_tests) / len(student_tests), 2),
-                    "batch_name": batch.name,
-                    "proficiency": self.get_performance_band(sum(test.score_acquired for test in student_tests) / len(student_tests)),
+                    "student_id": student_id,
+                    "student_name": students_dict[student_id]["surname"]
+                    + " "
+                    + students_dict[student_id]["first_name"],
+                    "average_score": round(
+                        (
+                            sum(test.score_acquired for test in student_tests)
+                            / len(student_tests)
+                            if len(student_tests) > 0
+                            else 0
+                        ),
+                        2,
+                    ),
+                    "batch_name": batch.batch_name,
+                    "proficiency": self.get_performance_band(
+                        sum(test.score_acquired for test in student_tests)
+                        / len(student_tests)
+                        if len(student_tests) > 0
+                        else 0
+                    ),
                 }
             )
 
@@ -628,9 +695,20 @@ class AnalyticsService:
         if subject_id:
             tests = [test for test in tests if test.subject_id == subject_id]
 
-        average_score = round(sum(test.score_acquired for test in tests) / len(tests), 2)
-        proficiency  = self.get_performance_band(average_score)
-        total_time_spent = round(sum((test.finished_on - test.started_on).total_seconds() for test in tests) / 60, 2)
+        average_score = round(
+            (
+                sum(test.score_acquired for test in tests) / len(tests)
+                if len(tests) > 0
+                else 0
+            ),
+            2,
+        )
+        proficiency = self.get_performance_band(average_score)
+        total_time_spent = round(
+            sum((test.finished_on - test.started_on).total_seconds() for test in tests)
+            / 60,
+            2,
+        )
         practice_tier = self.get_practice_tier(total_time_spent)
 
         return {
@@ -641,9 +719,9 @@ class AnalyticsService:
             "total_tests_taken": len(tests),
             "practice_tier": practice_tier,
             "total_time_spent": total_time_spent,
-            "average_proficiency": average_score
+            "average_proficiency": average_score,
         }
-        
+
     def get_subject_proficiency(self, student_id, subject_id=None, batch_id=None):
         tests = test_manager.get_tests_by_student_ids([student_id])
         subject_ids = []
@@ -653,29 +731,36 @@ class AnalyticsService:
         else:
             subject_ids = [test.subject_id for test in tests]
 
-        subject_ids = set(subject_ids)
-        subjects = subject_manager.get_subjects_by_ids(list(subject_ids))
+        subjects = subject_manager.get_subject_by_curriculum("bece")
 
         subjects = {subject.id: subject for subject in subjects}
 
         subject_performance = []
 
-        for subject_id in subject_ids:
+        for subject_id, subject in subjects.items():
             tests = [test for test in tests if test.subject_id == subject_id]
 
-            average_score = round(sum(test.score_acquired for test in tests) / len(tests), 2)
-            proficiency  = self.get_performance_band(average_score)
+            average_score = round(
+                (
+                    sum(test.score_acquired for test in tests) / len(tests)
+                    if len(tests) > 0
+                    else 0
+                ),
+                2,
+            )
+            proficiency = self.get_performance_band(average_score)
 
-            subject_performance.append({
-                "subject_id": subject_id,
-                "subject_name": subjects[subject_id].name,
-                "average_score": average_score,
-                "proficiency": proficiency,
-            })
+            subject_performance.append(
+                {
+                    "subject_id": subject_id,
+                    "subject_name": subject.name,
+                    "average_score": average_score,
+                    "proficiency": proficiency,
+                }
+            )
 
         return subject_performance
 
-        
     def get_test_history(self, student_id, subject_id=None, batch_id=None):
         tests = test_manager.get_tests_by_student_ids([student_id])
         if subject_id:
@@ -690,19 +775,18 @@ class AnalyticsService:
 
         test_history = []
         for test in tests:
-            test_history.append({
-                "test_id": test.id,
-                "subject_id": test.subject_id,
-                "subject_name": subjects[test.subject_id].name,
-                "proficiency": self.get_performance_band(test.score_acquired),
-                "score": test.score_acquired,
-                "points": test.points_acquired,
-            })
+            test_history.append(
+                {
+                    "test_id": test.id,
+                    "subject_id": test.subject_id,
+                    "subject_name": subjects[test.subject_id].name,
+                    "proficiency": self.get_performance_band(test.score_acquired),
+                    "score": test.score_acquired,
+                    "points": test.points_acquired,
+                }
+            )
 
         return test_history
 
-
-        
-        
 
 analytics_service = AnalyticsService()
