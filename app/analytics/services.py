@@ -105,7 +105,7 @@ class AnalyticsService:
         try:
             counts = Counter(r.get(id_key) for r in records if id_key in r)
         except TypeError:
-            counts = Counter(r.get(id_key) for r in records if id_key in r.to_json())
+            counts = Counter(r.to_json().get(id_key) for r in records if id_key in r.to_json())
 
         qualifying_ids = {
             sid for sid, c in counts.items() if min_times <= c <= max_times
