@@ -189,7 +189,7 @@ class AnalyticsService:
         comparison = (
             len(these_students_took_tests_this_param)
             - len(these_students_took_tests_last_param)
-        ) / len(these_students_took_tests_last_param)
+        ) / len(these_students_took_tests_last_param) if len(these_students_took_tests_last_param) > 0 else 0
 
         practiced_percent = len(these_students_took_tests_this_param) / len(
             all_student_ids
@@ -292,7 +292,7 @@ class AnalyticsService:
         else:
             subject_name = "Overall"
 
-        average_score = sum(test.score_acquired for test in tests) / len(tests)
+        average_score = sum(test.score_acquired for test in tests) / len(tests) if len(tests) > 0 else 0
 
         proficiency_percent = average_score
         proficiency_status = self.get_performance_band(average_score)
@@ -321,13 +321,13 @@ class AnalyticsService:
             tier_distribution["highly_proficient"]["count"]
             + tier_distribution["proficient"]["count"]
         )
-        proficiency_above_percent = proficiency_above / total_students
+        proficiency_above_percent = proficiency_above / total_students if total_students > 0 else 0
         at_risk = (
             tier_distribution["approaching"]["count"]
             + tier_distribution["emerging"]["count"]
             + tier_distribution["developing"]["count"]
         )
-        at_risk_percent = at_risk / total_students
+        at_risk_percent = at_risk / total_students if total_students > 0 else 0
 
         summary_distribution = {
             "proficiency_above": {
@@ -354,7 +354,7 @@ class AnalyticsService:
             "last_updated": self.most_recent_created_at(tests),
         }
 
-    def get_subject_performance(self, school_id, batch_id, subject_id):
+    def get_subject_performance(self, school_id, batch_id, subject_id=None):
         if batch_id:
             batch = batch_manager.get_batch_by_id(batch_id)
             students = batch.to_json()["students"]
