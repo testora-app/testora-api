@@ -102,7 +102,11 @@ class AnalyticsService:
         if min_times > max_times:
             min_times, max_times = max_times, min_times
 
-        counts = Counter(r.get(id_key) for r in records if id_key in r)
+        try:
+            counts = Counter(r.get(id_key) for r in records if id_key in r)
+        except TypeError:
+            counts = Counter(r.get(id_key) for r in records if id_key in r.to_json())
+
         qualifying_ids = {
             sid for sid, c in counts.items() if min_times <= c <= max_times
         }
@@ -305,7 +309,7 @@ class AnalyticsService:
         else:
             subject_name = "Overall"
 
-        average_score = (
+        average_score = round(
             sum(test.score_acquired for test in tests) / len(tests)
             if len(tests) > 0
             else 0
@@ -351,9 +355,9 @@ class AnalyticsService:
         summary_distribution = {
             "proficiency_above": {
                 "count": proficiency_above,
-                "percentage": proficiency_above_percent,
+                "percentage": round(proficiency_above_percent, 2),
             },
-            "at_risk": {"count": at_risk, "percentage": at_risk_percent},
+            "at_risk": {"count": at_risk, "percentage": round(at_risk_percent, 2)},
             "average_tests": {"value": len(tests), "unit": "/week"},
             "average_time_spent": {
                 "value": round(
@@ -374,7 +378,7 @@ class AnalyticsService:
 
         return {
             "subject_name": subject_name,
-            "proficiency_percent": proficiency_percent,
+            "proficiency_percent": round(proficiency_percent, 2),
             "proficiency_status": proficiency_status,
             "tier_distribution": tier_distribution,
             "summary_distribution": summary_distribution,
