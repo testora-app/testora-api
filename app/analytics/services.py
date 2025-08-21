@@ -603,7 +603,7 @@ class AnalyticsService:
             students_proficiency.append(
                 {
                     "student_id": test.student_id,
-                    "student_name": students_dict[test.student_id].surname + " " + students_dict[test.student_id].first_name,
+                    "student_name": students_dict[test.student_id]["surname"] + " " + students_dict[test.student_id]["first_name"],
                     "average_score": round(sum(test.score_acquired for test in student_tests) / len(student_tests), 2),
                     "batch_name": batch.name,
                     "proficiency": self.get_performance_band(sum(test.score_acquired for test in student_tests) / len(student_tests)),
