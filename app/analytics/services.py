@@ -398,21 +398,21 @@ class AnalyticsService:
 
         for subject in subjects:
             students_with_highly_proficient = len(
-                [
-                    test
+                set([
+                    test.student_id
                     for test in tests
                     if test.subject_id == subject.id
                     and self.get_performance_band(test.score_acquired)
                     == "highly_proficient"
-                ]
+                ])
             )
             students_with_proficient = len(
-                [
-                    test
+                set([
+                    test.student_id
                     for test in tests
                     if test.subject_id == subject.id
                     and self.get_performance_band(test.score_acquired) == "proficient"
-                ]
+                ])
             )
 
             student_readiness_number = (
