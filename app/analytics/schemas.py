@@ -215,6 +215,19 @@ class TestHistoryDataSchema(BaseSchema):
     score = Float(required=True, example=28.0)
     points = Integer(required=True, validate=Range(min=0), example=86)
     
+
+class ProficiencyGraphDataSchema(BaseSchema):
+    proficiency_band = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    count = Integer(required=True, validate=Range(min=0), example=86)
+    topics = List(String(required=True, example="Nouns"))
+
+
+class FailingTopicsDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    topic_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
     
 
 class Responses:
@@ -234,6 +247,8 @@ class Responses:
     PerformanceIndicatorsDataSchema = make_response_schema(PerformanceIndicatorsDataSchema)
     SubjectProficiencyDataSchema = make_response_schema(SubjectProficiencyDataSchema, is_list=True)
     TestHistoryDataSchema = make_response_schema(TestHistoryDataSchema, is_list=True)
+    ProficiencyGraphDataSchema = make_response_schema(ProficiencyGraphDataSchema, is_list=True)
+    FailingTopicsDataSchema = make_response_schema(FailingTopicsDataSchema, is_list=True)
 
 class Requests:
     TopicPerformanceQuerySchema = TopicPerformanceQuerySchema

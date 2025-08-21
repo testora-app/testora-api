@@ -132,6 +132,24 @@ def test_history(student_id, query_data):
     return success_response(data=test_history_results)
 
 
+@analytics.get('/analytics/<student_id>/proficiency-graph')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.ProficiencyGraphDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def proficiency_graph(student_id, query_data):
+    proficiency_graph_results = analytics_service.get_proficiency_graph(student_id, **query_data)
+    return success_response(data=proficiency_graph_results)
+
+
+@analytics.get('/analytics/<student_id>/failing-topics')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.FailingTopicsDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def failing_topics(student_id, query_data):
+    failing_topics_results = analytics_service.get_failing_topics(student_id, **query_data)
+    return success_response(data=failing_topics_results)
+
+
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)

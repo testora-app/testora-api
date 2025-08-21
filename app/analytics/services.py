@@ -9,6 +9,8 @@ from app.student.operations import student_manager, batch_manager
 from app.test.operations import test_manager
 from app.app_admin.operations import subject_manager
 from app.student.operations import student_manager
+from app.app_admin.operations import topic_manager
+from app.analytics.operations import ssr_manager, sts_manager
 
 
 class AnalyticsService:
@@ -788,5 +790,46 @@ class AnalyticsService:
 
         return test_history
 
+    def get_proficiency_graph(self, student_id, subject_id=None, batch_id=None):
+        student_topic_scores = sts_manager.select_student_topic_score_history(student_id)
+        topics = topic_manager.get_topic_by_ids([topic_id for topic_id in student_topic_scores])
+
+        topics = {topic.id: topic for topic in topics}
+
+        topic_bands = {}
+        for score in student_topic_scores:
+            proficiency_band = self.get_performance_band(score.score_acquired)
+            if proficiency_band not in topic_bands:
+                topic_bands[proficiency_band] = {'count': 0, 'topics': []}
+            
+            topic_bands[proficiency_band]['count'] += 1
+            topic_bands[proficiency_band]['topics'].append(topics[score.topic_id].name)
+
+        
+        proficiency_graph = []
+        for band, data in topic_bands.items():
+            proficiency_graph.append({
+                'band': band,
+                'count': data['count'],
+                'topics': data['topics']
+            })
+            
+        return proficiency_graph
+
+    def get_failing_topics(self, student_id, subject_id=None, batch_id=None):
+        recommendations = ssr_manager.select_student_recommendations(student_id)
+        topics = topic_manager.get_topic_by_ids([topic_id for topic_id in recommendations])
+
+        topics = {topic.id: topic for topic in topics}
+
+        failing_topics = []
+        for recommendation in recommendations:
+            failing_topics.append({
+                'topic_name': topics[recommendation.topic_id].name,
+                'average_score': 0, #TODO: calculate average score
+                'proficiency': recommendation.recommendation_level
+            })
+            
+        return failing_topics
 
 analytics_service = AnalyticsService()
