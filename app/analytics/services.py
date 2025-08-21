@@ -296,6 +296,8 @@ class AnalyticsService:
             tests = this_tests
         elif time_range == "last_week":
             tests = last_tests
+        else:
+            tests = this_tests + last_tests
 
         if subject_id:
             subject = subject_manager.get_subject_by_id(subject_id)
