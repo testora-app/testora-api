@@ -150,6 +150,14 @@ def failing_topics(student_id, query_data):
     return success_response(data=failing_topics_results)
 
 
+@analytics.get('/analytics/<student_id>/student-proficiency')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.StudentProficiencyDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def student_proficiency(student_id, query_data):
+    student_proficiency_results = analytics_service.get_student_average_and_band(student_id, **query_data)
+    return success_response(data=student_proficiency_results)
+
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)

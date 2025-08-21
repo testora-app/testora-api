@@ -230,6 +230,14 @@ class FailingTopicsDataSchema(BaseSchema):
     proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
     
 
+class StudentProficiencyDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    student_id = Integer(required=True, validate=Range(min=0), example=86)
+    student_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -249,6 +257,8 @@ class Responses:
     TestHistoryDataSchema = make_response_schema(TestHistoryDataSchema, is_list=True)
     ProficiencyGraphDataSchema = make_response_schema(ProficiencyGraphDataSchema, is_list=True)
     FailingTopicsDataSchema = make_response_schema(FailingTopicsDataSchema, is_list=True)
+    StudentProficiencyDataSchema = make_response_schema(StudentProficiencyDataSchema)
+
 
 class Requests:
     TopicPerformanceQuerySchema = TopicPerformanceQuerySchema

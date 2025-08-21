@@ -799,7 +799,9 @@ class AnalyticsService:
 
     def get_proficiency_graph(self, student_id, subject_id=None, batch_id=None):
         student_topic_scores = sts_manager.select_student_topic_score_history(student_id)
-        topics = topic_manager.get_topic_by_ids([topic_id for topic_id in student_topic_scores])
+        topics = topic_manager.get_topic_by_ids([score.topic_id for score in student_topic_scores])
+        if subject_id:
+            topics = [topic for topic in topics if topic.subject_id == subject_id]
 
         topics = {topic.id: topic for topic in topics}
 
@@ -825,7 +827,12 @@ class AnalyticsService:
 
     def get_failing_topics(self, student_id, subject_id=None, batch_id=None):
         recommendations = ssr_manager.select_student_recommendations(student_id)
-        topics = topic_manager.get_topic_by_ids([topic_id for topic_id in recommendations])
+        topics = topic_manager.get_topic_by_ids([recommendation.topic_id for recommendation in recommendations])
+        if subject_id:
+            topics = [topic for topic in topics if topic.subject_id == subject_id]
+
+        subjects = subject_manager.get_subjects_by_ids([topic.subject_id for topic in topics])
+        subjects = {subject.id: subject for subject in subjects}
 
         topics = {topic.id: topic for topic in topics}
 
@@ -833,10 +840,34 @@ class AnalyticsService:
         for recommendation in recommendations:
             failing_topics.append({
                 'topic_name': topics[recommendation.topic_id].name,
+                'subject_name': subjects[topics[recommendation.topic_id].subject_id].name,
                 'average_score': 0, #TODO: calculate average score
                 'proficiency': recommendation.recommendation_level
             })
             
         return failing_topics
+
+    def get_student_average_and_band(self, student_id, subject_id=None, batch_id=None):
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        student = student_manager.get_student_by_id(student_id)
+        if subject_id:
+            tests = [test for test in tests if test.subject_id == subject_id]
+
+        average_score = round(
+            (
+                sum(test.score_acquired for test in tests) / len(tests)
+                if len(tests) > 0
+                else 0
+            ),
+            2,
+        )
+        proficiency = self.get_performance_band(average_score)
+
+        return {
+            'student_id': student_id,
+            'student_name': student.surname + " " + student.first_name,
+            'average_score': average_score,
+            'proficiency': proficiency
+        }
 
 analytics_service = AnalyticsService()
