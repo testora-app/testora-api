@@ -99,13 +99,14 @@ class AnalyticsService:
         """
         if not records:
             return 0, 0.0
+
+        if not isinstance(records[0], dict):
+            records = [r.to_json() for r in records]
+
         if min_times > max_times:
             min_times, max_times = max_times, min_times
 
-        try:
-            counts = Counter(r.get(id_key) for r in records if id_key in r)
-        except TypeError:
-            counts = Counter(r.to_json().get(id_key) for r in records if id_key in r.to_json())
+        counts = Counter(r.get(id_key) for r in records if id_key in r)
 
         qualifying_ids = {
             sid for sid, c in counts.items() if min_times <= c <= max_times
