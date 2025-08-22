@@ -807,6 +807,9 @@ class AnalyticsService:
 
         topic_bands = {}
         for score in student_topic_scores:
+            if score.topic_id not in topics:
+                continue
+            
             proficiency_band = self.get_performance_band(score.score_acquired)
             if proficiency_band not in topic_bands:
                 topic_bands[proficiency_band] = {'count': 0, 'topics': []}
