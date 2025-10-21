@@ -528,7 +528,7 @@ class AnalyticsService:
 
         distribution = [
             {
-                "name": "Highly Proficient",
+                "name": "highly_proficient",
                 "students": band_counts["highly_proficient"],
                 "percentage": (
                     band_counts["highly_proficient"] / total_students
@@ -537,7 +537,7 @@ class AnalyticsService:
                 ),
             },
             {
-                "name": "Proficient",
+                "name": "proficient",
                 "students": band_counts["proficient"],
                 "percentage": (
                     band_counts["proficient"] / total_students
@@ -546,7 +546,7 @@ class AnalyticsService:
                 ),
             },
             {
-                "name": "Approaching",
+                "name": "approaching_proficient",
                 "students": band_counts["approaching"],
                 "percentage": (
                     band_counts["approaching"] / total_students
@@ -555,7 +555,7 @@ class AnalyticsService:
                 ),
             },
             {
-                "name": "Developing",
+                "name": "developing",
                 "students": band_counts["developing"],
                 "percentage": (
                     band_counts["developing"] / total_students
@@ -564,7 +564,7 @@ class AnalyticsService:
                 ),
             },
             {
-                "name": "Emerging",
+                "name": "emerging",
                 "students": band_counts["emerging"],
                 "percentage": (
                     band_counts["emerging"] / total_students
