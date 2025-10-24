@@ -57,6 +57,8 @@ class PracticeRateQuerySchema(BaseSchema):
 class AnalyticsQuerySchema(BaseSchema):
     batch_id = Integer(required=True, allow_none=False)
     subject_id = Integer(required=False, allow_none=True)
+    stage = String(required=False, allow_none=True)
+    level = String(required=False, allow_none=True)
 
 
 class BandStatSchema(Schema):
@@ -238,6 +240,18 @@ class StudentProficiencyDataSchema(BaseSchema):
     average_score = Float(required=True, example=28.0)
     proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
 
+
+class TopicLevelBreakdownItemSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    topic = String(required=True, example="Fractions")
+    students_affected = Integer(required=True, validate=Range(min=0), example=32)
+    percentage = Float(required=True, validate=Range(min=0, max=100), example=62.5)
+    level = String(required=True, validate=OneOf(["EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "PROFICIENT", "HIGHLY_PROFICIENT"]), example="EMERGING")
+    stage = String(required=True, validate=OneOf(["Stage 1-3", "Stage 4-6", "Stage 7-9"]), example="Stage 1-3")
+
+
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -258,6 +272,7 @@ class Responses:
     ProficiencyGraphDataSchema = make_response_schema(ProficiencyGraphDataSchema, is_list=True)
     FailingTopicsDataSchema = make_response_schema(FailingTopicsDataSchema, is_list=True)
     StudentProficiencyDataSchema = make_response_schema(StudentProficiencyDataSchema)
+    TopicLevelBreakdownDataSchema = make_response_schema(TopicLevelBreakdownItemSchema)
 
 
 class Requests:

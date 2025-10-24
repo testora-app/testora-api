@@ -105,6 +105,35 @@ def students_proficiency(query_data):
     return success_response(data=students_proficiency_results)
 
 
+@analytics.get("/analytics/topic-level-breakdown")
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.TopicLevelBreakdownDataSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+@require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
+def performance_topics(query_data):
+    """
+    Get mock performance data for topics.
+    
+    Optional query parameters:
+    - stage: Filter by stage (e.g., "Stage 1-3", "Stage 4-6", "Stage 7-9")
+    - level: Filter by proficiency level (e.g., "EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "HIGHLY_PROFICIENT")
+    
+    Returns:
+    - list of topic performance data
+    """
+    
+    # Get optional query parameters
+
+    
+    # Call the service function with filters
+    filtered_data = analytics_service.get_performance_topics(**query_data)
+    
+    return success_response(
+        message="Performance topics retrieved successfully",
+        data=filtered_data
+    )
+
+
 @analytics.get('/analytics/<student_id>/performance-indicators')
 @analytics.input(Requests.AnalyticsQuerySchema, location="query")
 @analytics.output(Responses.PerformanceIndicatorsDataSchema)
@@ -157,6 +186,8 @@ def failing_topics(student_id, query_data):
 def student_proficiency(student_id, query_data):
     student_proficiency_results = analytics_service.get_student_average_and_band(student_id, **query_data)
     return success_response(data=student_proficiency_results)
+
+
 
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")

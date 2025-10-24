@@ -873,4 +873,87 @@ class AnalyticsService:
             'proficiency': proficiency
         }
 
+    def get_performance_topics(self, subject_id, batch_id=None, stage=None, level=None):
+        """
+        Get performance data for topics based on student_topic_scores with optional filtering.
+        
+        Args:
+            stage (str, optional): Filter by stage (e.g., "Stage 1-3", "Stage 4-6", "Stage 7-9")
+            level (str, optional): Filter by proficiency level (e.g., "EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "HIGHLY_PROFICIENT")
+        
+        Returns:
+            list: Filtered topic performance data
+        """
+        from sqlalchemy import func, distinct
+        from app.analytics.models import StudentTopicScores
+        
+        # Stage mapping based on topic level
+        def get_stage_from_level(topic_level):
+            if topic_level <= 3:
+                return "Stage 1-3"
+            elif topic_level <= 6:
+                return "Stage 4-6"
+            else:
+                return "Stage 7-9"
+        
+        # Get student IDs based on batch_id if provided
+        if batch_id:
+            batch = batch_manager.get_batch_by_id(batch_id)
+            students = batch.to_json()["students"]
+            student_ids = [student["id"] for student in students]
+        else:
+            student_ids = None
+        
+        # Build query with filters
+        query = StudentTopicScores.query.filter_by(subject_id=subject_id)
+        
+        # Filter by student IDs if batch_id was provided
+        if student_ids:
+            query = query.filter(StudentTopicScores.student_id.in_(student_ids))
+        
+        # Query to get average scores and student counts per topic
+        topic_stats = query.with_entities(
+            StudentTopicScores.topic_id,
+            func.avg(StudentTopicScores.score_acquired).label('average_score'),
+            func.count(distinct(StudentTopicScores.student_id)).label('students_affected')
+        ).group_by(StudentTopicScores.topic_id).all()
+        
+        # Get topics for this subject to map topic_id to topic details
+        topics = topic_manager.get_topic_by_subject(subject_id)
+        topic_dict = {topic.id: topic for topic in topics}
+        
+        # Build performance data
+        performance_data = []
+        for topic_id, avg_score, student_count in topic_stats:
+            if topic_id not in topic_dict:
+                continue
+                
+            topic = topic_dict[topic_id]
+            avg_score_rounded = round(float(avg_score), 2) if avg_score else 0
+            
+            # Get performance band using existing function
+            proficiency_level = self.get_performance_band(avg_score_rounded).upper()
+            
+            # Map topic level to stage
+            topic_stage = get_stage_from_level(topic.level)
+            
+            performance_data.append({
+                "topic": topic.name,
+                "students_affected": student_count,
+                "percentage": avg_score_rounded,
+                "level": proficiency_level,
+                "stage": topic_stage
+            })
+        
+        # Apply filters
+        filtered_data = performance_data
+        
+        if stage:
+            filtered_data = [item for item in filtered_data if item['stage'] == stage]
+        
+        if level:
+            filtered_data = [item for item in filtered_data if item['level'] == level]
+        
+        return filtered_data
+
 analytics_service = AnalyticsService()
