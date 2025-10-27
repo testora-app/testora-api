@@ -277,6 +277,33 @@ class AchievementItemData(BaseSchema):
     number_of_times = Integer(required=True, validate=Range(min=1), example=3)
 
 
+class WeeklyGoalItemSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    goal_id = Integer(required=True, validate=Range(min=0), example=123)
+    subject_id = Integer(required=False, allow_none=True, example=5)
+    subject_name = String(required=False, allow_none=True, example="Mathematics")
+    week_start_date = String(required=True, example="2025-10-20")
+    week_end_date = String(required=True, example="2025-10-26")
+    status = String(required=True, validate=OneOf(["pending", "in_progress", "achieved", "expired"]), example="in_progress")
+    target_metric = String(required=True, validate=OneOf(["xp", "streak_days"]), example="xp")
+    target_value = Integer(required=True, validate=Range(min=0), example=275)
+    current_value = Integer(required=True, validate=Range(min=0), example=150)
+    progress_percent = Float(required=True, validate=Range(min=0, max=100), example=54.5)
+    achieved_at = DateTime(required=False, allow_none=True, example="2025-10-24T14:30:00Z")
+
+
+class WeeklyWinsMessageSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    message = String(required=True, example="Great job! You hit your Mathematics XP goal 🙌")
+    goal_id = Integer(required=True, validate=Range(min=0), example=123)
+    subject_name = String(required=False, allow_none=True, example="Mathematics")
+    metric = String(required=True, validate=OneOf(["xp", "streak_days"]), example="xp")
+    variant = String(required=True, validate=OneOf(["info", "success", "warning", "danger"]), example="success")
+    icon = String(required=True, example="trophy")
+
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -301,6 +328,8 @@ class Responses:
     StudentDashboardOverviewDataSchema = make_response_schema(StudentDashboardOverviewDataSchema)
     PracticeOverviewDataSchema = make_response_schema(PracticeOverviewDataSchema)
     AchievementDataSchema = make_response_schema(AchievementItemData, is_list=True)
+    WeeklyGoalsDataSchema = make_response_schema(WeeklyGoalItemSchema, is_list=True)
+    WeeklyWinsMessagesDataSchema = make_response_schema(WeeklyWinsMessageSchema, is_list=True)
 
 
 class Requests:

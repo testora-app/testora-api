@@ -213,6 +213,22 @@ def get_student_achievements(student_id):
     student_achievements_results = analytics_service.get_student_achievements(student_id)
     return success_response(data=student_achievements_results)
 
+
+@analytics.get('/analytics/<student_id>/weekly-goals')
+@analytics.output(Responses.WeeklyGoalsDataSchema)
+@token_auth([UserTypes.student])
+def get_student_weekly_goals(student_id):
+    weekly_goals_results = analytics_service.get_student_weekly_goals(student_id)
+    return success_response(data=weekly_goals_results)
+
+
+@analytics.get('/analytics/<student_id>/weekly-wins-messages')
+@analytics.output(Responses.WeeklyWinsMessagesDataSchema)
+@token_auth([UserTypes.student])
+def get_student_weekly_wins_messages(student_id):
+    weekly_wins_messages_results = analytics_service.get_student_weekly_wins_messages(student_id)
+    return success_response(data=weekly_wins_messages_results)
+
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")
 @analytics.output(Responses.WeeklyReportSchema)

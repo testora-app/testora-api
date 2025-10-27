@@ -25,6 +25,9 @@ from app.errorhandlers import (
 )
 from app.extensions import cors, db, migrate, admin as admin_extension
 
+# models
+from app.goals import *
+
 # importing the routes
 from .routes import main
 from app.app_admin.routes import app_admin
@@ -36,6 +39,7 @@ from app.notifications.routes import notification
 from app.analytics.routes import analytics
 from app.subscriptions.routes import subscription
 from app.achievements.routes import achievements
+
 
 load_dotenv()
 

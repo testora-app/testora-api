@@ -1039,4 +1039,104 @@ class AnalyticsService:
             'topics': topic_mastery_items
         }
 
+    def get_student_weekly_goals(self, student_id):
+        """
+        Get all weekly goals for a student with their current progress.
+        Returns a list of goal items with subject names and progress percentages.
+        """
+        from datetime import timedelta
+        from app.goals.models import WeeklyGoal
+        from app.app_admin.operations import subject_manager
+        
+        goals = WeeklyGoal.query.filter_by(student_id=student_id).order_by(
+            WeeklyGoal.week_start_date.desc()
+        ).all()
+        
+        # Get all subject IDs
+        subject_ids = [g.subject_id for g in goals if g.subject_id is not None]
+        subjects_dict = {}
+        if subject_ids:
+            subjects = subject_manager.get_subjects_by_ids(list(set(subject_ids)))
+            subjects_dict = {s.id: s.name for s in subjects}
+        
+        goals_data = []
+        for goal in goals:
+            progress_percent = (
+                (goal.current_value / goal.target_value * 100) 
+                if goal.target_value > 0 else 0
+            )
+            
+            goals_data.append({
+                'goal_id': goal.id,
+                'subject_id': goal.subject_id,
+                'subject_name': subjects_dict.get(goal.subject_id) if goal.subject_id else None,
+                'week_start_date': str(goal.week_start_date),
+                'week_end_date': str(goal.week_start_date + timedelta(days=6)),
+                'status': goal.status.value,
+                'target_metric': goal.target_metric.value,
+                'target_value': goal.target_value,
+                'current_value': goal.current_value,
+                'progress_percent': round(progress_percent, 2),
+                'achieved_at': goal.achieved_at
+            })
+        
+        return goals_data
+    
+    def get_student_weekly_wins_messages(self, student_id):
+        """
+        Generate weekly wins messages for achieved goals using the message generator.
+        Returns a list of messages with goal information.
+        """
+        from app.goals.models import WeeklyGoal, GoalStatus
+        from app.app_admin.operations import subject_manager
+        from app.analytics.weekly_messages_generator import GoalMessageGenerator, GoalMetric as MsgGoalMetric
+        
+        # Get achieved goals (only achieved status)
+        achieved_goals = WeeklyGoal.query.filter_by(
+            student_id=student_id,
+            status=GoalStatus.achieved
+        ).order_by(WeeklyGoal.achieved_at.desc()).all()
+        
+        if not achieved_goals:
+            return []
+        
+        # Get subject names
+        subject_ids = [g.subject_id for g in achieved_goals if g.subject_id is not None]
+        subjects_dict = {}
+        if subject_ids:
+            subjects = subject_manager.get_subjects_by_ids(list(set(subject_ids)))
+            subjects_dict = {s.id: s.name for s in subjects}
+        
+        messages = []
+        for goal in achieved_goals:
+            subject_name = subjects_dict.get(goal.subject_id) if goal.subject_id else None
+            
+            # Map goal metric to message generator metric
+            if goal.target_metric.value == 'xp':
+                metric = MsgGoalMetric.xp
+            elif goal.target_metric.value == 'streak_days':
+                metric = MsgGoalMetric.streak_days
+            else:
+                metric = MsgGoalMetric.xp  # default
+            
+            # Generate achievement message
+            message = GoalMessageGenerator.achievement(
+                metric=metric,
+                subject=subject_name,
+                value=goal.current_value,
+                target=goal.target_value,
+                progress=goal.current_value
+            )
+            
+            messages.append({
+                'message': message,
+                'goal_id': goal.id,
+                'subject_name': subject_name,
+                'metric': goal.target_metric.value,
+                'variant': 'success',
+                'icon': 'trophy'
+            })
+        
+        return messages
+
 analytics_service = AnalyticsService()
