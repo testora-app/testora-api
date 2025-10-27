@@ -11,6 +11,7 @@ from app.app_admin.operations import subject_manager
 from app.student.operations import student_manager
 from app.app_admin.operations import topic_manager
 from app.analytics.operations import ssr_manager, sts_manager
+from app.achievements.operations import student_has_achievement_manager
 
 
 class AnalyticsService:
@@ -955,5 +956,87 @@ class AnalyticsService:
             filtered_data = [item for item in filtered_data if item['level'] == level]
         
         return filtered_data
+    
+
+    def get_student_dashboard_overview(self, student_id):
+        '''
+            total_tests: int
+            current_streak: int
+            highest_streak: int
+            total_achievements: int
+        '''
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        student = student_manager.get_student_by_id(student_id)
+        achievements = student_has_achievement_manager.get_student_achievements_number(student_id)
+        return {
+            'total_tests': len(tests),
+            'current_streak': student.current_streak,
+            'highest_streak': student.highest_streak,
+            'total_achievements': achievements
+        }
+    
+    def get_student_practice_overview(self, student_id, subject_id=None):
+        from app.analytics.operations import sts_manager
+        '''
+            mastery_percent: float
+            mastery_stage: str
+            topics: List[{
+                topic_name: str
+                mastery_level: str
+            }]
+        '''
+        # 1) Load and filter topics by subject (if provided)
+        student_topic_scores = sts_manager.select_student_topic_score_history(student_id)
+        topics = topic_manager.get_topic_by_ids([s.topic_id for s in student_topic_scores])
+        if subject_id:
+            topics = [t for t in topics if t.subject_id == subject_id]
+        topics_by_id = {t.id: t for t in topics}
+        if not topics_by_id:
+            return {'mastery_percent': 0.0, 'mastery_stage': self.get_performance_band(0.0), 'topics': []}
+
+        # 2) Aggregate scores per topic (sum & count)
+        sums, counts = defaultdict(float), defaultdict(int)
+        total_sum, total_count = 0.0, 0  # for attempt-weighted fallback if desired
+
+        for s in student_topic_scores:
+            if s.topic_id in topics_by_id:
+                sums[s.topic_id] += float(s.score_acquired)
+                counts[s.topic_id] += 1
+                total_sum += float(s.score_acquired)
+                total_count += 1
+
+        # No scores for the filtered topics
+        if not sums:
+            return {'mastery_percent': 0.0, 'mastery_stage': self.get_performance_band(0.0), 'topics': []}
+
+        # 3) Compute per-topic averages
+        topic_avg = {tid: (sums[tid] / counts[tid]) for tid in sums.keys()}
+
+        # 4) Topic items with performance band from average
+        topic_mastery_items = []
+        for tid, avg in topic_avg.items():
+            band = self.get_performance_band(avg)
+            topic_mastery_items.append({
+                'topic_name': topics_by_id[tid].name,
+                'avg_score': round(avg, 2),
+                'mastery_level': band,
+                'topic_id': tid
+            })
+
+        # Optional: sort topics (e.g., highest avg first)
+        topic_mastery_items.sort(key=lambda x: x['avg_score'], reverse=True)
+
+        # 5) Overall mastery: mean of topic averages (topic-weighted)
+        overall_avg = sum(topic_avg.values()) / len(topic_avg)
+
+        # If you prefer attempt-weighted across all scores, use this instead:
+        # overall_avg = (total_sum / total_count) if total_count else 0.0
+
+        overall_avg = round(overall_avg, 2)
+        return {
+            'mastery_percent': overall_avg,
+            'mastery_stage': self.get_performance_band(overall_avg),
+            'topics': topic_mastery_items
+        }
 
 analytics_service = AnalyticsService()

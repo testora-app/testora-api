@@ -188,6 +188,30 @@ def student_proficiency(student_id, query_data):
     return success_response(data=student_proficiency_results)
 
 
+#region NEW STUDENT ANALYTICS
+@analytics.get('/analytics/<student_id>/dashboard-overview')
+@analytics.output(Responses.StudentDashboardOverviewDataSchema)
+@token_auth([UserTypes.student])
+def student_dashboard_overview(student_id):
+    dashboard_overview_results = analytics_service.get_student_dashboard_overview(student_id)
+    return success_response(data=dashboard_overview_results)
+
+
+@analytics.get('/analytics/<student_id>/practice-insights')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.PracticeOverviewDataSchema)
+@token_auth([UserTypes.student])
+def student_practice_overview(student_id):
+    practice_overview_results = analytics_service.get_student_practice_overview(student_id)
+    return success_response(data=practice_overview_results)
+
+
+@analytics.get('/analytics/<student_id>/achievements')
+@analytics.output(Responses.AchievementDataSchema)
+@token_auth([UserTypes.student])
+def get_student_achievements(student_id):
+    student_achievements_results = analytics_service.get_student_achievements(student_id)
+    return success_response(data=student_achievements_results)
 
 #region OLD ANALYTICS
 @analytics.get("/students/dashboard/weekly-report/")

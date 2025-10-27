@@ -32,6 +32,9 @@ class StudentHasAchievementManager(BaseManager):
 
     def get_student_achievements(self, student_id) -> List[StudentHasAchievement]:
         return StudentHasAchievement.query.filter_by(student_id=student_id).all()
+    
+    def get_student_achievements_number(self, student_id) -> int:
+        return StudentHasAchievement.query.filter_by(student_id=student_id).count()
 
     def get_student_achievement(
         self, student_id, achievement_id

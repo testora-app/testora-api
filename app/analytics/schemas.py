@@ -251,6 +251,31 @@ class TopicLevelBreakdownItemSchema(BaseSchema):
     stage = String(required=True, validate=OneOf(["Stage 1-3", "Stage 4-6", "Stage 7-9"]), example="Stage 1-3")
 
 
+class StudentDashboardOverviewDataSchema(BaseSchema):
+    total_tests = Integer(required=True, validate=Range(min=0), example=42)
+    current_streak = Integer(required=True, validate=Range(min=0), example=5)
+    highest_streak = Integer(required=True, validate=Range(min=0), example=12)
+    total_achievements = Integer(required=True, validate=Range(min=0), example=15)
+
+
+class TopicMasteryLevelItem(BaseSchema):
+    topic_id = Integer(required=True, validate=Range(min=0), example=86)
+    topic_name = String(required=True, example="Algebra")
+    mastery_level = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+
+class PracticeOverviewDataSchema(BaseSchema):
+    mastery_percent = Float(required=True, validate=Range(min=0, max=100), example=75.0)
+    mastery_stage = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    topics = List(Nested(TopicMasteryLevelItem), required=True)
+
+class AchievementItemData(BaseSchema):
+    achievement_id = Integer(required=True, validate=Range(min=0), example=86)
+    name = String(required=True, example="Math Whiz")
+    description = String(required=True, example="Awarded for excellence in mathematics.")
+    image_url = String(required=True, example="http://example.com/images/achievement/math_whiz.png")
+    date_earned = DateTime(required=True, example="2025-08-14T22:10:00Z")
+    number_of_times = Integer(required=True, validate=Range(min=1), example=3)
+
 
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
@@ -273,6 +298,9 @@ class Responses:
     FailingTopicsDataSchema = make_response_schema(FailingTopicsDataSchema, is_list=True)
     StudentProficiencyDataSchema = make_response_schema(StudentProficiencyDataSchema)
     TopicLevelBreakdownDataSchema = make_response_schema(TopicLevelBreakdownItemSchema)
+    StudentDashboardOverviewDataSchema = make_response_schema(StudentDashboardOverviewDataSchema)
+    PracticeOverviewDataSchema = make_response_schema(PracticeOverviewDataSchema)
+    AchievementDataSchema = make_response_schema(AchievementItemData, is_list=True)
 
 
 class Requests:
