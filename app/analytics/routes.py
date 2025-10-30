@@ -201,8 +201,8 @@ def student_dashboard_overview(student_id):
 @analytics.input(Requests.AnalyticsQuerySchema, location="query")
 @analytics.output(Responses.PracticeOverviewDataSchema)
 @token_auth([UserTypes.student])
-def student_practice_overview(student_id):
-    practice_overview_results = analytics_service.get_student_practice_overview(student_id)
+def student_practice_overview(student_id, query_data):
+    practice_overview_results = analytics_service.get_student_practice_overview(student_id, **query_data)
     return success_response(data=practice_overview_results)
 
 
