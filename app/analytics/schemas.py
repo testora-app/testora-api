@@ -273,8 +273,9 @@ class AchievementItemData(BaseSchema):
     name = String(required=True, example="Math Whiz")
     description = String(required=True, example="Awarded for excellence in mathematics.")
     image_url = String(required=True, example="http://example.com/images/achievement/math_whiz.png")
-    date_earned = DateTime(required=True, example="2025-08-14T22:10:00Z")
     number_of_times = Integer(required=True, validate=Range(min=1), example=3)
+    first_awarded_at = DateTime(required=True, example="2025-09-15T10:20:30Z")
+    last_awarded_at = DateTime(required=True, example="2025-09-15T10:20:30Z")
 
 
 class WeeklyGoalItemSchema(BaseSchema):

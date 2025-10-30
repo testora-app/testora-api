@@ -10,6 +10,9 @@ class AchievementManager(BaseManager):
     
     def get_achievement(self, achievement_id) -> Achievement:
         return Achievement.query.filter_by(id=achievement_id).first()
+    
+    def get_achievements_by_ids(self, achievement_ids: List[int]) -> List[Achievement]:
+        return Achievement.query.filter(Achievement.id.in_(achievement_ids)).all()
 
     def add_achievement(
         self, name, description, image_url, requirements=None

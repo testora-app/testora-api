@@ -1138,5 +1138,36 @@ class AnalyticsService:
             })
         
         return messages
+    
+    def get_student_achievements(self, student_id: int, include_requirements: bool = False) -> List[Dict[str, Any]]:
+        """Return a student's achievements with metadata and counts."""
+        from app.achievements.models import StudentHasAchievement, Achievement
+        from app.extensions import db
+        
+        rows = (
+            db.session.query(StudentHasAchievement, Achievement)
+            .join(Achievement, Achievement.id == StudentHasAchievement.achievement_id)
+            .filter(StudentHasAchievement.student_id == student_id)
+            .all()
+        )
+
+        results: List[Dict[str, Any]] = []
+        for sha, ach in rows:
+            item = ach.to_json(include_requirements=include_requirements)  # id, name, description, image_url, class[, requirements]
+            # Ensure stable keys expected by callers
+            item.update({
+                "achievement_id": ach.id,  # redundant with "id", but convenient
+                "number_of_times": sha.number_of_times or 1,
+                "first_awarded_at": sha.created_at.isoformat() if getattr(sha, "created_at", None) else None,
+                "last_awarded_at": getattr(sha, "updated_at", None).isoformat() if getattr(sha, "updated_at", None) else None,
+            })
+            results.append(item)
+
+        # Sort newest awards first (fallback to first_awarded)
+        results.sort(
+            key=lambda x: x.get("last_awarded_at") or x.get("first_awarded_at") or "",
+            reverse=True,
+        )
+        return results
 
 analytics_service = AnalyticsService()
