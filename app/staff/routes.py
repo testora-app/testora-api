@@ -108,6 +108,8 @@ def register_staff(json_data):
 @staff.input(LoginSchema)
 @staff.output(Responses.VerifiedStaffSchema)
 def login(json_data):
+    from app.student.operations import batch_manager
+
     staff = staff_manager.get_staff_by_email(json_data["email"].strip())
     if staff and not staff.is_approved:
         return unapproved_account()
@@ -128,12 +130,14 @@ def login(json_data):
         school_data = school.to_json()
         if user_type == UserTypes.staff:
             school_data.pop("code")
+    
         return success_response(
             data={
                 "user": staff.to_json(),
                 "auth_token": access_token,
                 "school": school_data,
                 "user_type": user_type,
+                "batches": staff.to_json(include_batches=True)["batches"],
             }
         )
 
