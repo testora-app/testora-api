@@ -262,15 +262,19 @@ class TopicMasteryLevelItem(BaseSchema):
     topic_id = Integer(required=True, validate=Range(min=0), example=86)
     topic_name = String(required=True, example="Algebra")
     mastery_level = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    avg_score = Float(required=True, validate=Range(min=0, max=100), example=75.5)
 
 class PracticeOverviewDataSchema(BaseSchema):
     mastery_percent = Float(required=True, validate=Range(min=0, max=100), example=75.0)
     mastery_stage = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
     topics = List(Nested(TopicMasteryLevelItem), required=True)
+    mastery_zone = List(Nested(TopicMasteryLevelItem), required=True)
+    power_up_zone = List(Nested(TopicMasteryLevelItem), required=True)
 
 class AchievementItemData(BaseSchema):
     achievement_id = Integer(required=True, validate=Range(min=0), example=86)
     name = String(required=True, example="Math Whiz")
+    achievement_class = String(required=False, allow_none=True, example="gold")
     description = String(required=True, example="Awarded for excellence in mathematics.")
     image_url = String(required=True, example="http://example.com/images/achievement/math_whiz.png")
     number_of_times = Integer(required=True, validate=Range(min=1), example=3)

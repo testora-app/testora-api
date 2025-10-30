@@ -977,67 +977,75 @@ class AnalyticsService:
     
     def get_student_practice_overview(self, student_id, subject_id=None):
         from app.analytics.operations import sts_manager
-        '''
-            mastery_percent: float
-            mastery_stage: str
-            topics: List[{
-                topic_name: str
-                mastery_level: str
-            }]
-        '''
+
         # 1) Load and filter topics by subject (if provided)
         student_topic_scores = sts_manager.select_student_topic_score_history(student_id)
         topics = topic_manager.get_topic_by_ids([s.topic_id for s in student_topic_scores])
         if subject_id:
-            topics = [t for t in topics if t.subject_id == subject_id]
+            topics = [t for t in topics if getattr(t, "subject_id", None) == subject_id]
         topics_by_id = {t.id: t for t in topics}
+
         if not topics_by_id:
-            return {'mastery_percent': 0.0, 'mastery_stage': self.get_performance_band(0.0), 'topics': []}
+            return {
+                'mastery_percent': 0.0,
+                'mastery_stage': self.get_performance_band(0.0),
+                'topics': [],
+                'mastery_zone': [],
+                'power_up_zone': []
+            }
 
-        # 2) Aggregate scores per topic (sum & count)
+        # 2) Aggregate scores per topic
         sums, counts = defaultdict(float), defaultdict(int)
-        total_sum, total_count = 0.0, 0  # for attempt-weighted fallback if desired
-
         for s in student_topic_scores:
             if s.topic_id in topics_by_id:
                 sums[s.topic_id] += float(s.score_acquired)
                 counts[s.topic_id] += 1
-                total_sum += float(s.score_acquired)
-                total_count += 1
 
-        # No scores for the filtered topics
         if not sums:
-            return {'mastery_percent': 0.0, 'mastery_stage': self.get_performance_band(0.0), 'topics': []}
+            return {
+                'mastery_percent': 0.0,
+                'mastery_stage': self.get_performance_band(0.0),
+                'topics': [],
+                'mastery_zone': [],
+                'power_up_zone': []
+            }
 
         # 3) Compute per-topic averages
         topic_avg = {tid: (sums[tid] / counts[tid]) for tid in sums.keys()}
 
-        # 4) Topic items with performance band from average
+        # 4) Build topic mastery items
         topic_mastery_items = []
         for tid, avg in topic_avg.items():
             band = self.get_performance_band(avg)
             topic_mastery_items.append({
+                'topic_id': tid,
                 'topic_name': topics_by_id[tid].name,
                 'avg_score': round(avg, 2),
-                'mastery_level': band,
-                'topic_id': tid
+                'mastery_level': band
             })
 
-        # Optional: sort topics (e.g., highest avg first)
+        # Sort topics by score descending for main list
         topic_mastery_items.sort(key=lambda x: x['avg_score'], reverse=True)
 
-        # 5) Overall mastery: mean of topic averages (topic-weighted)
-        overall_avg = sum(topic_avg.values()) / len(topic_avg)
+        # 5) Identify zones
+        # Power-up zone → 2 lowest scoring topics
+        power_up_zone = sorted(topic_mastery_items, key=lambda x: x['avg_score'])[:2]
 
-        # If you prefer attempt-weighted across all scores, use this instead:
-        # overall_avg = (total_sum / total_count) if total_count else 0.0
+        # Mastery zone → 2 best topics excluding those already in power_up_zone
+        power_up_ids = {t['topic_id'] for t in power_up_zone}
+        mastery_zone = [t for t in topic_mastery_items if t['topic_id'] not in power_up_ids][:2]
 
-        overall_avg = round(overall_avg, 2)
+        # 6) Compute overall mastery
+        overall_avg = round(sum(topic_avg.values()) / len(topic_avg), 2)
+
         return {
             'mastery_percent': overall_avg,
             'mastery_stage': self.get_performance_band(overall_avg),
-            'topics': topic_mastery_items
+            'topics': topic_mastery_items,
+            'mastery_zone': mastery_zone,
+            'power_up_zone': power_up_zone
         }
+
 
     def get_student_weekly_goals(self, student_id):
         """
@@ -1143,7 +1151,7 @@ class AnalyticsService:
         """Return a student's achievements with metadata and counts."""
         from app.achievements.models import StudentHasAchievement, Achievement
         from app.extensions import db
-        
+
         rows = (
             db.session.query(StudentHasAchievement, Achievement)
             .join(Achievement, Achievement.id == StudentHasAchievement.achievement_id)
