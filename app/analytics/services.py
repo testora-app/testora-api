@@ -958,7 +958,7 @@ class AnalyticsService:
         return filtered_data
     
 
-    def get_student_dashboard_overview(self, student_id):
+    def get_student_dashboard_overview(self, student_id, subject_id=None, batch_id=None):
         '''
             total_tests: int
             current_streak: int
@@ -975,7 +975,7 @@ class AnalyticsService:
             'total_achievements': achievements
         }
     
-    def get_student_practice_overview(self, student_id, subject_id=None):
+    def get_student_practice_overview(self, student_id, subject_id=None, batch_id=None):
         from app.analytics.operations import sts_manager
 
         # 1) Load and filter topics by subject (if provided)
