@@ -7,13 +7,12 @@ minimum coverage requirements.
 """
 
 from collections import defaultdict
-from typing import Dict, List, Tuple, Set
-from datetime import datetime, timedelta
+from typing import Dict, List
+from datetime import datetime
 import random
 
 from app.extensions import db
-from app.test.models import Test, Question
-from app.app_admin.models import Topic
+from app.test.models import Test
 
 class PerformanceAnalyzer:
     """Analyzes student performance to identify weak topics and levels"""
@@ -315,8 +314,9 @@ class AdaptiveTestService:
         
         This replaces TestService.generate_random_questions_by_level()
         """
-        from app.test.models import Question, Topic
-        from app.test.operations import QuestionsNumberLimiter
+        from app.test.models import Question
+        from app.app_admin.models import Topic
+        from app._shared.schemas import QuestionsNumberLimiter
         
         # Get total questions needed
         total_questions = QuestionsNumberLimiter.get_question_limit_for_level(
@@ -446,7 +446,8 @@ class AdaptiveTestService:
         Strategy: Pick from topics with LOWEST mastered average 
         (least mastered among the mastered)
         """
-        from app.test.models import Question, Topic
+        from app.test.models import Question
+        from app.app_admin.models import Topic
         
         mastered_topics = performance_data.get('mastered_topics', [])
         
