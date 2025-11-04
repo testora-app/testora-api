@@ -3,6 +3,8 @@ from datetime import datetime, timezone, timedelta
 from dateutil.parser import parse as date_parser
 from apiflask import APIBlueprint
 from flask import render_template
+import pytz
+from logging import error as log_error, info as log_info
 
 from app._shared.schemas import SuccessMessage, UserTypes, LoginSchema, CurriculumTypes
 from app._shared.api_errors import (
@@ -105,6 +107,70 @@ def login(json_data):
         
         student_json = student.to_json()
         student_json["tests_completed"] = len(test_manager.get_tests_by_student_ids([student.id]))
+
+        # Generate weekly goals on first login of the week
+        week_start_date = None
+        try:
+            from app.goals.services import GenerateGoalsService, find_active_week_start
+            from app.goals.operations import (
+                calculate_subject_averages,
+                calculate_max_streak_30d,
+                select_subjects_for_goals,
+                get_weekly_wins_message
+            )
+            
+            # Get current date in Africa/Accra timezone
+            accra_tz = pytz.timezone('Africa/Accra')
+            current_date = datetime.now(accra_tz).date()
+            
+            # Calculate subject averages from last 5 tests
+            subjects_data = calculate_subject_averages(student.id)
+            
+            if subjects_data:
+                # Select subjects for goals (handles random selection if needed)
+                selected_subjects = select_subjects_for_goals(subjects_data)
+                
+                # Calculate max streak in last 30 days
+                max_streak_30d = calculate_max_streak_30d(student.id, current_date)
+                
+                # Generate weekly goals
+                goal_service = GenerateGoalsService()
+                goal_result = goal_service.run(
+                    student_id=student.id,
+                    login_date=current_date,
+                    subjects=selected_subjects,
+                    student_max_streak_30d=max_streak_30d
+                )
+                
+                if goal_result.get("skipped"):
+                    log_info(f"Weekly goals skipped for student {student.id}: {goal_result.get('reason')}")
+                    # Get the existing week start date
+                    week_start_date = find_active_week_start(student.id, current_date)
+                else:
+                    log_info(f"Weekly goals generated for student {student.id}: {goal_result.get('summary')}")
+                    # Use the newly created week start date
+                    week_start_date = current_date
+            else:
+                log_info(f"No subjects found for student {student.id}, skipping goal generation")
+                
+        except Exception as e:
+            # Log error but don't fail the login
+            log_error(f"Error generating weekly goals for student {student.id}: {str(e)}")
+        
+        # Check for weekly wins (achieved goals in current week)
+        if week_start_date:
+            try:
+                from app.goals.operations import get_weekly_wins_message
+                
+                weekly_wins = get_weekly_wins_message(student.id, week_start_date)
+                
+                if weekly_wins["has_wins"]:
+                    student_json["weekly_wins"] = weekly_wins
+                    log_info(f"Weekly wins found for student {student.id}: {len(weekly_wins['achievements'])} achievements")
+                    
+            except Exception as e:
+                # Log error but don't fail the login
+                log_error(f"Error generating weekly wins message for student {student.id}: {str(e)}")
 
         return success_response(
             data={
