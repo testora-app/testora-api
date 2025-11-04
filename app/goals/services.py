@@ -1,8 +1,9 @@
 from datetime import date, timedelta
-from typing import Optional
+from typing import Optional, Dict
 from sqlalchemy import and_, or_
 from app.extensions import db
 from app.goals.models import WeeklyGoal, GoalStatus, GoalMetric
+from logging import info as log_info, error as log_error
 
 
 def find_active_week_start(student_id: int, login_date: date) -> Optional[date]:
@@ -245,3 +246,127 @@ class GenerateGoalsService:
             return 4
         else:
             return 3
+
+
+class UpdateWeeklyGoalsService:
+    """
+    Service to update weekly goals after test completion.
+    
+    Updates XP goals and streak goals based on test results and current student streak.
+    """
+    
+    def run(
+        self,
+        student_id: int,
+        current_date: date,
+        subject_id: int,
+        xp_earned: int,
+        current_streak: int
+    ) -> Dict:
+        """
+        Update weekly goals for a student after test completion.
+        
+        Args:
+            student_id: The student's ID
+            current_date: The current date (Africa/Accra timezone)
+            subject_id: The subject ID of the completed test
+            xp_earned: The XP/score earned from the test
+            current_streak: The student's current streak in days
+            
+        Returns:
+            dict with update results:
+            {
+                "updated": bool,
+                "xp_goals_updated": int,
+                "streak_goals_updated": int,
+                "goals_achieved": int,
+                "message": str
+            }
+        """
+        try:
+            # Find active week for this student
+            week_start_date = find_active_week_start(student_id, current_date)
+            
+            if not week_start_date:
+                return {
+                    "updated": False,
+                    "xp_goals_updated": 0,
+                    "streak_goals_updated": 0,
+                    "goals_achieved": 0,
+                    "message": "No active week found for student"
+                }
+            
+            # Query all active goals for this week
+            active_goals = WeeklyGoal.query.filter(
+                WeeklyGoal.student_id == student_id,
+                WeeklyGoal.week_start_date == week_start_date,
+                WeeklyGoal.status.in_([GoalStatus.pending, GoalStatus.in_progress])
+            ).all()
+            
+            if not active_goals:
+                return {
+                    "updated": False,
+                    "xp_goals_updated": 0,
+                    "streak_goals_updated": 0,
+                    "goals_achieved": 0,
+                    "message": f"No active goals found for week starting {week_start_date}"
+                }
+            
+            xp_goals_updated = 0
+            streak_goals_updated = 0
+            goals_achieved = 0
+            
+            # Update each goal based on its type
+            for goal in active_goals:
+                previous_status = goal.status
+                
+                if goal.target_metric == GoalMetric.xp:
+                    # Update XP goals for matching subject
+                    if goal.subject_id == subject_id:
+                        goal.apply_progress(xp_earned)
+                        xp_goals_updated += 1
+                        log_info(f"Updated XP goal {goal.id} for subject {subject_id}: +{xp_earned} points")
+                        
+                        # Check if newly achieved
+                        if previous_status != GoalStatus.achieved and goal.status == GoalStatus.achieved:
+                            goals_achieved += 1
+                
+                elif goal.target_metric == GoalMetric.streak_days:
+                    # Update streak goal with current streak value
+                    goal.set_value(current_streak)
+                    streak_goals_updated += 1
+                    log_info(f"Updated streak goal {goal.id}: set to {current_streak} days")
+                    
+                    # Check if newly achieved
+                    if previous_status != GoalStatus.achieved and goal.status == GoalStatus.achieved:
+                        goals_achieved += 1
+            
+            # Commit all goal updates
+            db.session.commit()
+            
+            message = f"Updated {xp_goals_updated} XP goal(s) and {streak_goals_updated} streak goal(s)"
+            if goals_achieved > 0:
+                message += f". {goals_achieved} goal(s) achieved!"
+            
+            log_info(f"Weekly goals updated for student {student_id}: {message}")
+            
+            return {
+                "updated": True,
+                "xp_goals_updated": xp_goals_updated,
+                "streak_goals_updated": streak_goals_updated,
+                "goals_achieved": goals_achieved,
+                "message": message
+            }
+            
+        except Exception as e:
+            # Rollback on error
+            db.session.rollback()
+            log_error(f"Error updating weekly goals for student {student_id}: {str(e)}")
+            
+            return {
+                "updated": False,
+                "xp_goals_updated": 0,
+                "streak_goals_updated": 0,
+                "goals_achieved": 0,
+                "message": f"Error: {str(e)}"
+            }

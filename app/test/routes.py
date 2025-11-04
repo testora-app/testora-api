@@ -298,6 +298,38 @@ def mark_test(test_id, json_data):
                     device_ids=recipient.device_ids,
                 )
 
+        # Update weekly goals
+        try:
+            from app.goals.services import UpdateWeeklyGoalsService
+            import pytz
+            
+            # Get current date in Africa/Accra timezone
+            accra_tz = pytz.timezone('Africa/Accra')
+            current_date = datetime.now(accra_tz).date()
+            
+            # Get student's current streak
+            student_obj = student_manager.get_student_by_id(student_id)
+            
+            # Update weekly goals using the service
+            update_service = UpdateWeeklyGoalsService()
+            result = update_service.run(
+                student_id=student_id,
+                current_date=current_date,
+                subject_id=test.subject_id,
+                xp_earned=marked_test["score_acquired"],
+                current_streak=student_obj.current_streak if student_obj else 0
+            )
+            
+            if result["updated"]:
+                log_info(f"Weekly goals update: {result['message']}")
+            else:
+                log_info(f"Weekly goals not updated: {result['message']}")
+                
+        except Exception as e:
+            # Log error but don't fail the test marking
+            from logging import error as log_error
+            log_error(f"Error updating weekly goals for student {student_id}: {str(e)}")
+
         log_info("Analytics ran successfully...")
 
     return success_response(data=test.to_json())
