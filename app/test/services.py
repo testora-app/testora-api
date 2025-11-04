@@ -391,3 +391,65 @@ class TestService:
                 'total_questions': len(adaptive_questions)
             }
         }
+    
+    @staticmethod
+    def mark_test(questions, deduct_points=False):
+        from app.test.operations import question_manager
+        # we need a way to determine if we're deducting points lost or half points
+
+        points_acquired = 0
+        score_acquired = 0  # correct/total * 100
+
+        # recommended topic, recommendation_level = high
+        # a break down of topics and the percentage acquired
+        total_number = len(questions)
+
+        topic_scores = {question["topic_id"]: 0 for question in questions}
+
+        for question in questions:
+            # get the question
+            q = question_manager.get_question_by_id(question["id"])
+            main_question_correct = False
+            no_subs_correct = 0
+            if q.correct_answer == question["student_answer"]:
+                main_question_correct = True
+                score_acquired += 1
+                topic_scores[q.topic_id] += 1
+            else:
+                if deduct_points:
+                    points_acquired -= TestService.determine_question_points(question)
+
+            # mark sub questions if any
+            if len(question["sub_questions"]) > 0:
+                total_number += len(question["sub_questions"])
+                for sub in question["sub_questions"]:
+                    s = question_manager.get_sub_question_by_id(sub["id"])
+                    sub["correct_answer"] = s.correct_answer
+                    if s.correct_answer == sub["student_answer"]:
+                        no_subs_correct += 1
+                        topic_scores[q.topic_id] += 1
+                    else:
+                        if deduct_points:
+                            points_acquired -= 1
+
+            points = round(
+                TestService.determine_question_points(
+                    question,
+                    main_correct=main_question_correct,
+                    sub_questions_correct=no_subs_correct,
+                ),
+                2,
+            )
+            points_acquired += points
+            question["correct_answer"] = q.correct_answer
+            question["points"] = points
+            score_acquired += no_subs_correct
+
+        score_acquired = (score_acquired / total_number) * 100  # correct/total * 100
+
+        return {
+            "questions": questions,
+            "points_acquired": round(points_acquired, 2),
+            "score_acquired": score_acquired,
+            "topic_scores": topic_scores,
+        }
