@@ -52,6 +52,7 @@ class PushNotificationsService:
             "headings": {"en": title},
             # "include_player_ids": valid_device_ids,
             "include_aliases": {"external_id": emails},
+            "target_channel": "push",
         }
 
         if metadata:
