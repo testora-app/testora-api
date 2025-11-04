@@ -289,7 +289,7 @@ def mark_test(test_id, json_data):
 
         if streak_update["streak_modified"]:
             recipient = recipient_manager.get_recipient_by_email(
-                student.email, UserTypes.student
+                student["user_email"], UserTypes.student
             )
             if recipient:
                 pusher.notify_devices(
