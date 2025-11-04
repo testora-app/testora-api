@@ -197,8 +197,8 @@ def create_test(json_data):
     if student and not TestService.is_mode_accessible(exam_mode, student_level.level):
         return bad_request(f"{exam_mode} mode is not available at your current level!")
 
-    questions = TestService.generate_random_questions_by_level(
-        subject_id, student_level.level
+    questions = TestService.generate_adaptive_questions(
+        subject_id, student.id, student_level.level
     )
     questions = [
         question.to_json(include_correct_answer=False) for question in questions
