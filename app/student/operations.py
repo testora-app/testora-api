@@ -77,13 +77,13 @@ class StudentManager(BaseManager):
                 )
 
                 title = "Streak Increased"
-                content = render_template("streak_added.txt")
+                content = f"Great job! Your login streak is now {student.current_streak} days."
                 streak_modified = True
             else:
                 # More than one day has passed, or same day login, reset streak
                 student.current_streak = 1
                 title = "Streak Reset"
-                content = render_template("streak_reset.txt")
+                content = "Your login streak has been reset. Start a new streak today!"
                 streak_modified = True
         else:
             # First time login
