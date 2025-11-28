@@ -3,7 +3,6 @@ from app._shared.models import BaseModel
 from flask_admin.contrib.sqla import ModelView
 
 
-# Association table for many-to-many relationship
 staff_batches = db.Table(
     "staff_batches",
     db.Column("staff_id", db.Integer, db.ForeignKey("staff.id"), primary_key=True),
@@ -35,7 +34,7 @@ class Staff(BaseModel):
     def __repr__(self):
         return f"Staff {self.first_name} {self.surname}"
 
-    def to_json(self, include_batches=False):
+    def to_json(self, include_batches: bool = False):
         data = {
             "id": self.id,
             "first_name": self.first_name,
@@ -45,13 +44,33 @@ class Staff(BaseModel):
             "school_id": self.school_id,
             "is_approved": self.is_approved,
             "is_admin": self.is_admin,
+            # all subjects assigned to this teacher
             "subjects": [subject.to_json() for subject in self.subjects],
         }
+
         if include_batches:
-            data["batches"] = (
-                [batch.to_json(include_students=False, include_staff=False, include_subjects=False) for batch in self.batches] if self.batches else []
-            )
+            # IDs of subjects assigned to this teacher
+            teacher_subject_ids = {subject.id for subject in self.subjects}
+            batches_payload = []
+
+            for batch in self.batches:
+                # Get batch JSON including its subjects, but avoid recursion
+                batch_json = batch.to_json(
+                    include_students=False,
+                    include_subjects=True,
+                    include_staff=False,
+                )
+
+                batch_subjects = batch_json.get("subjects", [])
+                # Filter batch subjects to only those assigned to this teacher
+                assigned_subjects_for_batch = [
+                    subj for subj in batch_subjects
+                    if subj.get("id") in teacher_subject_ids
+                ]
+
+                batch_json["subjects"] = assigned_subjects_for_batch
+                batches_payload.append(batch_json)
+
+            data["batches"] = batches_payload
+
         return data
-
-
-# admin.add_view(ModelView(Staff, db.session, name="Staff"))
