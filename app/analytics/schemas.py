@@ -114,7 +114,7 @@ class PerformanceDistributionDataSchema(BaseSchema):
     proficiency_percent = Float(required=True, example=71.3)
     proficiency_status = String(
         required=True,
-        validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]),
+        validate=OneOf(["highly_proficient", "proficient", "approaching_proficient", "developing", "emerging"]),
         example="proficient"
     )
     tier_distribution = Nested(TierDistributionSchema, required=True)

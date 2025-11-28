@@ -180,7 +180,7 @@ class AnalyticsService:
         if subject_id:
             last_tests = [test for test in last_tests if test.subject_id == subject_id]
 
-        return this_tests, last_tests, all_student_ids
+        return this_tests, last_tests, student_ids
 
     def get_practice_rate(self, school_id, batch_id, time_range, subject_id=None):
         this_tests, last_tests, all_student_ids = (
@@ -286,7 +286,7 @@ class AnalyticsService:
 
         return {
             "count": number_of_students_in_band,
-            "percentage": percentage_of_students_in_band,
+            "percentage": round(percentage_of_students_in_band * 100, 2),
         }
 
     def get_performance_distribution(
@@ -329,8 +329,8 @@ class AnalyticsService:
             "proficient": self.calculate_student_average_performance(
                 total_students, tests, "proficient"
             ),
-            "approaching": self.calculate_student_average_performance(
-                total_students, tests, "approaching"
+            "approaching_proficient": self.calculate_student_average_performance(
+                total_students, tests, "approaching_proficient"
             ),
             "emerging": self.calculate_student_average_performance(
                 total_students, tests, "emerging"
