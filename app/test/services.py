@@ -407,23 +407,36 @@ class TestService:
         topic_scores = {question["topic_id"]: 0 for question in questions}
 
         for question in questions:
-            # get the question
             q = question_manager.get_question_by_id(question["id"])
+            if not q:
+                total_number -= 1
+                continue 
+            
             main_question_correct = False
             no_subs_correct = 0
-            if q.correct_answer == question["student_answer"]:
-                main_question_correct = True
-                score_acquired += 1
-                topic_scores[q.topic_id] += 1
-            else:
-                if deduct_points:
-                    points_acquired -= TestService.determine_question_points(question)
+
+            if not q.is_flagged:
+                #TODO: MAKE THIS BETTER JOSEPH 
+                # current logic: mark main question if it's not flagged
+                if q.correct_answer == question["student_answer"]:
+                    main_question_correct = True
+                    score_acquired += 1
+                    topic_scores[q.topic_id] += 1
+                else:
+                    if deduct_points:
+                        points_acquired -= TestService.determine_question_points(question)
 
             # mark sub questions if any
             if len(question["sub_questions"]) > 0:
                 total_number += len(question["sub_questions"])
                 for sub in question["sub_questions"]:
                     s = question_manager.get_sub_question_by_id(sub["id"])
+                    if not s:
+                        total_number -= 1
+                        continue
+
+                    if s.is_flagged:
+                        continue  # skip flagged sub questions
                     sub["correct_answer"] = s.correct_answer
                     if s.correct_answer == sub["student_answer"]:
                         no_subs_correct += 1
