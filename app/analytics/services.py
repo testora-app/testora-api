@@ -195,8 +195,10 @@ class AnalyticsService:
             return {
                 "number_of_tests_per_student": 0,
                 "comparison": 0,
-                "practiced": {"number": 0, "percent": 0.0},
-                "not_practiced": {"number": 0, "percent": 0.0},
+                "practiced_number": 0,
+                "practiced_percent": 0.0,
+                "not_practiced_number": 0,
+                "not_practiced_percent": 0.0,
                 "tier_distribution": {
                     "no_practice": {"number": 0, "percent": 0.0},
                     "minimal_practice": {"number": 0, "percent": 0.0},
@@ -275,15 +277,13 @@ class AnalyticsService:
 
         return {
             "number_of_tests_per_student": number_of_tests_per_student,
-            "comparison": comparison,
-            "practiced": {
-                "number": practiced_number,
-                "percent": round(practiced_percent, 2),
-            },
-            "not_practiced": {
-                "number": not_practiced_number,
-                "percent": round(not_practiced_percent, 2),
-            },
+            "change_from": round(previous,2) if previous is not None else previous,
+            "change_direction": "up" if comparison > 0 else "down",
+            "comparison": round(comparison * 100, 2) if comparison is not None else comparison,
+            "practiced_number": practiced_number,
+            "practiced_percent": round(practiced_percent, 2),
+            "not_practiced_number": not_practiced_number,
+            "not_practiced_percent": round(not_practiced_percent, 2),
             "tier_distribution": tier_distribution,
         }
 
