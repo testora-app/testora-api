@@ -348,7 +348,7 @@ class AnalyticsService:
             proficiency_above / total_students if total_students > 0 else 0
         )
         at_risk = (
-            tier_distribution["approaching"]["count"]
+            tier_distribution["approaching_proficient"]["count"]
             + tier_distribution["emerging"]["count"]
             + tier_distribution["developing"]["count"]
         )
