@@ -41,7 +41,7 @@ class StaffSchema(BaseSchema):
     other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
     is_approved = Boolean(required=False, allow_none=False)
     is_admin = Boolean(required=False, allow_none=False)
-    subjects = List(Dict(), required=False, allow_none=True, validate=[Length(min=0)])
+    subjects = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
     school_id = ID_FIELD
 
 
@@ -73,7 +73,7 @@ class GetStaffListSchema(BaseSchema):
 
 
 class VerifiedStaffSchema(BaseSchema):
-    user = Nested(StaffSchema)
+    user = Nested(StaffResponseSchema)
     auth_token = String()
     school = Nested(SchoolSchema)
     user_type = String(required=True)
