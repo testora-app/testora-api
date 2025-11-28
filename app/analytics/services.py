@@ -181,147 +181,218 @@ class AnalyticsService:
             last_tests = [test for test in last_tests if test.subject_id == subject_id]
 
         return this_tests, last_tests, student_ids
+    
 
-    def get_practice_rate(self, school_id, batch_id, time_range, subject_id=None):
-        this_tests, last_tests, all_student_ids = (
-            self.configure_performance_requirements(
-                school_id, batch_id, time_range, subject_id
-            )
+
+    def get_practice_rate(self, school_id, batch_id, time_range, subject_id=None) -> Dict[str, Any]:
+        this_tests, last_tests, all_student_ids = self.configure_performance_requirements(
+            school_id, batch_id, time_range, subject_id
         )
 
-        # Tier Distributions
-        these_students_took_tests_this_param = set(
-            [test.student_id for test in this_tests]
-        )
-        these_students_took_tests_last_param = set(
-            [test.student_id for test in last_tests]
+        total_students = len(all_student_ids)
+        if total_students == 0:
+            # No students – return an all-zero structure
+            return {
+                "number_of_tests_per_student": 0,
+                "comparison": 0,
+                "practiced": {"number": 0, "percent": 0.0},
+                "not_practiced": {"number": 0, "percent": 0.0},
+                "tier_distribution": {
+                    "no_practice": {"number": 0, "percent": 0.0},
+                    "minimal_practice": {"number": 0, "percent": 0.0},
+                    "consistent_practice": {"number": 0, "percent": 0.0},
+                    "high_practice": {"number": 0, "percent": 0.0},
+                },
+            }
+
+        # --- Current vs previous participation (student-based) ---
+        these_students_took_tests_this_param = set(t.student_id for t in this_tests)
+        these_students_took_tests_last_param = set(t.student_id for t in last_tests)
+
+        number_of_tests_per_student = (
+            round(len(this_tests) / total_students, 2) if total_students > 0 else 0
         )
 
-        number_of_test_per_student = len(this_tests) / len(all_student_ids)
-        comparison = (
-            (
-                len(these_students_took_tests_this_param)
-                - len(these_students_took_tests_last_param)
-            )
-            / len(these_students_took_tests_last_param)
-            if len(these_students_took_tests_last_param) > 0
-            else 0
-        )
+        current = len(these_students_took_tests_this_param)
+        previous = len(these_students_took_tests_last_param)
 
-        practiced_percent = len(these_students_took_tests_this_param) / len(
-            all_student_ids
-        )
-        practiced_number = len(these_students_took_tests_this_param)
+        if previous > 0:
+            comparison = (current - previous) / previous  # growth rate (e.g. 0.2 = +20%)
+        else:
+            comparison = 0  # or None if you want "no baseline" instead
 
+        # --- Overall practice vs no practice (student-based) ---
+        practiced_number = current
+        practiced_percent = (practiced_number / total_students) * 100
+
+        not_practiced_number = total_students - practiced_number
         not_practiced_percent = 100 - practiced_percent
-        not_practiced_number = len(all_student_ids) - practiced_number
 
-        minimal_practice_number, minimal_practice_percent = self.count_in_range(
-            this_tests, 1, 2
+        # --- Tier distributions (student-based) ---
+        # Count how many tests each student took in THIS period
+        test_counts = Counter(t.student_id for t in this_tests)
+
+        def count_students_in_range(counts: Counter, min_times: int, max_times: int) -> int:
+            return sum(1 for c in counts.values() if min_times <= c <= max_times)
+
+        minimal_students = count_students_in_range(test_counts, 1, 2)
+        consistent_students = count_students_in_range(test_counts, 3, 5)
+        high_students = count_students_in_range(test_counts, 6, 10**9)
+
+        minimal_practice_number = minimal_students
+        minimal_practice_percent = (
+            minimal_students / total_students * 100 if total_students > 0 else 0.0
         )
-        consistent_practice_number, consistent_practice_percent = self.count_in_range(
-            this_tests, 3, 5
+
+        consistent_practice_number = consistent_students
+        consistent_practice_percent = (
+            consistent_students / total_students * 100 if total_students > 0 else 0.0
         )
-        high_practice_number, high_practice_percent = self.count_in_range(
-            this_tests, 6, 1000
+
+        high_practice_number = high_students
+        high_practice_percent = (
+            high_students / total_students * 100 if total_students > 0 else 0.0
         )
 
         tier_distribution = {
             "no_practice": {
                 "number": not_practiced_number,
-                "percent": not_practiced_percent,
+                "percent": round(not_practiced_percent, 2),
             },
             "minimal_practice": {
                 "number": minimal_practice_number,
-                "percent": minimal_practice_percent,
+                "percent": round(minimal_practice_percent, 2),
             },
             "consistent_practice": {
                 "number": consistent_practice_number,
-                "percent": consistent_practice_percent,
+                "percent": round(consistent_practice_percent, 2),
             },
             "high_practice": {
                 "number": high_practice_number,
-                "percent": high_practice_percent,
+                "percent": round(high_practice_percent, 2),
             },
         }
 
         return {
-            "rate": number_of_test_per_student,
-            "unit": "tests/student",
-            "change_from": comparison,
-            "change_direction": "up" if comparison > 0 else "down",
-            "total_students": len(all_student_ids),
-            "practiced_percent": practiced_percent,
-            "practiced_number": practiced_number,
-            "not_practiced_percent": not_practiced_percent,
-            "not_practiced_number": not_practiced_number,
+            "number_of_tests_per_student": number_of_tests_per_student,
+            "comparison": comparison,
+            "practiced": {
+                "number": practiced_number,
+                "percent": round(practiced_percent, 2),
+            },
+            "not_practiced": {
+                "number": not_practiced_number,
+                "percent": round(not_practiced_percent, 2),
+            },
             "tier_distribution": tier_distribution,
         }
 
+
     def calculate_student_average_performance(
-        self, total_number_of_students, tests, performance_band
+        self,
+        total_number_of_students: int,
+        tests,
+        performance_band: str,
     ):
         """
-        Calculates the average performance of students in a given performance band
-        So if the performance_band is "highly_proficient", it will calculate the average performance of students who are highly proficient
+        Calculates how many students fall into a given performance band
+        based on their AVERAGE score over the provided tests.
+
         Args:
-          total_number_of_students (int): The total number of students
-          tests (list): The list of tests
-          performance_band (str): The performance band
+        total_number_of_students (int): Total students in the cohort
+                                        (including those with no tests)
+        tests (list): List of tests within the selected time range/subject
+                        Each test is expected to have .student_id and .score_acquired
+        performance_band (str): Target band
+                                e.g. 'highly_proficient', 'proficient',
+                                'approaching_proficient', 'developing', 'emerging'
+
         Returns:
-          - the number of students in that band
-          - the percentage of students in that band
+        dict:
+            - count: number of students in that band
+            - percentage: percentage of total students in that band (0–100)
         """
-        filtered_tests = [
-            test
-            for test in tests
-            if self.get_performance_band(test.score_acquired) == performance_band
-        ]
-        number_of_students_in_band = len(
-            set([test.student_id for test in filtered_tests])
-        )
+        # Guard: no students or no tests → nothing in this band
+        if total_number_of_students == 0 or not tests:
+            return {"count": 0, "percentage": 0.0}
+
+        # Collect scores per student
+        scores_by_student = defaultdict(list)
+        for test in tests:
+            scores_by_student[test.student_id].append(test.score_acquired)
+
+        # Classify each student by their AVERAGE score band
+        number_of_students_in_band = 0
+        for student_id, scores in scores_by_student.items():
+            avg_score = sum(scores) / len(scores)
+            band = self.get_performance_band(avg_score)
+            if band == performance_band:
+                number_of_students_in_band += 1
+
         percentage_of_students_in_band = (
             number_of_students_in_band / total_number_of_students
-        )
+        ) * 100
 
         return {
             "count": number_of_students_in_band,
-            "percentage": round(percentage_of_students_in_band * 100, 2),
+            "percentage": round(percentage_of_students_in_band, 2),
         }
 
-    def get_performance_distribution(
-        self, school_id, batch_id, time_range, subject_id=None
-    ):
-        this_tests, last_tests, all_student_ids = (
-            self.configure_performance_requirements(
-                school_id, batch_id, time_range, subject_id
-            )
+    def get_performance_distribution(self, school_id, batch_id, time_range, subject_id=None):
+        this_tests, last_tests, all_student_ids = self.configure_performance_requirements(
+            school_id, batch_id, time_range, subject_id
         )
 
+        # Decide which tests to use based on the time range
         if time_range == "this_week":
             tests = this_tests
         elif time_range == "last_week":
             tests = last_tests
         else:
+            # e.g. "this_month", "all_time" → combine
             tests = this_tests + last_tests
 
+        # Subject label
         if subject_id:
             subject = subject_manager.get_subject_by_id(subject_id)
             subject_name = subject.name
         else:
             subject_name = "Overall"
 
-        average_score = round(
-            sum(test.score_acquired for test in tests) / len(tests)
-            if len(tests) > 0
-            else 0
-        )
-
-        proficiency_percent = average_score
-        proficiency_status = self.get_performance_band(average_score)
-
         total_students = len(all_student_ids)
 
+        # If there are no students at all, return an all-zero structure
+        if total_students == 0:
+            return {
+                "subject_name": subject_name,
+                "proficiency_percent": 0.0,
+                "proficiency_status": None,
+                "tier_distribution": {
+                    "highly_proficient": {"count": 0, "percentage": 0.0},
+                    "proficient": {"count": 0, "percentage": 0.0},
+                    "approaching_proficient": {"count": 0, "percentage": 0.0},
+                    "developing": {"count": 0, "percentage": 0.0},
+                    "emerging": {"count": 0, "percentage": 0.0},
+                },
+                "summary_distribution": {
+                    "proficiency_above": {"count": 0, "percentage": 0.0},
+                    "at_risk": {"count": 0, "percentage": 0.0},
+                    "average_tests": {"value": 0.0, "unit": "tests/student"},
+                    "average_time_spent": {"value": 0.0, "unit": "min/student"},
+                },
+                "last_updated": None,
+            }
+
+        # --- Average score across tests (0–100) ---
+        if tests:
+            average_score = sum(test.score_acquired for test in tests) / len(tests)
+        else:
+            average_score = 0.0
+
+        proficiency_percent = round(average_score, 2)
+        proficiency_status = self.get_performance_band(average_score)
+
+        # --- Tier distribution (student-based; uses calculate_student_average_performance) ---
         tier_distribution = {
             "highly_proficient": self.calculate_student_average_performance(
                 total_students, tests, "highly_proficient"
@@ -332,55 +403,70 @@ class AnalyticsService:
             "approaching_proficient": self.calculate_student_average_performance(
                 total_students, tests, "approaching_proficient"
             ),
-            "emerging": self.calculate_student_average_performance(
-                total_students, tests, "emerging"
-            ),
             "developing": self.calculate_student_average_performance(
                 total_students, tests, "developing"
             ),
+            "emerging": self.calculate_student_average_performance(
+                total_students, tests, "emerging"
+            ),
         }
 
+        # --- Rollup: At/Above Proficiency vs At Risk (student-based) ---
+        # At/Above Proficiency = Highly Proficient + Proficient + Approaching Proficient
         proficiency_above = (
             tier_distribution["highly_proficient"]["count"]
             + tier_distribution["proficient"]["count"]
+            + tier_distribution["approaching_proficient"]["count"]
         )
         proficiency_above_percent = (
-            proficiency_above / total_students if total_students > 0 else 0
+            (proficiency_above / total_students) * 100 if total_students > 0 else 0.0
         )
+
+        # At Risk = Developing + Emerging
         at_risk = (
-            tier_distribution["approaching_proficient"]["count"]
+            tier_distribution["developing"]["count"]
             + tier_distribution["emerging"]["count"]
-            + tier_distribution["developing"]["count"]
         )
-        at_risk_percent = at_risk / total_students if total_students > 0 else 0
+        at_risk_percent = (
+            (at_risk / total_students) * 100 if total_students > 0 else 0.0
+        )
+
+        # --- Average tests and time per student ---
+        if tests:
+            # average number of tests per student in this cohort
+            avg_tests_per_student = len(tests) / total_students
+
+            # average time per test in minutes
+            total_seconds = sum(
+                (test.finished_on - test.started_on).total_seconds() for test in tests
+            )
+            avg_time_minutes = (total_seconds / len(tests)) / 60.0
+        else:
+            avg_tests_per_student = 0.0
+            avg_time_minutes = 0.0
 
         summary_distribution = {
             "proficiency_above": {
                 "count": proficiency_above,
                 "percentage": round(proficiency_above_percent, 2),
             },
-            "at_risk": {"count": at_risk, "percentage": round(at_risk_percent, 2)},
-            "average_tests": {"value": len(tests), "unit": "/week"},
+            "at_risk": {
+                "count": at_risk,
+                "percentage": round(at_risk_percent, 2),
+            },
+            "average_tests": {
+                "value": round(avg_tests_per_student, 2),
+                "unit": "tests/student",
+            },
             "average_time_spent": {
-                "value": round(
-                    (
-                        sum(
-                            (test.finished_on.minute - test.started_on.minute)
-                            for test in tests
-                        )
-                        / len(tests)
-                        if len(tests) > 0
-                        else 0
-                    ),
-                    2,
-                ),
+                "value": round(avg_time_minutes, 2),
                 "unit": "min/student",
             },
         }
 
         return {
             "subject_name": subject_name,
-            "proficiency_percent": round(proficiency_percent, 2),
+            "proficiency_percent": proficiency_percent,
             "proficiency_status": proficiency_status,
             "tier_distribution": tier_distribution,
             "summary_distribution": summary_distribution,
