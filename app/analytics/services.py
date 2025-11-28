@@ -181,12 +181,14 @@ class AnalyticsService:
             last_tests = [test for test in last_tests if test.subject_id == subject_id]
 
         return this_tests, last_tests, student_ids
-    
 
-
-    def get_practice_rate(self, school_id, batch_id, time_range, subject_id=None) -> Dict[str, Any]:
-        this_tests, last_tests, all_student_ids = self.configure_performance_requirements(
-            school_id, batch_id, time_range, subject_id
+    def get_practice_rate(
+        self, school_id, batch_id, time_range, subject_id=None
+    ) -> Dict[str, Any]:
+        this_tests, last_tests, all_student_ids = (
+            self.configure_performance_requirements(
+                school_id, batch_id, time_range, subject_id
+            )
         )
 
         total_students = len(all_student_ids)
@@ -219,7 +221,9 @@ class AnalyticsService:
         previous = len(these_students_took_tests_last_param)
 
         if previous > 0:
-            comparison = (current - previous) / previous  # growth rate (e.g. 0.2 = +20%)
+            comparison = (
+                current - previous
+            ) / previous  # growth rate (e.g. 0.2 = +20%)
         else:
             comparison = 0  # or None if you want "no baseline" instead
 
@@ -234,7 +238,9 @@ class AnalyticsService:
         # Count how many tests each student took in THIS period
         test_counts = Counter(t.student_id for t in this_tests)
 
-        def count_students_in_range(counts: Counter, min_times: int, max_times: int) -> int:
+        def count_students_in_range(
+            counts: Counter, min_times: int, max_times: int
+        ) -> int:
             return sum(1 for c in counts.values() if min_times <= c <= max_times)
 
         minimal_students = count_students_in_range(test_counts, 1, 2)
@@ -277,16 +283,17 @@ class AnalyticsService:
 
         return {
             "number_of_tests_per_student": number_of_tests_per_student,
-            "change_from": round(previous,2) if previous is not None else previous,
+            "change_from": round(previous, 2) if previous is not None else previous,
             "change_direction": "up" if comparison > 0 else "down",
-            "comparison": round(comparison * 100, 2) if comparison is not None else comparison,
+            "comparison": (
+                round(comparison * 100, 2) if comparison is not None else comparison
+            ),
             "practiced_number": practiced_number,
             "practiced_percent": round(practiced_percent, 2),
             "not_practiced_number": not_practiced_number,
             "not_practiced_percent": round(not_practiced_percent, 2),
             "tier_distribution": tier_distribution,
         }
-
 
     def calculate_student_average_performance(
         self,
@@ -338,9 +345,13 @@ class AnalyticsService:
             "percentage": round(percentage_of_students_in_band, 2),
         }
 
-    def get_performance_distribution(self, school_id, batch_id, time_range, subject_id=None):
-        this_tests, last_tests, all_student_ids = self.configure_performance_requirements(
-            school_id, batch_id, time_range, subject_id
+    def get_performance_distribution(
+        self, school_id, batch_id, time_range, subject_id=None
+    ):
+        this_tests, last_tests, all_student_ids = (
+            self.configure_performance_requirements(
+                school_id, batch_id, time_range, subject_id
+            )
         )
 
         # Decide which tests to use based on the time range
@@ -473,7 +484,11 @@ class AnalyticsService:
             "last_updated": self.most_recent_created_at(tests),
         }
 
+    from collections import defaultdict
+
+
     def get_subject_performance(self, school_id, batch_id, subject_id=None):
+        # 1. Resolve students for this context
         if batch_id:
             batch = batch_manager.get_batch_by_id(batch_id)
             students = batch.to_json()["students"]
@@ -482,64 +497,88 @@ class AnalyticsService:
             students = student_manager.get_active_students_by_school(school_id)
             student_ids = [student.id for student in students]
 
+        if not student_ids:
+            return []
+
+        # 2. Get all tests for these students (optionally filtered by subject)
         tests = test_manager.get_tests_by_student_ids(student_ids)
         if subject_id:
             tests = [test for test in tests if test.subject_id == subject_id]
 
-        subjects = subject_manager.get_subject_by_curriculum("bece")
+        # 3. Decide which subjects to report on
+        if subject_id:
+            subject = subject_manager.get_subject_by_id(subject_id)
+            subjects = [subject] if subject else []
+        else:
+            subjects = subject_manager.get_subject_by_curriculum("bece")
 
         subject_distribution = []
 
         for subject in subjects:
-            students_with_highly_proficient = len(
-                set([
-                    test.student_id
-                    for test in tests
-                    if test.subject_id == subject.id
-                    and self.get_performance_band(test.score_acquired)
-                    == "highly_proficient"
-                ])
-            )
-            students_with_proficient = len(
-                set([
-                    test.student_id
-                    for test in tests
-                    if test.subject_id == subject.id
-                    and self.get_performance_band(test.score_acquired) == "proficient"
-                ])
-            )
+            # All tests for this subject
+            subject_tests = [t for t in tests if t.subject_id == subject.id]
 
-            student_readiness_number = (
-                students_with_highly_proficient + students_with_proficient
-            )
-            student_readiness_percent = (
-                student_readiness_number / len(student_ids) * 100
-            )
-
-            number_of_subject_tests = len(
-                [test for test in tests if test.subject_id == subject.id]
-            )
-            average_subject_score = (
-                sum(
-                    test.score_acquired
-                    for test in tests
-                    if test.subject_id == subject.id
+            if not subject_tests:
+                # No data for this subject in this context
+                subject_distribution.append(
+                    {
+                        "subject_name": subject.name,
+                        "student_readiness_number": 0,
+                        "student_readiness_percent": 0.0,
+                        # you can decide if you want a special "no_data" status here instead
+                        "status": self.get_performance_band(0),
+                    }
                 )
-                / number_of_subject_tests
-                if number_of_subject_tests > 0
-                else 0
+                continue
+
+            # 4. Build per-student average score for THIS subject
+            scores_by_student = defaultdict(list)
+            for test in subject_tests:
+                scores_by_student[test.student_id].append(test.score_acquired)
+
+            avg_by_student = {
+                sid: (sum(scores) / len(scores))
+                for sid, scores in scores_by_student.items()
+            }
+
+            # 5. Classify each student by their average band
+            # Assumption: "ready" = at/above proficiency
+            # If you want only HP+P, adjust ready_bands accordingly.
+            ready_bands = {
+                "highly_proficient",
+                "proficient",
+                "approaching_proficient",
+            }
+
+            students_ready = [
+                sid
+                for sid, avg in avg_by_student.items()
+                if self.get_performance_band(avg) in ready_bands
+            ]
+
+            student_readiness_number = len(students_ready)
+            student_readiness_percent = (
+                student_readiness_number / len(student_ids) * 100 if student_ids else 0.0
             )
+
+            # 6. Subject status from mean of student averages (not raw tests)
+            if avg_by_student:
+                average_subject_score = sum(avg_by_student.values()) / len(avg_by_student)
+            else:
+                average_subject_score = 0.0
+
+            status_band = self.get_performance_band(average_subject_score)
 
             subject_distribution.append(
                 {
                     "subject_name": subject.name,
                     "student_readiness_number": student_readiness_number,
-                    "student_readiness_percent": student_readiness_percent,
-                    "status": self.get_performance_band(average_subject_score),
+                    "student_readiness_percent": round(student_readiness_percent, 2),
+                    "status": status_band,
                 }
             )
 
-        return subject_distribution
+            return subject_distribution
 
     def get_recent_tests_activities(self, school_id, batch_id, subject_id=None):
         if batch_id:
@@ -885,8 +924,12 @@ class AnalyticsService:
         return test_history
 
     def get_proficiency_graph(self, student_id, subject_id=None, batch_id=None):
-        student_topic_scores = sts_manager.select_student_topic_score_history(student_id)
-        topics = topic_manager.get_topic_by_ids([score.topic_id for score in student_topic_scores])
+        student_topic_scores = sts_manager.select_student_topic_score_history(
+            student_id
+        )
+        topics = topic_manager.get_topic_by_ids(
+            [score.topic_id for score in student_topic_scores]
+        )
         if subject_id:
             topics = [topic for topic in topics if topic.subject_id == subject_id]
 
@@ -896,45 +939,50 @@ class AnalyticsService:
         for score in student_topic_scores:
             if score.topic_id not in topics:
                 continue
-            
+
             proficiency_band = self.get_performance_band(score.score_acquired)
             if proficiency_band not in topic_bands:
-                topic_bands[proficiency_band] = {'count': 0, 'topics': []}
-            
-            topic_bands[proficiency_band]['count'] += 1
-            topic_bands[proficiency_band]['topics'].append(topics[score.topic_id].name)
+                topic_bands[proficiency_band] = {"count": 0, "topics": []}
 
-        
+            topic_bands[proficiency_band]["count"] += 1
+            topic_bands[proficiency_band]["topics"].append(topics[score.topic_id].name)
+
         proficiency_graph = []
         for band, data in topic_bands.items():
-            proficiency_graph.append({
-                'band': band,
-                'count': data['count'],
-                'topics': data['topics']
-            })
-            
+            proficiency_graph.append(
+                {"band": band, "count": data["count"], "topics": data["topics"]}
+            )
+
         return proficiency_graph
 
     def get_failing_topics(self, student_id, subject_id=None, batch_id=None):
         recommendations = ssr_manager.select_student_recommendations(student_id)
-        topics = topic_manager.get_topic_by_ids([recommendation.topic_id for recommendation in recommendations])
+        topics = topic_manager.get_topic_by_ids(
+            [recommendation.topic_id for recommendation in recommendations]
+        )
         if subject_id:
             topics = [topic for topic in topics if topic.subject_id == subject_id]
 
-        subjects = subject_manager.get_subjects_by_ids([topic.subject_id for topic in topics])
+        subjects = subject_manager.get_subjects_by_ids(
+            [topic.subject_id for topic in topics]
+        )
         subjects = {subject.id: subject for subject in subjects}
 
         topics = {topic.id: topic for topic in topics}
 
         failing_topics = []
         for recommendation in recommendations:
-            failing_topics.append({
-                'topic_name': topics[recommendation.topic_id].name,
-                'subject_name': subjects[topics[recommendation.topic_id].subject_id].name,
-                'average_score': 0, #TODO: calculate average score
-                'proficiency': recommendation.recommendation_level
-            })
-            
+            failing_topics.append(
+                {
+                    "topic_name": topics[recommendation.topic_id].name,
+                    "subject_name": subjects[
+                        topics[recommendation.topic_id].subject_id
+                    ].name,
+                    "average_score": 0,  # TODO: calculate average score
+                    "proficiency": recommendation.recommendation_level,
+                }
+            )
+
         return failing_topics
 
     def get_student_average_and_band(self, student_id, subject_id=None, batch_id=None):
@@ -954,26 +1002,26 @@ class AnalyticsService:
         proficiency = self.get_performance_band(average_score)
 
         return {
-            'student_id': student_id,
-            'student_name': student.surname + " " + student.first_name,
-            'average_score': average_score,
-            'proficiency': proficiency
+            "student_id": student_id,
+            "student_name": student.surname + " " + student.first_name,
+            "average_score": average_score,
+            "proficiency": proficiency,
         }
 
     def get_performance_topics(self, subject_id, batch_id=None, stage=None, level=None):
         """
         Get performance data for topics based on student_topic_scores with optional filtering.
-        
+
         Args:
             stage (str, optional): Filter by stage (e.g., "Stage 1-3", "Stage 4-6", "Stage 7-9")
             level (str, optional): Filter by proficiency level (e.g., "EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "HIGHLY_PROFICIENT")
-        
+
         Returns:
             list: Filtered topic performance data
         """
         from sqlalchemy import func, distinct
         from app.analytics.models import StudentTopicScores
-        
+
         # Stage mapping based on topic level
         def get_stage_from_level(topic_level):
             if topic_level <= 3:
@@ -982,7 +1030,7 @@ class AnalyticsService:
                 return "Stage 4-6"
             else:
                 return "Stage 7-9"
-        
+
         # Get student IDs based on batch_id if provided
         if batch_id:
             batch = batch_manager.get_batch_by_id(batch_id)
@@ -990,94 +1038,109 @@ class AnalyticsService:
             student_ids = [student["id"] for student in students]
         else:
             student_ids = None
-        
+
         # Build query with filters
         query = StudentTopicScores.query.filter_by(subject_id=subject_id)
-        
+
         # Filter by student IDs if batch_id was provided
         if student_ids:
             query = query.filter(StudentTopicScores.student_id.in_(student_ids))
-        
+
         # Query to get average scores and student counts per topic
-        topic_stats = query.with_entities(
-            StudentTopicScores.topic_id,
-            func.avg(StudentTopicScores.score_acquired).label('average_score'),
-            func.count(distinct(StudentTopicScores.student_id)).label('students_affected')
-        ).group_by(StudentTopicScores.topic_id).all()
-        
+        topic_stats = (
+            query.with_entities(
+                StudentTopicScores.topic_id,
+                func.avg(StudentTopicScores.score_acquired).label("average_score"),
+                func.count(distinct(StudentTopicScores.student_id)).label(
+                    "students_affected"
+                ),
+            )
+            .group_by(StudentTopicScores.topic_id)
+            .all()
+        )
+
         # Get topics for this subject to map topic_id to topic details
         topics = topic_manager.get_topic_by_subject(subject_id)
         topic_dict = {topic.id: topic for topic in topics}
-        
+
         # Build performance data
         performance_data = []
         for topic_id, avg_score, student_count in topic_stats:
             if topic_id not in topic_dict:
                 continue
-                
+
             topic = topic_dict[topic_id]
             avg_score_rounded = round(float(avg_score), 2) if avg_score else 0
-            
+
             # Get performance band using existing function
             proficiency_level = self.get_performance_band(avg_score_rounded).upper()
-            
+
             # Map topic level to stage
             topic_stage = get_stage_from_level(topic.level)
-            
-            performance_data.append({
-                "topic": topic.name,
-                "students_affected": student_count,
-                "percentage": avg_score_rounded,
-                "level": proficiency_level,
-                "stage": topic_stage
-            })
-        
+
+            performance_data.append(
+                {
+                    "topic": topic.name,
+                    "students_affected": student_count,
+                    "percentage": avg_score_rounded,
+                    "level": proficiency_level,
+                    "stage": topic_stage,
+                }
+            )
+
         # Apply filters
         filtered_data = performance_data
-        
-        if stage:
-            filtered_data = [item for item in filtered_data if item['stage'] == stage]
-        
-        if level:
-            filtered_data = [item for item in filtered_data if item['level'] == level]
-        
-        return filtered_data
-    
 
-    def get_student_dashboard_overview(self, student_id, subject_id=None, batch_id=None):
-        '''
-            total_tests: int
-            current_streak: int
-            highest_streak: int
-            total_achievements: int
-        '''
+        if stage:
+            filtered_data = [item for item in filtered_data if item["stage"] == stage]
+
+        if level:
+            filtered_data = [item for item in filtered_data if item["level"] == level]
+
+        return filtered_data
+
+    def get_student_dashboard_overview(
+        self, student_id, subject_id=None, batch_id=None
+    ):
+        """
+        total_tests: int
+        current_streak: int
+        highest_streak: int
+        total_achievements: int
+        """
         tests = test_manager.get_tests_by_student_ids([student_id])
         student = student_manager.get_student_by_id(student_id)
-        achievements = student_has_achievement_manager.get_student_achievements_number(student_id)
+        achievements = student_has_achievement_manager.get_student_achievements_number(
+            student_id
+        )
         return {
-            'total_tests': len(tests),
-            'current_streak': student.current_streak,
-            'highest_streak': student.highest_streak,
-            'total_achievements': achievements
+            "total_tests": len(tests),
+            "current_streak": student.current_streak,
+            "highest_streak": student.highest_streak,
+            "total_achievements": achievements,
         }
-    
+
     def get_student_practice_overview(self, student_id, subject_id=None, batch_id=None):
         from app.analytics.operations import sts_manager
 
         # 1) Load and filter topics by subject (if provided)
-        student_topic_scores = sts_manager.select_student_topic_score_history(student_id)
-        topics = topic_manager.get_topic_by_ids([s.topic_id for s in student_topic_scores])
+        student_topic_scores = sts_manager.select_student_topic_score_history(
+            student_id
+        )
+        topics = topic_manager.get_topic_by_ids(
+            [s.topic_id for s in student_topic_scores]
+        )
         if subject_id:
             topics = [t for t in topics if getattr(t, "subject_id", None) == subject_id]
         topics_by_id = {t.id: t for t in topics}
 
         if not topics_by_id:
             return {
-                'mastery_percent': 0.0,
-                'mastery_stage': self.get_performance_band(0.0),
-                'topics': [],
-                'mastery_zone': [],
-                'power_up_zone': []
+                "mastery_percent": 0.0,
+                "mastery_stage": self.get_performance_band(0.0),
+                "topics": [],
+                "mastery_zone": [],
+                "power_up_zone": [],
             }
 
         # 2) Aggregate scores per topic
@@ -1089,11 +1152,11 @@ class AnalyticsService:
 
         if not sums:
             return {
-                'mastery_percent': 0.0,
-                'mastery_stage': self.get_performance_band(0.0),
-                'topics': [],
-                'mastery_zone': [],
-                'power_up_zone': []
+                "mastery_percent": 0.0,
+                "mastery_stage": self.get_performance_band(0.0),
+                "topics": [],
+                "mastery_zone": [],
+                "power_up_zone": [],
             }
 
         # 3) Compute per-topic averages
@@ -1103,35 +1166,38 @@ class AnalyticsService:
         topic_mastery_items = []
         for tid, avg in topic_avg.items():
             band = self.get_performance_band(avg)
-            topic_mastery_items.append({
-                'topic_id': tid,
-                'topic_name': topics_by_id[tid].name,
-                'avg_score': round(avg, 2),
-                'mastery_level': band
-            })
+            topic_mastery_items.append(
+                {
+                    "topic_id": tid,
+                    "topic_name": topics_by_id[tid].name,
+                    "avg_score": round(avg, 2),
+                    "mastery_level": band,
+                }
+            )
 
         # Sort topics by score descending for main list
-        topic_mastery_items.sort(key=lambda x: x['avg_score'], reverse=True)
+        topic_mastery_items.sort(key=lambda x: x["avg_score"], reverse=True)
 
         # 5) Identify zones
         # Power-up zone → 2 lowest scoring topics
-        power_up_zone = sorted(topic_mastery_items, key=lambda x: x['avg_score'])[:2]
+        power_up_zone = sorted(topic_mastery_items, key=lambda x: x["avg_score"])[:2]
 
         # Mastery zone → 2 best topics excluding those already in power_up_zone
-        power_up_ids = {t['topic_id'] for t in power_up_zone}
-        mastery_zone = [t for t in topic_mastery_items if t['topic_id'] not in power_up_ids][:2]
+        power_up_ids = {t["topic_id"] for t in power_up_zone}
+        mastery_zone = [
+            t for t in topic_mastery_items if t["topic_id"] not in power_up_ids
+        ][:2]
 
         # 6) Compute overall mastery
         overall_avg = round(sum(topic_avg.values()) / len(topic_avg), 2)
 
         return {
-            'mastery_percent': overall_avg,
-            'mastery_stage': self.get_performance_band(overall_avg),
-            'topics': topic_mastery_items,
-            'mastery_zone': mastery_zone,
-            'power_up_zone': power_up_zone
+            "mastery_percent": overall_avg,
+            "mastery_stage": self.get_performance_band(overall_avg),
+            "topics": topic_mastery_items,
+            "mastery_zone": mastery_zone,
+            "power_up_zone": power_up_zone,
         }
-
 
     def get_student_weekly_goals(self, student_id):
         """
@@ -1141,41 +1207,48 @@ class AnalyticsService:
         from datetime import timedelta
         from app.goals.models import WeeklyGoal
         from app.app_admin.operations import subject_manager
-        
-        goals = WeeklyGoal.query.filter_by(student_id=student_id, is_active=True).order_by(
-            WeeklyGoal.week_start_date.desc()
-        ).all()
-        
+
+        goals = (
+            WeeklyGoal.query.filter_by(student_id=student_id, is_active=True)
+            .order_by(WeeklyGoal.week_start_date.desc())
+            .all()
+        )
+
         # Get all subject IDs
         subject_ids = [g.subject_id for g in goals if g.subject_id is not None]
         subjects_dict = {}
         if subject_ids:
             subjects = subject_manager.get_subjects_by_ids(list(set(subject_ids)))
             subjects_dict = {s.id: s.name for s in subjects}
-        
+
         goals_data = []
         for goal in goals:
             progress_percent = (
-                (goal.current_value / goal.target_value * 100) 
-                if goal.target_value > 0 else 0
+                (goal.current_value / goal.target_value * 100)
+                if goal.target_value > 0
+                else 0
             )
-            
-            goals_data.append({
-                'goal_id': goal.id,
-                'subject_id': goal.subject_id,
-                'subject_name': subjects_dict.get(goal.subject_id) if goal.subject_id else None,
-                'week_start_date': str(goal.week_start_date),
-                'week_end_date': str(goal.week_start_date + timedelta(days=6)),
-                'status': goal.status.value,
-                'target_metric': goal.target_metric.value,
-                'target_value': goal.target_value,
-                'current_value': goal.current_value,
-                'progress_percent': round(progress_percent, 2),
-                'achieved_at': goal.achieved_at
-            })
-        
+
+            goals_data.append(
+                {
+                    "goal_id": goal.id,
+                    "subject_id": goal.subject_id,
+                    "subject_name": (
+                        subjects_dict.get(goal.subject_id) if goal.subject_id else None
+                    ),
+                    "week_start_date": str(goal.week_start_date),
+                    "week_end_date": str(goal.week_start_date + timedelta(days=6)),
+                    "status": goal.status.value,
+                    "target_metric": goal.target_metric.value,
+                    "target_value": goal.target_value,
+                    "current_value": goal.current_value,
+                    "progress_percent": round(progress_percent, 2),
+                    "achieved_at": goal.achieved_at,
+                }
+            )
+
         return goals_data
-    
+
     def get_student_weekly_wins_messages(self, student_id):
         """
         Generate weekly wins messages for achieved goals using the message generator.
@@ -1183,57 +1256,69 @@ class AnalyticsService:
         """
         from app.goals.models import WeeklyGoal, GoalStatus
         from app.app_admin.operations import subject_manager
-        from app.analytics.weekly_messages_generator import GoalMessageGenerator, GoalMetric as MsgGoalMetric
-        
+        from app.analytics.weekly_messages_generator import (
+            GoalMessageGenerator,
+            GoalMetric as MsgGoalMetric,
+        )
+
         # Get achieved goals (only achieved status)
-        achieved_goals = WeeklyGoal.query.filter_by(
-            student_id=student_id,
-            status=GoalStatus.achieved
-        ).order_by(WeeklyGoal.achieved_at.desc()).all()
-        
+        achieved_goals = (
+            WeeklyGoal.query.filter_by(
+                student_id=student_id, status=GoalStatus.achieved
+            )
+            .order_by(WeeklyGoal.achieved_at.desc())
+            .all()
+        )
+
         if not achieved_goals:
             return []
-        
+
         # Get subject names
         subject_ids = [g.subject_id for g in achieved_goals if g.subject_id is not None]
         subjects_dict = {}
         if subject_ids:
             subjects = subject_manager.get_subjects_by_ids(list(set(subject_ids)))
             subjects_dict = {s.id: s.name for s in subjects}
-        
+
         messages = []
         for goal in achieved_goals:
-            subject_name = subjects_dict.get(goal.subject_id) if goal.subject_id else None
-            
+            subject_name = (
+                subjects_dict.get(goal.subject_id) if goal.subject_id else None
+            )
+
             # Map goal metric to message generator metric
-            if goal.target_metric.value == 'xp':
+            if goal.target_metric.value == "xp":
                 metric = MsgGoalMetric.xp
-            elif goal.target_metric.value == 'streak_days':
+            elif goal.target_metric.value == "streak_days":
                 metric = MsgGoalMetric.streak_days
             else:
                 metric = MsgGoalMetric.xp  # default
-            
+
             # Generate achievement message
             message = GoalMessageGenerator.achievement(
                 metric=metric,
                 subject=subject_name,
                 value=goal.current_value,
                 target=goal.target_value,
-                progress=goal.current_value
+                progress=goal.current_value,
             )
-            
-            messages.append({
-                'message': message,
-                'goal_id': goal.id,
-                'subject_name': subject_name,
-                'metric': goal.target_metric.value,
-                'variant': 'success',
-                'icon': 'trophy'
-            })
-        
+
+            messages.append(
+                {
+                    "message": message,
+                    "goal_id": goal.id,
+                    "subject_name": subject_name,
+                    "metric": goal.target_metric.value,
+                    "variant": "success",
+                    "icon": "trophy",
+                }
+            )
+
         return messages
-    
-    def get_student_achievements(self, student_id: int, include_requirements: bool = False) -> List[Dict[str, Any]]:
+
+    def get_student_achievements(
+        self, student_id: int, include_requirements: bool = False
+    ) -> List[Dict[str, Any]]:
         """Return a student's achievements with metadata and counts."""
         from app.achievements.models import StudentHasAchievement, Achievement
         from app.extensions import db
@@ -1247,14 +1332,26 @@ class AnalyticsService:
 
         results: List[Dict[str, Any]] = []
         for sha, ach in rows:
-            item = ach.to_json(include_requirements=include_requirements)  # id, name, description, image_url, class[, requirements]
+            item = ach.to_json(
+                include_requirements=include_requirements
+            )  # id, name, description, image_url, class[, requirements]
             # Ensure stable keys expected by callers
-            item.update({
-                "achievement_id": ach.id,  # redundant with "id", but convenient
-                "number_of_times": sha.number_of_times or 1,
-                "first_awarded_at": sha.created_at.isoformat() if getattr(sha, "created_at", None) else None,
-                "last_awarded_at": getattr(sha, "updated_at", None).isoformat() if getattr(sha, "updated_at", None) else None,
-            })
+            item.update(
+                {
+                    "achievement_id": ach.id,  # redundant with "id", but convenient
+                    "number_of_times": sha.number_of_times or 1,
+                    "first_awarded_at": (
+                        sha.created_at.isoformat()
+                        if getattr(sha, "created_at", None)
+                        else None
+                    ),
+                    "last_awarded_at": (
+                        getattr(sha, "updated_at", None).isoformat()
+                        if getattr(sha, "updated_at", None)
+                        else None
+                    ),
+                }
+            )
             results.append(item)
 
         # Sort newest awards first (fallback to first_awarded)
@@ -1263,5 +1360,6 @@ class AnalyticsService:
             reverse=True,
         )
         return results
+
 
 analytics_service = AnalyticsService()
