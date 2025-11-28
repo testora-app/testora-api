@@ -49,7 +49,7 @@ class Staff(BaseModel):
         }
         if include_batches:
             data["batches"] = (
-                [batch.to_json() for batch in self.batches] if self.batches else []
+                [batch.to_json(include_students=False, include_staff=False, include_subjects=False) for batch in self.batches] if self.batches else []
             )
         return data
 

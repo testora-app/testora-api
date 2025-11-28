@@ -108,7 +108,6 @@ def register_staff(json_data):
 @staff.input(LoginSchema)
 @staff.output(Responses.VerifiedStaffSchema)
 def login(json_data):
-    from app.student.operations import batch_manager
 
     staff = staff_manager.get_staff_by_email(json_data["email"].strip())
     if staff and not staff.is_approved:
@@ -217,7 +216,6 @@ def edit_staff_details(staff_id, json_data):
         staff.email = data.get("email", staff.email)
         staff.other_names = data.get("other_names", staff.other_names)
         staff.is_admin = data.get("is_admin", staff.is_admin)
-        staff.save()
 
         if subjects:
             staff.subjects = [

@@ -29,15 +29,17 @@ class Batch(BaseModel):
         db.UniqueConstraint("batch_name", "school_id", name="uix_batch_name_school_id"),
     )
 
-    def to_json(self, include_students=True, include_subjects=True):
+    def to_json(self, include_students=True, include_subjects=True, include_staff=True):
         from app.app_admin.operations import subject_manager
         data = {
             "id": self.id,
             "batch_name": self.batch_name,
             "school_id": self.school_id,
-            "curriculum": self.curriculum,
-            "staff": [staff.to_json() for staff in self.staff],
+            "curriculum": self.curriculum
         }
+        if include_staff:
+            data["staff"] = [staff.to_json() for staff in self.staff]
+            
         if include_students:
             data["students"] = [
                 student.to_json(include_batch=False) for student in self.students
