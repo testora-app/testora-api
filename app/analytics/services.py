@@ -1056,7 +1056,7 @@ class AnalyticsService:
         from app.goals.models import WeeklyGoal
         from app.app_admin.operations import subject_manager
         
-        goals = WeeklyGoal.query.filter_by(student_id=student_id).order_by(
+        goals = WeeklyGoal.query.filter_by(student_id=student_id, is_active=True).order_by(
             WeeklyGoal.week_start_date.desc()
         ).all()
         

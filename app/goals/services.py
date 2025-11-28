@@ -73,6 +73,17 @@ class GenerateGoalsService:
             - {"skipped": true, "reason": "active_goals_exist", "week_start_date": "YYYY-MM-DD"}
             - {"created": [...], "summary": {...}}
         """
+        # deactivate existing active goals if any
+        db.session.query(WeeklyGoal).filter(
+            WeeklyGoal.student_id == student_id,
+            WeeklyGoal.is_active == True,
+            WeeklyGoal.week_start_date <= login_date,
+            WeeklyGoal.week_start_date + timedelta(days=6) <= login_date
+        ).update(
+            {WeeklyGoal.is_active: False},
+            synchronize_session='fetch'
+        )
+        
         # Check if there's an active window covering login_date
         active_week = find_active_week_start(student_id, login_date)
         if active_week:

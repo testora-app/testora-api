@@ -40,6 +40,7 @@ class WeeklyGoal(BaseModel):
     current_value = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     params = db.Column(JSONB, nullable=False, default=dict, server_default="{}")
     achieved_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    is_active = db.Column(db.Boolean, nullable=True, default=True, server_default=func.true())
 
     # Constraints & indexes
     __table_args__ = (
