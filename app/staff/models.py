@@ -63,12 +63,14 @@ class Staff(BaseModel):
 
                 batch_subjects = batch_json.get("subjects", [])
                 # Filter batch subjects to only those assigned to this teacher
-                assigned_subjects_for_batch = [
-                    subj for subj in batch_subjects
-                    if subj.get("id") in teacher_subject_ids
-                ]
 
-                batch_json["subjects"] = assigned_subjects_for_batch
+                if not self.is_admin:
+                    assigned_subjects_for_batch = [
+                        subj for subj in batch_subjects
+                        if subj.get("id") in teacher_subject_ids
+                    ]
+
+                    batch_json["subjects"] = assigned_subjects_for_batch
                 batches_payload.append(batch_json)
 
             data["batches"] = batches_payload
