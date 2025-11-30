@@ -185,18 +185,17 @@ class AnalyticsService:
     def get_practice_rate(
         self, school_id, batch_id, time_range, subject_id=None
     ) -> Dict[str, Any]:
-        this_tests, last_tests, all_student_ids = (
-            self.configure_performance_requirements(
-                school_id, batch_id, time_range, subject_id
-            )
+        this_tests, last_tests, all_student_ids = self.configure_performance_requirements(
+            school_id, batch_id, time_range, subject_id
         )
 
         total_students = len(all_student_ids)
         if total_students == 0:
-            # No students – return an all-zero structure
             return {
                 "number_of_tests_per_student": 0,
-                "comparison": 0,
+                "comparison": None,
+                "change_from": 0,
+                "change_direction": "same",
                 "practiced_number": 0,
                 "practiced_percent": 0.0,
                 "not_practiced_number": 0,
@@ -207,41 +206,49 @@ class AnalyticsService:
                     "consistent_practice": {"number": 0, "percent": 0.0},
                     "high_practice": {"number": 0, "percent": 0.0},
                 },
-                "total_students": total_students
+                "total_students": total_students,
             }
 
         # --- Current vs previous participation (student-based) ---
         these_students_took_tests_this_param = set(t.student_id for t in this_tests)
         these_students_took_tests_last_param = set(t.student_id for t in last_tests)
 
-        number_of_tests_per_student = (
-            round(len(this_tests) / total_students, 2) if total_students > 0 else 0
-        )
+        number_of_tests_per_student = round(len(this_tests) / total_students, 2)
 
         current = len(these_students_took_tests_this_param)
         previous = len(these_students_took_tests_last_param)
 
-        if previous > 0:
-            comparison = (
-                current - previous
-            ) / previous  # growth rate (e.g. 0.2 = +20%)
-        else:
-            comparison = 0  # or None if you want "no baseline" instead
+        # practice *rates* (0–1)
+        current_rate = current / total_students
+        previous_rate = previous / total_students if total_students > 0 else 0.0
 
-        # --- Overall practice vs no practice (student-based) ---
+        if previous_rate > 0:
+            # relative change in practice rate
+            comparison = (current_rate - previous_rate) / previous_rate  # e.g. 0.2 = +20%
+            change_from = round(previous_rate * 100, 2)  # previous % practicing
+        else:
+            # no baseline last period → treat as "new" or "same"
+            comparison = None
+            change_from = 0.0
+
+        if comparison is None:
+            change_direction = "up" if current_rate > 0 else "same"
+        else:
+            change_direction = (
+                "up" if comparison > 0 else "down" if comparison < 0 else "same"
+            )
+
+        # --- Overall practice vs no practice (student-based, this period only) ---
         practiced_number = current
-        practiced_percent = (practiced_number / total_students) * 100
+        practiced_percent = current_rate * 100
 
         not_practiced_number = total_students - practiced_number
         not_practiced_percent = 100 - practiced_percent
 
         # --- Tier distributions (student-based) ---
-        # Count how many tests each student took in THIS period
         test_counts = Counter(t.student_id for t in this_tests)
 
-        def count_students_in_range(
-            counts: Counter, min_times: int, max_times: int
-        ) -> int:
+        def count_students_in_range(counts: Counter, min_times: int, max_times: int) -> int:
             return sum(1 for c in counts.values() if min_times <= c <= max_times)
 
         minimal_students = count_students_in_range(test_counts, 1, 2)
@@ -249,19 +256,13 @@ class AnalyticsService:
         high_students = count_students_in_range(test_counts, 6, 10**9)
 
         minimal_practice_number = minimal_students
-        minimal_practice_percent = (
-            minimal_students / total_students * 100 if total_students > 0 else 0.0
-        )
+        minimal_practice_percent = minimal_students / total_students * 100
 
         consistent_practice_number = consistent_students
-        consistent_practice_percent = (
-            consistent_students / total_students * 100 if total_students > 0 else 0.0
-        )
+        consistent_practice_percent = consistent_students / total_students * 100
 
         high_practice_number = high_students
-        high_practice_percent = (
-            high_students / total_students * 100 if total_students > 0 else 0.0
-        )
+        high_practice_percent = high_students / total_students * 100
 
         tier_distribution = {
             "no_practice": {
@@ -284,10 +285,13 @@ class AnalyticsService:
 
         return {
             "number_of_tests_per_student": number_of_tests_per_student,
-            "change_from": round(previous, 2) if previous is not None else previous,
-            "change_direction": "up" if comparison > 0 else "down",
+            # previous practice rate in %
+            "change_from": change_from,
+            # up / down / same
+            "change_direction": change_direction,
+            # relative change in rate, as %
             "comparison": (
-                round(comparison * 100, 2) if comparison is not None else comparison
+                round(comparison * 100, 2) if comparison is not None else None
             ),
             "practiced_number": practiced_number,
             "practiced_percent": round(practiced_percent, 2),
