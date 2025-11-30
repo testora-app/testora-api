@@ -207,6 +207,7 @@ class AnalyticsService:
                     "consistent_practice": {"number": 0, "percent": 0.0},
                     "high_practice": {"number": 0, "percent": 0.0},
                 },
+                "total_students": total_students
             }
 
         # --- Current vs previous participation (student-based) ---
@@ -293,6 +294,7 @@ class AnalyticsService:
             "not_practiced_number": not_practiced_number,
             "not_practiced_percent": round(not_practiced_percent, 2),
             "tier_distribution": tier_distribution,
+            "total_students": total_students,
         }
 
     def calculate_student_average_performance(
