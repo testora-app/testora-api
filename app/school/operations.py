@@ -18,11 +18,15 @@ class SchoolManager(BaseManager):
         phone_number=None,
         email=None,
     ) -> School:
+        MAX_TRIES = 10_000
 
-        if short_name:
-            code = create_school_code(short_name)
+        for _ in range(MAX_TRIES):
+            code = create_school_code()
+            if not self.get_school_by_code(code):
+                break
         else:
-            code = create_school_code(name[:3])
+            raise RuntimeError("Could not generate a unique school code after many attempts.")
+
         new_school = School(
             name=name,
             location=location,
