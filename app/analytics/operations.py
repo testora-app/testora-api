@@ -294,7 +294,7 @@ class StudentSubjectRecommendationManager(BaseManager):
                 is_archived=include_archived,
             ).all()
         return StudentSubjectRecommendation.query.filter_by(
-            student_id=student_id, subject_id=subject_id, is_archived=include_archived
+            student_id=student_id, is_archived=include_archived
         ).all()
 
     def insert_student_recommendation(

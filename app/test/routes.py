@@ -288,7 +288,7 @@ def mark_test(test_id, json_data):
         TopicAnalytics.save_topic_scores_for_student(
             student_id, test.subject_id, test.id, marked_test["topic_scores"], marked_test["topic_totals"]
         )
-        TopicAnalytics.test_level_topic_analytics(test.id, marked_test["topic_scores"])
+        TopicAnalytics.test_level_topic_analytics(test.id, marked_test["topic_scores"], marked_test["topic_totals"])
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
         RemarksAnalyzer.add_remarks_to_test(test, last_test)
 

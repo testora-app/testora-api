@@ -19,19 +19,22 @@ class AchievementEngine:
         ).first()
 
         if exists:
+            print("exists", exists.number_of_times)
             if repeatable:
+                print("repeatable")
                 exists.number_of_times += 1
                 db.session.commit()
                 return
             return
-
-        new_achievement = StudentHasAchievement(
-            student_id=self.student_id,
-            achievement_id=achievement.id,
-            number_of_times=1,
-            created_at=datetime.now(timezone.utc)
-        )
+        
         try:
+            new_achievement = StudentHasAchievement(
+                student_id=self.student_id,
+                achievement_id=achievement.id,
+                number_of_times=1,
+                created_at=datetime.now(timezone.utc)
+            )
+        
             db.session.add(new_achievement)
             db.session.commit()
         except Exception as e:

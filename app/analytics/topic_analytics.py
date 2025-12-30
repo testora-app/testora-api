@@ -23,23 +23,41 @@ class RecommendationLevels:
 
     @staticmethod
     def calculate_recommendation_level_for_avg(score, recommendation=True):
-        # if we their average score is really low, it means they're recommended to take that topic
-        # else it means their proficient
-
-        if score > 80:
-            return (
-                RecommendationLevels.low
-                if recommendation
-                else RecommendationLevels.high
-            )
-        elif score > 50 and score < 79:
-            return RecommendationLevels.moderate
-        elif score <= 50:
-            return (
-                RecommendationLevels.high
-                if recommendation
-                else RecommendationLevels.low
-            )
+        """
+        Calculate recommendation or proficiency level based on percentage score.
+        
+        For recommendations (topics to work on):
+        - < 50% = highly recommended
+        - 50-70% = moderately recommended
+        - 70-85% = low priority recommendation
+        - 85%+ = None (not saved)
+        
+        For proficiency (best subjects):
+        - 80%+ = highly proficient
+        - 65-80% = moderately proficient
+        - 50-65% = low proficient
+        - < 50% = None (not tracked)
+        """
+        if recommendation:
+            # For recommendations (lower scores = higher priority)
+            if score < 50:
+                return RecommendationLevels.high
+            elif score < 70:
+                return RecommendationLevels.moderate
+            elif score < 85:
+                return RecommendationLevels.low
+            else:
+                return None  # Above 85% - no recommendation needed
+        else:
+            # For proficiency (higher scores = higher proficiency)
+            if score >= 80:
+                return RecommendationLevels.high
+            elif score >= 65:
+                return RecommendationLevels.moderate
+            elif score >= 50:
+                return RecommendationLevels.low
+            else:
+                return None  # Below 50% - not proficient
 
 
 class TopicAnalytics:
@@ -162,29 +180,75 @@ class TopicAnalytics:
     # do some analytics for the test based, and save it in the test metadata right?
     # @async_method
     @staticmethod
-    def test_level_topic_analytics(test_id, test_scores: Dict):
+    def test_level_topic_analytics(test_id, test_scores: Dict, topic_totals: Dict):
+        """
+        Analyze test performance using percentage-based thresholds.
+        
+        Categorizes topics into:
+        - Best topics: 85%+ (mastered)
+        - Highly recommended: < 50% (critical need)
+        - Moderately recommended: 50-70%
+        - Low priority recommended: 70-85%
+        """
         from app.test.operations import test_manager
         from app.app_admin.operations import topic_manager
 
         test = test_manager.get_test_by_id(test_id)
 
-        best_topics, worst_topics, diff = (
-            TopicAnalytics.__calculate_topic_recommendations(test_scores)
-        )
-        recommendation_level = RecommendationLevels.calculate_recommendation_level(diff)
+        # Calculate percentages for each topic
+        topic_percentages = {}
+        for topic_id, score in test_scores.items():
+            total = topic_totals.get(topic_id, 1)
+            if total > 0:
+                percentage = (score / total) * 100
+                topic_percentages[topic_id] = round(percentage, 2)
+            else:
+                topic_percentages[topic_id] = 0.0
+
+        # Categorize topics based on percentage thresholds
+        best_topics = []  # 85%+
+        highly_recommended = []  # < 50%
+        moderately_recommended = []  # 50-70%
+        low_recommended = []  # 70-85%
+
+        for topic_id, percentage in topic_percentages.items():
+            if percentage >= 85:
+                best_topics.append(topic_id)
+            elif percentage < 50:
+                highly_recommended.append(topic_id)
+            elif percentage < 70:
+                moderately_recommended.append(topic_id)
+            else:  # 70-85%
+                low_recommended.append(topic_id)
+
+        # Build recommendations list with levels
+        recommendations = []
+        
+        for topic_id in highly_recommended:
+            recommendations.append({
+                "topic": topic_manager.get_topic_by_id(topic_id).name,
+                "level": RecommendationLevels.high,
+            })
+        
+        for topic_id in moderately_recommended:
+            recommendations.append({
+                "topic": topic_manager.get_topic_by_id(topic_id).name,
+                "level": RecommendationLevels.moderate,
+            })
+        
+        for topic_id in low_recommended:
+            recommendations.append({
+                "topic": topic_manager.get_topic_by_id(topic_id).name,
+                "level": RecommendationLevels.low,
+            })
 
         topic_analytics = {
             "best_topics": [
                 topic_manager.get_topic_by_id(id).name for id in best_topics
             ],
-            "recommendations": [
-                {
-                    "topic": topic_manager.get_topic_by_id(id).name,
-                    "level": recommendation_level,
-                }
-                for id in worst_topics
-            ],
+            "recommendations": recommendations,
         }
+        
         meta = {}
         meta["out_time"] = test.meta.get("out_time", 0)
         meta["topic_analytics"] = topic_analytics
@@ -205,14 +269,30 @@ class TopicAnalytics:
             sts_manager.get_averages_for_topics_by_subject_id(student_id, subject_id)
         )
 
-        test_scores = []
+        # Filter topics based on thresholds
+        # For proficiency: only include topics with score >= 50%
+        # For recommendations: only include topics with score < 85%
+        proficient_scores = []
+        recommendation_scores = []
 
         for topic_id, score in averages:
-            test_scores.append({topic_id: score})
+            # Check if topic qualifies for proficiency tracking (>= 50%)
+            if score >= 50:
+                proficient_scores.append({topic_id: score})
+            
+            # Check if topic qualifies for recommendation (< 85%)
+            if score < 85:
+                recommendation_scores.append({topic_id: score})
 
-        best_topics, worst_topics = (
-            TopicAnalytics.__calculate_topic_recommendations_per_avg(test_scores)
-        )
+        # Find best and worst topics from filtered lists
+        best_topics = []
+        worst_topics = []
+        
+        if proficient_scores:
+            best_topics, _ = TopicAnalytics.__calculate_topic_recommendations_per_avg(proficient_scores)
+        
+        if recommendation_scores:
+            _, worst_topics = TopicAnalytics.__calculate_topic_recommendations_per_avg(recommendation_scores)
 
         proficient = sbs_manager.select_student_best(student_id, subject_id)
         recommended = ssr_manager.select_student_recommendations(student_id, subject_id)
@@ -247,23 +327,29 @@ class TopicAnalytics:
             key: List = list(t.keys())
             best_objs[key[0]] = list(t.values())[0]
 
-        # add the new recommendations and best topics
+        # add the new recommendations and best topics (only if they meet the threshold)
         for topic_id in recommended_comparisons["added"]:
-            ssr_manager.insert_student_recommendation(
-                student_id,
-                subject_id,
-                topic_id,
-                RecommendationLevels.calculate_recommendation_level_for_avg(
-                    worst_objs[topic_id], recommendation=True
-                ),
+            recommendation_level = RecommendationLevels.calculate_recommendation_level_for_avg(
+                worst_objs[topic_id], recommendation=True
             )
+            # Only save if the score is below 85% (recommendation_level is not None)
+            if recommendation_level is not None:
+                ssr_manager.insert_student_recommendation(
+                    student_id,
+                    subject_id,
+                    topic_id,
+                    recommendation_level,
+                )
 
         for topic_id in proficient_comparisons["added"]:
-            sbs_manager.insert_student_best(
-                student_id,
-                subject_id,
-                topic_id,
-                RecommendationLevels.calculate_recommendation_level_for_avg(
-                    best_objs[topic_id]
-                ),
+            proficiency_level = RecommendationLevels.calculate_recommendation_level_for_avg(
+                best_objs[topic_id], recommendation=False
             )
+            # Only save if the score is at least 50% (proficiency_level is not None)
+            if proficiency_level is not None:
+                sbs_manager.insert_student_best(
+                    student_id,
+                    subject_id,
+                    topic_id,
+                    proficiency_level,
+                )

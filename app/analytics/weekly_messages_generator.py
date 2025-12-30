@@ -42,12 +42,12 @@ class GoalMessageGenerator:
     ACHIEVE = {
         GoalMetric.xp: {
             PerfTier.outstanding: [
-                "Phenomenal! You smashed your {subject} XP target 🎉",
-                "XP goal crushed in {subject}! Pure momentum 🔥",
+                "Phenomenal! You smashed your XP target 🎉",
+                "XP goal crushed! Pure momentum 🔥",
             ],
             PerfTier.on_track: [
-                "Great job! You hit your {subject} XP goal 🙌",
-                "Nice work—XP target achieved in {subject}! 🌟",
+                "Great job! You hit your XP goal 🙌",
+                "Nice work—XP target achieves! 🌟",
             ],
             PerfTier.needs_nudge: [
                 "XP goal reached—way to push through! Keep the rhythm going 💪",

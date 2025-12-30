@@ -24,6 +24,12 @@ class AnalyticsService:
         "emerging": 0,
     }
 
+    recommendation_level = {
+        "highly": "High Recommendation",
+        "moderately": "Moderate Recommendation",
+        "lowly": "Low Recommendation",
+    }
+
     def _to_datetime(self, val: Any) -> Optional[datetime]:
         if val is None:
             return None
@@ -961,19 +967,30 @@ class AnalyticsService:
         subjects = {subject.id: subject for subject in subjects}
 
         topics = {topic.id: topic for topic in topics}
+        added_topic_ids = set()
 
         failing_topics = []
         for recommendation in recommendations:
+            if ( recommendation.topic_id in added_topic_ids):
+                continue
+
+            topic_scores = sts_manager.select_student_topic_score_history(student_id, recommendation.topic_id)
             failing_topics.append(
                 {
                     "topic_name": topics[recommendation.topic_id].name,
                     "subject_name": subjects[
                         topics[recommendation.topic_id].subject_id
                     ].name,
-                    "average_score": 0,  # TODO: calculate average score
-                    "proficiency": recommendation.recommendation_level,
+                    "average_score": round(
+                        (
+                            sum(test.score_acquired for test in topic_scores) / len(topic_scores)
+                            if len(topic_scores) > 0
+                            else 0
+                        ), 2),
+                    "proficiency": self.recommendation_level[recommendation.recommendation_level],
                 }
             )
+            added_topic_ids.add(recommendation.topic_id)
 
         return failing_topics
 
@@ -1217,15 +1234,26 @@ class AnalyticsService:
         # Sort topics by score descending for main list
         topic_mastery_items.sort(key=lambda x: x["avg_score"], reverse=True)
 
-        # 5) Identify zones
-        # Power-up zone → 2 lowest scoring topics
-        power_up_zone = sorted(topic_mastery_items, key=lambda x: x["avg_score"])[:2]
-
-        # Mastery zone → 2 best topics excluding those already in power_up_zone
-        power_up_ids = {t["topic_id"] for t in power_up_zone}
+        # 5) Identify zones using percentage-based thresholds
+        # Mastery zone → topics with 85%+ (mastered)
+        # Power-up zone → topics with < 85% (needs work)
+        # Ensure no overlap: a topic cannot be in both zones
+        
         mastery_zone = [
-            t for t in topic_mastery_items if t["topic_id"] not in power_up_ids
-        ][:2]
+            t for t in topic_mastery_items if t["avg_score"] >= 80
+        ]
+        
+        power_up_zone = [
+            t for t in topic_mastery_items if t["avg_score"] < 60
+        ]
+        
+        # Sort mastery zone by score (best first), take top 2
+        mastery_zone.sort(key=lambda x: x["avg_score"], reverse=True)
+        mastery_zone = mastery_zone[:2]
+        
+        # Sort power-up zone by score (lowest first), take bottom 2
+        power_up_zone.sort(key=lambda x: x["avg_score"])
+        power_up_zone = power_up_zone[:2]
 
         # 6) Compute overall mastery
         overall_avg = round(sum(topic_avg.values()) / len(topic_avg), 2)
