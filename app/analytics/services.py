@@ -183,122 +183,109 @@ class AnalyticsService:
         return this_tests, last_tests, student_ids
 
     def get_practice_rate(
-        self, school_id, batch_id, time_range, subject_id=None
+        self, school_id: str, batch_id: str, time_range: str, subject_id: str = None
     ) -> Dict[str, Any]:
+        """
+        Calculates student practice rates and distributions.
+        time_range options: 'week', 'month', 'all_time'
+        """
+        # 1. Fetch data from backend
         this_tests, last_tests, all_student_ids = self.configure_performance_requirements(
             school_id, batch_id, time_range, subject_id
         )
 
         total_students = len(all_student_ids)
         if total_students == 0:
-            return {
-                "number_of_tests_per_student": 0,
-                "comparison": None,
-                "change_from": 0,
-                "change_direction": "same",
-                "practiced_number": 0,
-                "practiced_percent": 0.0,
-                "not_practiced_number": 0,
-                "not_practiced_percent": 0.0,
-                "tier_distribution": {
-                    "no_practice": {"number": 0, "percent": 0.0},
-                    "minimal_practice": {"number": 0, "percent": 0.0},
-                    "consistent_practice": {"number": 0, "percent": 0.0},
-                    "high_practice": {"number": 0, "percent": 0.0},
-                },
-                "total_students": total_students,
-            }
+            return self._get_empty_state()
 
-        # --- Current vs previous participation (student-based) ---
-        these_students_took_tests_this_param = set(t.student_id for t in this_tests)
-        these_students_took_tests_last_param = set(t.student_id for t in last_tests)
+        # 2. Define Dynamic Thresholds (min_tests, max_tests)
+        # Standards adjusted for 2025 learning engagement benchmarks
+        if time_range == "week":
+            thresholds = {"minimal": (1, 1), "consistent": (2, 4), "high": (5, 10**6)}
+        elif time_range == "month":
+            thresholds = {"minimal": (1, 4), "consistent": (5, 12), "high": (13, 10**6)}
+        else:  # all_time
+            thresholds = {"minimal": (1, 10), "consistent": (11, 30), "high": (31, 10**6)}
 
-        number_of_tests_per_student = round(len(this_tests) / total_students, 2)
+        # 3. Current Period Calculation
+        students_practiced_this_period = set(t.student_id for t in this_tests)
+        practiced_number = len(students_practiced_this_period)
+        practiced_percent = round((practiced_number / total_students) * 100, 2)
+        
+        tests_per_student = round(len(this_tests) / total_students, 2)
 
-        current = len(these_students_took_tests_this_param)
-        previous = len(these_students_took_tests_last_param)
+        # 4. Comparison Logic (Excluded for 'all_time')
+        comparison = None
+        change_from = 0.0
+        change_direction = "same"
 
-        # practice *rates* (0–1)
-        current_rate = current / total_students
-        previous_rate = previous / total_students if total_students > 0 else 0.0
+        if time_range != "all_time":
+            students_practiced_last_period = set(t.student_id for t in last_tests)
+            current_rate = practiced_number / total_students
+            previous_rate = len(students_practiced_last_period) / total_students if total_students > 0 else 0.0
 
-        if previous_rate > 0:
-            # relative change in practice rate
-            comparison = (current_rate - previous_rate) / previous_rate  # e.g. 0.2 = +20%
-            change_from = round(previous_rate * 100, 2)  # previous % practicing
-        else:
-            # no baseline last period → treat as "new" or "same"
-            comparison = None
-            change_from = 0.0
+            if previous_rate > 0:
+                # Relative % change between the two periods
+                comparison = round(((current_rate - previous_rate) / previous_rate) * 100, 2)
+                change_from = round(previous_rate * 100, 2)
+                if comparison > 0.1: # 0.1% buffer for stability
+                    change_direction = "up"
+                elif comparison < -0.1:
+                    change_direction = "down"
+            elif current_rate > 0:
+                change_direction = "up"
 
-        if comparison is None:
-            change_direction = "up" if current_rate > 0 else "same"
-        else:
-            change_direction = (
-                "up" if comparison > 0 else "down" if comparison < 0 else "same"
-            )
-
-        # --- Overall practice vs no practice (student-based, this period only) ---
-        practiced_number = current
-        practiced_percent = current_rate * 100
-
-        not_practiced_number = total_students - practiced_number
-        not_practiced_percent = 100 - practiced_percent
-
-        # --- Tier distributions (student-based) ---
+        # 5. Tier Distribution
         test_counts = Counter(t.student_id for t in this_tests)
 
-        def count_students_in_range(counts: Counter, min_times: int, max_times: int) -> int:
-            return sum(1 for c in counts.values() if min_times <= c <= max_times)
-
-        minimal_students = count_students_in_range(test_counts, 1, 2)
-        consistent_students = count_students_in_range(test_counts, 3, 5)
-        high_students = count_students_in_range(test_counts, 6, 10**9)
-
-        minimal_practice_number = minimal_students
-        minimal_practice_percent = minimal_students / total_students * 100
-
-        consistent_practice_number = consistent_students
-        consistent_practice_percent = consistent_students / total_students * 100
-
-        high_practice_number = high_students
-        high_practice_percent = high_students / total_students * 100
+        def get_tier_stats(min_t: int, max_t: int) -> Dict[str, Any]:
+            count = sum(1 for c in test_counts.values() if min_t <= c <= max_t)
+            return {
+                "number": count,
+                "percent": round((count / total_students) * 100, 2)
+            }
 
         tier_distribution = {
             "no_practice": {
-                "number": not_practiced_number,
-                "percent": round(not_practiced_percent, 2),
+                "number": total_students - practiced_number,
+                "percent": round(100 - practiced_percent, 2),
             },
-            "minimal_practice": {
-                "number": minimal_practice_number,
-                "percent": round(minimal_practice_percent, 2),
-            },
-            "consistent_practice": {
-                "number": consistent_practice_number,
-                "percent": round(consistent_practice_percent, 2),
-            },
-            "high_practice": {
-                "number": high_practice_number,
-                "percent": round(high_practice_percent, 2),
-            },
+            "minimal_practice": get_tier_stats(*thresholds["minimal"]),
+            "consistent_practice": get_tier_stats(*thresholds["consistent"]),
+            "high_practice": get_tier_stats(*thresholds["high"]),
         }
 
         return {
-            "number_of_tests_per_student": number_of_tests_per_student,
-            # previous practice rate in %
+            "number_of_tests_per_student": tests_per_student,
             "change_from": change_from,
-            # up / down / same
             "change_direction": change_direction,
-            # relative change in rate, as %
-            "comparison": (
-                round(comparison * 100, 2) if comparison is not None else None
-            ),
+            "comparison": comparison,
             "practiced_number": practiced_number,
-            "practiced_percent": round(practiced_percent, 2),
-            "not_practiced_number": not_practiced_number,
-            "not_practiced_percent": round(not_practiced_percent, 2),
+            "practiced_percent": practiced_percent,
+            "not_practiced_number": total_students - practiced_number,
+            "not_practiced_percent": round(100 - practiced_percent, 2),
             "tier_distribution": tier_distribution,
             "total_students": total_students,
+            "time_range": time_range
+        }
+
+    def _get_empty_state(self) -> Dict[str, Any]:
+        return {
+            "number_of_tests_per_student": 0,
+            "comparison": None,
+            "change_from": 0,
+            "change_direction": "same",
+            "practiced_number": 0,
+            "practiced_percent": 0.0,
+            "not_practiced_number": 0,
+            "not_practiced_percent": 0.0,
+            "tier_distribution": {
+                "no_practice": {"number": 0, "percent": 0.0},
+                "minimal_practice": {"number": 0, "percent": 0.0},
+                "consistent_practice": {"number": 0, "percent": 0.0},
+                "high_practice": {"number": 0, "percent": 0.0},
+            },
+            "total_students": 0,
         }
 
     def calculate_student_average_performance(
@@ -455,8 +442,9 @@ class AnalyticsService:
 
             # average time per test in minutes
             total_seconds = sum(
-                (test.finished_on - test.started_on).total_seconds() for test in tests
+                (abs(test.finished_on - test.started_on)).total_seconds() for test in tests
             )
+
             avg_time_minutes = (total_seconds / len(tests)) / 60.0
         else:
             avg_tests_per_student = 0.0
@@ -609,15 +597,13 @@ class AnalyticsService:
         student_dict = {student.id: student for student in students}
         subject_dict = {subject.id: subject for subject in subjects}
 
-        now = datetime.now(timezone.utc)
-
         tests_info = []
 
         for test in sorted_tests:
             tests_info.append(
                 {
-                    "description": f"{student_dict[test.student_id].first_name} completed a test in '{subject_dict[test.subject_id].name}' ",
-                    "time": test.created_at,
+                    "description": f"{student_dict[test.student_id].first_name} completed a test in {subject_dict[test.subject_id].short_name} and scored {test.score_acquired}%",
+                    "time": test.finished_on,
                     "type": "user_activity",
                 }
             )
@@ -663,7 +649,7 @@ class AnalyticsService:
                 "name": "highly_proficient",
                 "students": band_counts["highly_proficient"],
                 "percentage": (
-                    band_counts["highly_proficient"] / total_students
+                    round(band_counts["highly_proficient"] / total_students, 2)
                     if total_students > 0
                     else 0
                 ),
@@ -672,7 +658,7 @@ class AnalyticsService:
                 "name": "proficient",
                 "students": band_counts["proficient"],
                 "percentage": (
-                    band_counts["proficient"] / total_students
+                    round(band_counts["proficient"] / total_students, 2)
                     if total_students > 0
                     else 0
                 ),
@@ -681,7 +667,7 @@ class AnalyticsService:
                 "name": "approaching_proficient",
                 "students": band_counts["approaching"],
                 "percentage": (
-                    band_counts["approaching"] / total_students
+                    round(band_counts["approaching"] / total_students, 2)
                     if total_students > 0
                     else 0
                 ),
@@ -690,7 +676,7 @@ class AnalyticsService:
                 "name": "developing",
                 "students": band_counts["developing"],
                 "percentage": (
-                    band_counts["developing"] / total_students
+                    round(band_counts["developing"] / total_students, 2)
                     if total_students > 0
                     else 0
                 ),
@@ -699,7 +685,7 @@ class AnalyticsService:
                 "name": "emerging",
                 "students": band_counts["emerging"],
                 "percentage": (
-                    band_counts["emerging"] / total_students
+                    round(band_counts["emerging"] / total_students, 2)
                     if total_students > 0
                     else 0
                 ),

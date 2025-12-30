@@ -1,6 +1,6 @@
 from app.test.models import Question, SubQuestion, Test, QuestionImage
 from app._shared.operations import BaseManager
-import json
+from datetime import datetime, timezone
 
 from typing import List, Dict, Union
 from sqlalchemy.sql import func
@@ -233,11 +233,11 @@ class TestManager(BaseManager):
             school_id=school_id,
             points_acquired=points_acquired,
             score_acquired=score_acquired,
-            started_on=started_on,
             finished_on=finished_on,
             questions_correct=questions_correct,
             meta=meta,
             is_completed=is_completed,
+            started_on = datetime.now(timezone.utc),
         )
 
         self.save(new_test)

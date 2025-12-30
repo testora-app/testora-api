@@ -129,10 +129,17 @@ def login(json_data):
         school_data = school.to_json()
         if user_type == UserTypes.staff:
             school_data.pop("code")
+
+        staff_json = staff.to_json(include_batches=True)
+        if user_type == UserTypes.school_admin:
+            from app.student.operations import batch_manager
+            batches = batch_manager.get_batches_by_school_id(staff.school_id)
+            staff_json["batches"] = [batch.to_json(include_subjects=True) for batch in batches]
+
     
         return success_response(
             data={
-                "user": staff.to_json(include_batches=True),
+                "user": staff_json,
                 "auth_token": access_token,
                 "school": school_data,
                 "user_type": user_type
