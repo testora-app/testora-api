@@ -405,6 +405,7 @@ class TestService:
         total_number = len(questions)
 
         topic_scores = {question["topic_id"]: 0 for question in questions}
+        topic_totals = {question["topic_id"]: 0 for question in questions}
 
         for question in questions:
             q = question_manager.get_question_by_id(question["id"])
@@ -418,6 +419,7 @@ class TestService:
             if not q.is_flagged:
                 #TODO: MAKE THIS BETTER JOSEPH 
                 # current logic: mark main question if it's not flagged
+                topic_totals[q.topic_id] += 1
                 if q.correct_answer == question["student_answer"]:
                     main_question_correct = True
                     score_acquired += 1
@@ -437,6 +439,7 @@ class TestService:
 
                     if s.is_flagged:
                         continue  # skip flagged sub questions
+                    topic_totals[q.topic_id] += 1
                     sub["correct_answer"] = s.correct_answer
                     if s.correct_answer == sub["student_answer"]:
                         no_subs_correct += 1
@@ -465,4 +468,5 @@ class TestService:
             "points_acquired": round(points_acquired, 2),
             "score_acquired": score_acquired,
             "topic_scores": topic_scores,
+            "topic_totals": topic_totals,
         }

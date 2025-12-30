@@ -241,14 +241,26 @@ class StudentProficiencyDataSchema(BaseSchema):
     proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
 
 
+class StrugglingStudentSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    id = Integer(required=True, example=123)
+    name = String(required=True, example="Kofi Mensah")
+    score = Float(required=True, validate=Range(min=0, max=100), example=35.5)
+    proficiency_level = String(required=True, validate=OneOf(["EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "PROFICIENT", "HIGHLY_PROFICIENT"]), example="EMERGING")
+
+
 class TopicLevelBreakdownItemSchema(BaseSchema):
     class Meta:
         ordered = True
     topic = String(required=True, example="Fractions")
-    students_affected = Integer(required=True, validate=Range(min=0), example=32)
+    topic_id = Integer(required=True, example=123)
+    total_students = Integer(required=True, validate=Range(min=0), example=45)
+    students_affected = Integer(required=True, validate=Range(min=0), example=12)
     percentage = Float(required=True, validate=Range(min=0, max=100), example=62.5)
     level = String(required=True, validate=OneOf(["EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "PROFICIENT", "HIGHLY_PROFICIENT"]), example="EMERGING")
     stage = String(required=True, validate=OneOf(["Stage 1-3", "Stage 4-6", "Stage 7-9"]), example="Stage 1-3")
+    struggling_students = List(Nested(StrugglingStudentSchema), required=True)
 
 
 class StudentDashboardOverviewDataSchema(BaseSchema):

@@ -1000,18 +1000,20 @@ class AnalyticsService:
             "proficiency": proficiency,
         }
 
-    def get_performance_topics(self, subject_id, batch_id=None, stage=None, level=None):
+    def get_performance_topics(self, subject_id, batch_id=None, stage=None, level=None, threshold=50):
         """
-        Get performance data for topics based on student_topic_scores with optional filtering.
+        Get performance data for topics with details of struggling students.
 
         Args:
+            subject_id: The subject to analyze
+            batch_id (str, optional): Filter by specific batch
             stage (str, optional): Filter by stage (e.g., "Stage 1-3", "Stage 4-6", "Stage 7-9")
-            level (str, optional): Filter by proficiency level (e.g., "EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "HIGHLY_PROFICIENT")
+            level (str, optional): Filter by proficiency level (e.g., "EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "PROFICIENT", "HIGHLY_PROFICIENT")
+            threshold (int, optional): Score below which students are considered struggling (default: 50)
 
         Returns:
-            list: Filtered topic performance data
+            list: Topic performance data with struggling student details, sorted by number of struggling students (descending)
         """
-        from sqlalchemy import func, distinct
         from app.analytics.models import StudentTopicScores
 
         # Stage mapping based on topic level
@@ -1038,47 +1040,89 @@ class AnalyticsService:
         if student_ids:
             query = query.filter(StudentTopicScores.student_id.in_(student_ids))
 
-        # Query to get average scores and student counts per topic
-        topic_stats = (
-            query.with_entities(
-                StudentTopicScores.topic_id,
-                func.avg(StudentTopicScores.score_acquired).label("average_score"),
-                func.count(distinct(StudentTopicScores.student_id)).label(
-                    "students_affected"
-                ),
-            )
-            .group_by(StudentTopicScores.topic_id)
-            .all()
-        )
+        # Get all individual scores (not aggregated)
+        all_scores = query.all()
 
         # Get topics for this subject to map topic_id to topic details
         topics = topic_manager.get_topic_by_subject(subject_id)
         topic_dict = {topic.id: topic for topic in topics}
 
-        # Build performance data
-        performance_data = []
-        for topic_id, avg_score, student_count in topic_stats:
+        # Group scores by topic and student (to calculate averages per student per topic)
+        topic_data = {}
+        for score_record in all_scores:
+            topic_id = score_record.topic_id
+            student_id = score_record.student_id
+            
             if topic_id not in topic_dict:
                 continue
-
-            topic = topic_dict[topic_id]
-            avg_score_rounded = round(float(avg_score), 2) if avg_score else 0
-
-            # Get performance band using existing function
-            proficiency_level = self.get_performance_band(avg_score_rounded).upper()
-
-            # Map topic level to stage
-            topic_stage = get_stage_from_level(topic.level)
-
-            performance_data.append(
-                {
-                    "topic": topic.name,
-                    "students_affected": student_count,
-                    "percentage": avg_score_rounded,
-                    "level": proficiency_level,
-                    "stage": topic_stage,
+                
+            if topic_id not in topic_data:
+                topic_data[topic_id] = {
+                    'student_scores': {}  # student_id -> list of scores
                 }
-            )
+            
+            # Group scores by student for this topic
+            if student_id not in topic_data[topic_id]['student_scores']:
+                topic_data[topic_id]['student_scores'][student_id] = []
+            
+            topic_data[topic_id]['student_scores'][student_id].append(score_record.score_acquired)
+
+        # Build performance data
+        performance_data = []
+        for topic_id, data in topic_data.items():
+            topic = topic_dict[topic_id]
+            
+            # Calculate per-student averages and build student list
+            student_averages = []
+            all_student_avg_scores = []
+            
+            for student_id, scores in data['student_scores'].items():
+                # Calculate average score for this student in this topic
+                student_avg = sum(scores) / len(scores) if scores else 0
+                all_student_avg_scores.append(student_avg)
+                
+                # Fetch student details
+                student = student_manager.get_student_by_id(student_id)
+                
+                # Construct student name
+                if student:
+                    student_name = f"{student.first_name} {student.surname}"
+                else:
+                    student_name = f"Student {student_id}"
+                
+                student_averages.append({
+                    'id': student_id,
+                    'name': student_name,
+                    'score': round(student_avg, 2),
+                    'proficiency_level': self.get_performance_band(student_avg).upper()
+                })
+            
+            # Calculate overall topic average from student averages
+            avg_score = sum(all_student_avg_scores) / len(all_student_avg_scores) if all_student_avg_scores else 0
+            avg_score_rounded = round(avg_score, 2)
+            
+            # Get overall proficiency level
+            proficiency_level = self.get_performance_band(avg_score_rounded).upper()
+            
+            # Get stage
+            topic_stage = get_stage_from_level(topic.level)
+            
+            # Filter struggling students (average score below threshold)
+            struggling_students = [
+                student for student in student_averages 
+                if student['score'] < threshold
+            ]
+            
+            performance_data.append({
+                "topic": topic.name,
+                "topic_id": topic_id,
+                "total_students": len(student_averages),
+                "students_affected": len(struggling_students),  # Only struggling students
+                "percentage": avg_score_rounded,
+                "level": proficiency_level,
+                "stage": topic_stage,
+                "struggling_students": struggling_students
+            })
 
         # Apply filters
         filtered_data = performance_data
@@ -1088,6 +1132,9 @@ class AnalyticsService:
 
         if level:
             filtered_data = [item for item in filtered_data if item["level"] == level]
+
+        # Sort by number of struggling students (highest first - most urgent)
+        filtered_data.sort(key=lambda x: x['students_affected'], reverse=True)
 
         return filtered_data
 

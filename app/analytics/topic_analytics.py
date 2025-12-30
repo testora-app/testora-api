@@ -57,23 +57,32 @@ class TopicAnalytics:
     # @async_method
     @staticmethod
     def save_topic_scores_for_student(
-        student_id, subject_id, test_id, test_scores: Dict
+        student_id, subject_id, test_id, test_scores: Dict, topic_totals: Dict
     ):
         """
-        test_scores -- Dict[]
+        test_scores -- Dict[] of correct answers per topic
+        topic_totals -- Dict[] of total questions per topic
+        Calculate percentage: (score/total * 100) floored to 2 decimal places
         [{
             'topic_id': score
         }]
         """
         scores_to_save = []
         for topic_id, score in test_scores.items():
+            total = topic_totals.get(topic_id, 1)  # Avoid division by zero
+            if total > 0:
+                percentage = (score / total) * 100
+                percentage = round(percentage, 2)  # Floor to 2 decimal places
+            else:
+                percentage = 0.0
+            
             scores_to_save.append(
                 {
                     "student_id": student_id,
                     "subject_id": subject_id,
                     "test_id": test_id,
                     "topic_id": topic_id,
-                    "score_acquired": score,
+                    "score_acquired": percentage,
                 }
             )
         return sts_manager.insert_multiple_student_topic_scores(

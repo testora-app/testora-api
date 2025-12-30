@@ -302,7 +302,8 @@ class TestTestRoutes:
             "questions": [],
             "score_acquired": 80.0,
             "points_acquired": 8,
-            "topic_scores": []
+            "topic_scores": {},
+            "topic_totals": {}
         }
         
         payload = {
