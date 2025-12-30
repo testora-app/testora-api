@@ -866,17 +866,15 @@ class AnalyticsService:
 
         subjects = subject_manager.get_subject_by_curriculum("bece")
 
-        subjects = {subject.id: subject for subject in subjects}
-
         subject_performance = []
 
-        for subject_id, subject in subjects.items():
-            tests = [test for test in tests if test.subject_id == subject_id]
+        for subject in subjects:
+            subject_tests = [test for test in tests if test.subject_id == subject.id]
 
             average_score = round(
                 (
-                    sum(test.score_acquired for test in tests) / len(tests)
-                    if len(tests) > 0
+                    sum(subject_test.score_acquired for subject_test in subject_tests) / len(subject_tests)
+                    if len(subject_tests) > 0
                     else 0
                 ),
                 2,
