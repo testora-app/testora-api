@@ -1,6 +1,7 @@
 from typing import Dict
 from datetime import datetime, timezone
 from apiflask import APIBlueprint
+from flask import render_template
 from logging import info as log_info
 
 from app._shared.schemas import SuccessMessage, UserTypes, ExamModes
@@ -37,6 +38,7 @@ from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
 from app.achievements.services import AchievementEngine
 from app.integrations.pusher import pusher
+from app.integrations.mailer import mailer
 
 import json
 
@@ -114,6 +116,17 @@ def flag_questions(json_data):
         question.is_flagged = True
         question.flag_reason = json.dumps(objects[question.id])
         question.save()
+
+
+    html = render_template("flagged_questions.html", questions=questions)
+    # send notification to admins here
+    mailer.send_email(
+        subject="Flagged Questions Notification",
+        recipients=["support@preppee.online"],
+        text=html,
+        html=True,
+    )
+
     return success_response()
 
 

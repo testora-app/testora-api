@@ -31,8 +31,11 @@ class AchievementEngine:
             number_of_times=1,
             created_at=datetime.now(timezone.utc)
         )
-        db.session.add(new_achievement)
-        db.session.commit()
+        try:
+            db.session.add(new_achievement)
+            db.session.commit()
+        except Exception as e:
+            print(e)
 
     def check_test_achievements(self, subject_id, score, test_count, email=None):
         if test_count == 1:
