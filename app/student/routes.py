@@ -224,10 +224,18 @@ def unapprove_student(json_data):
 
 
 @student.get("/students/")
+@student.input(Requests.StudentQueryParams, location="query")
 @student.output(GetStudentListSchema)
 @token_auth([UserTypes.school_admin])
-def get_student_list():
+def get_student_list(query_data):
     school_id = get_current_user()["school_id"]
+
+    if query_data.get("batch_id", None) is not None:
+        batch = batch_manager.get_batch_by_id(query_data["batch_id"])
+        if batch:
+            students = batch.to_json(include_students=True).get("students", [])
+            return success_response(data=students)
+        
     student = student_manager.get_student_by_school(school_id)
     student_data = [st.to_json() for st in student] if student else []
     return success_response(data=student_data)

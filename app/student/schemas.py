@@ -130,9 +130,16 @@ class StudentLevelSchema(Schema):
     subject_name = String(required=True)
     level = Integer(required=True)
 
+
+class StudentQueryParams(Schema):
+    batch_id = Integer(required=False, allow_none=False)
+
+
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
     EndSessionSchema = make_response_schema(EndSessionSchema, is_list=True)
+    StudentQueryParams = StudentQueryParams
+
 
 
 class Responses:
