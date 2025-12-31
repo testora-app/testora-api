@@ -22,6 +22,7 @@ class StudentManager(BaseManager):
         is_approved=False,
         is_archived=False,
         other_names=None,
+        gender = "other",
     ) -> Student:
         new_student = Student(
             first_name=first_name,
@@ -32,6 +33,7 @@ class StudentManager(BaseManager):
             is_approved=is_approved,
             other_names=other_names,
             is_archived=is_archived,
+            gender=gender,
         )
 
         self.save(new_student)

@@ -64,6 +64,7 @@ class Student(BaseModel):
     current_streak = db.Column(db.Integer, default=0)
     highest_streak = db.Column(db.Integer, default=0)
     last_login = db.Column(db.DateTime, default=None, nullable=True)
+    gender = db.Column(db.String, nullable=True, default="other")
 
     def __repr__(self):
         return f"Student {self.first_name} {self.surname}"
@@ -81,6 +82,7 @@ class Student(BaseModel):
             "current_streak": self.current_streak,
             "highest_streak": self.highest_streak,
             "last_login": self.last_login,
+            "gender": self.gender,
         }
 
         if include_batch:
