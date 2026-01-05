@@ -40,14 +40,13 @@ jobs:
         docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
             
     - name: Deploy to Cloud Run
-      id: old-backend
+      id: preppee-api
       uses: google-github-actions/deploy-cloudrun@v2
       with:
         service: preppee-api
         image: europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
         region: ${{ secrets.PROJECT_LOCATION }}
         tag: staging
-        no_traffic: true
         labels: |
             service-name=preppee-api
             service-id=preppee-api
