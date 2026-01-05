@@ -43,14 +43,14 @@ jobs:
       id: old-backend
       uses: google-github-actions/deploy-cloudrun@v2
       with:
-        service: old-backend
+        service: preppee-api
         image: europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
         region: ${{ secrets.PROJECT_LOCATION }}
         tag: staging
         no_traffic: true
         labels: |
-            service-name=old-backend
-            service-id=old-backend-staging
+            service-name=preppee-api
+            service-id=preppee-api
         secrets: |
             DATABASE_USER=DATABASE_USER:latest
             DATABASE_HOST=DATABASE_HOST:latest
@@ -71,5 +71,5 @@ jobs:
             APP_SECRET_KEY=APP_SECRET_KEY:latest
         env_vars: |
             ENVIRONMENT=staging
-            FRONTEND_BASE_URL=staging-preppee.online
+            FRONTEND_BASE_URL=staging.preppee.online
 
