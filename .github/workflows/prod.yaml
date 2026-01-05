@@ -38,7 +38,11 @@ jobs:
       run: |-
         docker build -t europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }} .
         docker push europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
-            
+    
+    - name: Set current date as env variable
+      run: echo "NOW=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_ENV
+
+
     - name: Deploy to Cloud Run
       id: preppee-api
       uses: google-github-actions/deploy-cloudrun@v2
@@ -46,7 +50,7 @@ jobs:
         service: preppee-api
         image: europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
         region: ${{ secrets.PROJECT_LOCATION }}
-        tag: production
+        tag: production-${{ env.NOW }}
         labels: |
             service-name=preppee-api
             service-id=preppee-api
