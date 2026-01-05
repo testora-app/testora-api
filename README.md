@@ -1,5 +1,5 @@
 # Project Name
-> This is a template for starting a flask application. The basics have been set up
+> This is a template for starting a flask application. The basics have been set up.
 
 
 ## Setup
