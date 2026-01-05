@@ -63,4 +63,4 @@ Werkzeug==3.0.2
 WTForms==3.2.1
 zipp==3.18.1
 zope.event==5.0
-zope.interface
+zope.interface==6.3
