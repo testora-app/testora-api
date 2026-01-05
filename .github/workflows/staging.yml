@@ -55,8 +55,6 @@ jobs:
             DATABASE_HOST=DATABASE_HOST:latest
             DATABASE_NAME=DATABASE_NAME_STAGING:latest
             DATABASE_PASSWORD=DATABASE_PASSWORD:latest
-            DATABASE_UNIX_SOCKET=DATABASE_HOST:latest
-            DATABASE_URI=DATABASE_URI_STAGING:latest
             AUTH_JWT_KEY=AUTH_JWT_KEY:latest
             BUCKET_NAME=BUCKET_NAME:latest
             ADMIN_EMAIL=ADMIN_EMAIL:latest
