@@ -11,6 +11,7 @@ class StaffRegister(BaseSchema):
     other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
     password = String(required=True, allow_none=False, validate=[Length(min=8)])
     school_code = String(required=False, allow_none=True)
+    gender = String(required=False, allow_none=True)
 
 
 class SchoolRegister(BaseSchema):

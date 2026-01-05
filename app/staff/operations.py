@@ -16,6 +16,7 @@ class StaffManager(BaseManager):
         is_admin=False,
         is_approved=False,
         other_names=None,
+        gender="other",
     ) -> Staff:
         new_staff = Staff(
             first_name=first_name,
@@ -26,6 +27,7 @@ class StaffManager(BaseManager):
             is_approved=is_approved,
             other_names=other_names,
             is_admin=is_admin,
+            gender=gender,
         )
 
         self.save(new_staff)

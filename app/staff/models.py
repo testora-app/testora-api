@@ -26,6 +26,7 @@ class Staff(BaseModel):
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
     is_approved = db.Column(db.Boolean, default=False)
     is_admin = db.Column(db.Boolean, nullable=False)
+    gender = db.Column(db.String, nullable=True, default="other")
 
     subjects = db.relationship(
         "Subject", secondary=staff_subjects, back_populates="staff"
@@ -44,6 +45,7 @@ class Staff(BaseModel):
             "school_id": self.school_id,
             "is_approved": self.is_approved,
             "is_admin": self.is_admin,
+            "gender": self.gender,
             # all subjects assigned to this teacher
             "subjects": [subject.to_json() for subject in self.subjects],
         }
