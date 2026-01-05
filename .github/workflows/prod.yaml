@@ -1,11 +1,11 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Deploy to Cloud Run Staging
+name: Deploy to Cloud Run Production
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: [ "main" ]
 
 jobs:
   build:
@@ -46,29 +46,28 @@ jobs:
         service: preppee-api
         image: europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
         region: ${{ secrets.PROJECT_LOCATION }}
-        tag: staging
-        no_traffic: true
+        tag: production
         labels: |
             service-name=preppee-api
             service-id=preppee-api
         secrets: |
             DATABASE_USER=DATABASE_USER:latest
             DATABASE_HOST=DATABASE_HOST:latest
-            DATABASE_NAME=DATABASE_NAME_STAGING:latest
+            DATABASE_NAME=DATABASE_NAME_PROD:latest
             DATABASE_PASSWORD=DATABASE_PASSWORD:latest
             AUTH_JWT_KEY=AUTH_JWT_KEY:latest
             BUCKET_NAME=BUCKET_NAME:latest
             ADMIN_EMAIL=ADMIN_EMAIL:latest
             ADMIN_PASSWORD=ADMIN_PASSWORD:latest
             ADMIN_USERNAME=ADMIN_USERNAME:latest
-            POSTGRES_URI=DATABASE_URI_STAGING:latest
+            POSTGRES_URI=DATABASE_URI_PROD:latest
             SMTP2GO_API_KEY=SMTP2GO_API_KEY:latest
             ONE_SIGNAL_APP_ID=ONE_SIGNAL_APP_ID:latest
             ONE_SIGNAL_REST_API_KEY=ONE_SIGNAL_REST_API_KEY:latest
-            PAYSTACK_API_KEY=PAYSTACK_API_KEY_STAGING:latest
-            PAYSTACK_CALLBACK_URL=PAYSTACK_CALLBACK_URL_STAGING:latest
+            PAYSTACK_API_KEY=PAYSTACK_API_KEY_PROD:latest
+            PAYSTACK_CALLBACK_URL=PAYSTACK_CALLBACK_URL_PROD:latest
             APP_SECRET_KEY=APP_SECRET_KEY:latest
         env_vars: |
-            ENVIRONMENT=staging
-            FRONTEND_BASE_URL=staging.preppee.online
+            ENVIRONMENT=production
+            FRONTEND_BASE_URL=https://preppee.online
 
