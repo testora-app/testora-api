@@ -118,8 +118,8 @@ def create_app():
 
     with app.app_context():
         # run the necessary migrations
-        upgrade()
-        create_super_admin_if_not_exists()
+        # upgrade()
+        # create_super_admin_if_not_exists()
 
         # register errorhandlers
         app.register_error_handler(403, forbidden)
