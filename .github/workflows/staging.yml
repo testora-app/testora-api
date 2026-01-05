@@ -60,6 +60,7 @@ jobs:
             ADMIN_EMAIL=ADMIN_EMAIL:latest
             ADMIN_PASSWORD=ADMIN_PASSWORD:latest
             ADMIN_USERNAME=ADMIN_USERNAME:latest
+            POSTGRES_URI=POSTGRES_URI_STAGING:latest
             SMTP2GO_API_KEY=SMTP2GO_API_KEY:latest
             ONE_SIGNAL_APP_ID=ONE_SIGNAL_APP_ID:latest
             ONE_SIGNAL_REST_API_KEY=ONE_SIGNAL_REST_API_KEY:latest
