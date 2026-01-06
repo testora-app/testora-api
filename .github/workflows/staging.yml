@@ -68,6 +68,7 @@ jobs:
             PAYSTACK_API_KEY=PAYSTACK_API_KEY_STAGING:latest
             PAYSTACK_CALLBACK_URL=PAYSTACK_CALLBACK_URL_STAGING:latest
             APP_SECRET_KEY=APP_SECRET_KEY:latest
+            SECRET_KEY=SECRET_KEY:latest
         env_vars: |
             ENVIRONMENT=staging
             FRONTEND_BASE_URL=staging.preppee.online
