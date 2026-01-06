@@ -655,7 +655,7 @@ class AnalyticsService:
                 "name": "highly_proficient",
                 "students": band_counts["highly_proficient"],
                 "percentage": (
-                    round(band_counts["highly_proficient"] / total_students, 2)
+                    round(band_counts["highly_proficient"] / total_students, 2) * 100
                     if total_students > 0
                     else 0
                 ),
@@ -664,7 +664,7 @@ class AnalyticsService:
                 "name": "proficient",
                 "students": band_counts["proficient"],
                 "percentage": (
-                    round(band_counts["proficient"] / total_students, 2)
+                    round(band_counts["proficient"] / total_students, 2) * 100
                     if total_students > 0
                     else 0
                 ),
@@ -673,7 +673,7 @@ class AnalyticsService:
                 "name": "approaching_proficient",
                 "students": band_counts["approaching"],
                 "percentage": (
-                    round(band_counts["approaching"] / total_students, 2)
+                    round(band_counts["approaching"] / total_students, 2) * 100
                     if total_students > 0
                     else 0
                 ),
@@ -682,7 +682,7 @@ class AnalyticsService:
                 "name": "developing",
                 "students": band_counts["developing"],
                 "percentage": (
-                    round(band_counts["developing"] / total_students, 2)
+                    round(band_counts["developing"] / total_students, 2) * 100
                     if total_students > 0
                     else 0
                 ),
@@ -691,7 +691,7 @@ class AnalyticsService:
                 "name": "emerging",
                 "students": band_counts["emerging"],
                 "percentage": (
-                    round(band_counts["emerging"] / total_students, 2)
+                    round(band_counts["emerging"] / total_students, 2) * 100
                     if total_students > 0
                     else 0
                 ),
