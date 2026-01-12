@@ -46,6 +46,7 @@ from app.notifications.operations import recipient_manager
 
 from app.integrations.pusher import pusher
 from app.integrations.mailer import mailer
+import os
 
 
 student = APIBlueprint("student", __name__)
@@ -67,9 +68,9 @@ def student_register(json_data: Dict):
         context = {
             "student_name": new_student.first_name,
             "school_name": school.name,
-            "guide_link": "https://testora-web.onrender.com",
-            "login_url": "https://testora-web.onrender.com",
-            "phone_number": "+233240126470",
+            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs/student-guide",
+            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+            "phone_number": "+233 24 142 3514",
         }
         html = mailer.generate_email_text("student_signup.html", context)
         mailer.send_email(
