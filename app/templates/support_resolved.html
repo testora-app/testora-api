@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #1E90FF;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .request-details {
+      margin-top: 20px;
+      background-color: #f1f1f1;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #e0e0e0;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .footer a {
+      color: #1E90FF;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+    </div>
+    <div class="content">
+      <h1>Your Issue Has Been Resolved</h1>
+      <p>Hello {{ user_name }},</p>
+      <p>We are pleased to inform you that your support request has been successfully resolved.</p>
+
+      <div class="request-details">
+        <p><strong>Request Details:</strong></p>
+        <p><strong>Date Submitted:</strong> {{ request_date }}</p>
+        <p><strong>Issue:</strong> {{ issue_description }}</p>
+        <p><strong>Resolution:</strong> {{ resolution_description }}</p>
+      </div>
+
+      <p>Your feedback is important to us. Please help us improve our support by rating your experience with our support team:</p>
+      <p><a href="{{ rating_link }}" target="_blank">Rate Your Experience</a></p>
+      <p>We appreciate your patience.</p>
+    </div>
+    <div class="footer">
+      <p>Thank you,</p>
+      <p><strong>The Preppee Support Team</strong></p>
+    </div>
+  </div>
+</body>
+</html>

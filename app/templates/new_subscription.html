@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #1E90FF;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 12px 25px;
+      background-color: #1E90FF;
+      color: #fff;
+      font-size: 16px;
+      text-align: center;
+      text-decoration: none;
+      border-radius: 5px;
+      margin-top: 20px;
+    }
+    .cta-button:hover {
+      background-color: #0056b3;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .footer a {
+      color: #1E90FF;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    .receipt {
+      background-color: #f7f7f7;
+      padding: 20px;
+      margin-top: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .receipt h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    .receipt .details {
+      margin-bottom: 15px;
+    }
+    .receipt .details span {
+      display: block;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+    </div>
+    <div class="content">
+      <h1>Thank You for Subscribing to Preppee Premium!</h1>
+      <p>Dear {{ user_name }},</p>
+      <p>Thank you for subscribing to the Preppee Premium plan! We’re excited to have you as part of our community and can’t wait for you to experience all the premium features that will enhance your learning and teaching experience.</p>
+      
+      <p>Your subscription will give you access to:</p>
+      <ul>
+        <li>Unlimited practice questions and exam preparation material</li>
+        <li>In-depth student performance analytics</li>
+        <li>Exclusive teaching support tools and insights</li>
+      </ul>
+
+      <div class="receipt">
+        <h3>Subscription Receipt</h3>
+        <div class="details">
+          <span><strong>Subscriber Name:</strong> {{ user_name }}</span>
+          <span><strong>Subscription Plan:</strong> Preppee Premium</span>
+          <span><strong>Subscription Start Date:</strong> {{ subscription_start_date }}</span>
+          <span><strong>Subscription End Date:</strong> {{ subscription_end_date }}</span>
+          <span><strong>Total Amount:</strong> {{ total_amount }}</span>
+        </div>
+      </div>
+
+      <p>If you have any questions or need assistance, feel free to contact us at <a href="mailto:support@wedidtech.com">support@wedidtech.com</a> or [phone number].</p>
+
+      <p>We hope you enjoy all the benefits that come with your Preppee Premium plan!</p>
+
+      <p><a href="{{ login_link }}" class="cta-button">Log In to Preppee</a></p>
+    </div>
+    <div class="footer">
+      <p>Best Regards,</p>
+      <p><strong>The Preppee Support Team</strong></p>
+    </div>
+  </div>
+</body>
+</html>

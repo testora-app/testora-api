@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #1E90FF;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .content .details {
+      margin-top: 15px;
+    }
+    .content .details p {
+      margin: 5px 0;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .footer a {
+      color: #1E90FF;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+    </div>
+    <div class="content">
+      <h1>New Contact Submission Received</h1>
+      <p>Dear Admin,</p>
+      <p>A new contact has been submitted through the Preppee platform. Below are the details:</p>
+      <div class="details">
+        <p><strong>Name:</strong> {{ name }}</p>
+        <p><strong>Role:</strong> {{ role }}</p>
+        <p><strong>School Name:</strong> {{ school_name }}</p>
+        <p><strong>Contact Number:</strong> {{ contact_number }}</p>
+        <p><strong>Email:</strong> {{ email }}</p>
+        <p><strong>How They Found Out About Us:</strong> {{ find_out }}</p>
+        <p><strong>Contact Message:</strong>{{ contact_message }}</p>
+        <p><strong>Message:</strong></p>
+        <p>{{ message }}</p>
+      </div>
+      <p>Please review and respond to this inquiry at your earliest convenience.</p>
+    </div>
+    <div class="footer">
+      <p>Thank you,</p>
+      <p><strong>The Preppee Team</strong></p>
+    </div>
+  </div>
+</body>
+</html>

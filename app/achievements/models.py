@@ -1,0 +1,41 @@
+from app.extensions import db, admin
+from app._shared.models import BaseModel
+from flask_admin.contrib.sqla import ModelView
+
+
+class Achievement(BaseModel):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(1000), nullable=False)
+    image_url = db.Column(db.Text, nullable=False)
+    requirements = db.Column(db.Text, nullable=True)
+    achievement_class = db.Column(db.String(100), nullable=True)
+
+    def to_json(self, include_requirements=False):
+        obj = {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "image_url": self.image_url,
+            "achievement_class": self.achievement_class
+        }
+        if include_requirements:
+            obj["requirements"] = self.requirements
+        return obj
+
+
+class StudentHasAchievement(BaseModel):
+    student_id = db.Column(db.Integer, db.ForeignKey("student.id"), nullable=False, primary_key=True)
+    achievement_id = db.Column(
+        db.Integer, db.ForeignKey("achievement.id"), nullable=False, primary_key=True
+    )
+    number_of_times = db.Column(db.Integer, nullable=True, default=1)
+
+
+
+    def to_json(self):
+        return {"student_id": self.student_id, "achievement_id": self.achievement_id, "number_of_times": self.number_of_times, "created_at": self.created_at}
+
+
+admin.add_view(ModelView(Achievement, db.session, name="Achievements"))
+admin.add_view(ModelView(StudentHasAchievement, db.session, name="Student Has Achievements"))
