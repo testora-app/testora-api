@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #1E90FF;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 12px 20px;
+      margin: 20px 0;
+      background-color: #1E90FF;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    .cta-button:hover {
+      background-color: #1c86ee;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .footer a {
+      color: #1E90FF;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+    </div>
+    <div class="content">
+      <h1>You’re In—Let's Get You Exam Ready With Preppee</h1>
+      <p>Hello {{ student_name }},</p>
+      <p>Your Preppee account is ready to go and linked to <strong>{{ school_name }}</strong>.</p>
+      <p>Preppee is your new exam buddy! It’s packed with a bank of practice questions to help you master your subjects through practice. Plus, your teachers are using Preppee to track your progress and identify areas where you need extra support to make you exam-ready.</p>
+      <p>To get started, we've put together a quick guide on how to navigate the app. Click the link below:</p>
+      <a href="{{ guide_url }}" class="cta-button">Explore the App Guide</a>
+      <p>Let’s get practising!</p>
+      <a href="{{ login_url }}" class="cta-button">Go to Preppee</a>
+    </div>
+    <div class="footer">
+      <p>Need help? Contact our support team at <a href="mailto:support@preppee.online">support@preppee.online</a> or call us at {{ phone_number }}.</p>
+    </div>
+  </div>
+</body>
+</html>

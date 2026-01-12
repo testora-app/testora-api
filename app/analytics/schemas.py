@@ -1,0 +1,355 @@
+from apiflask import Schema
+from apiflask.fields import Float, String, Integer, Nested, List, DateTime
+from apiflask.validators import OneOf, Range
+
+from app._shared.schemas import BaseSchema, make_response_schema
+
+
+class WeeklyReportSchema(BaseSchema):
+    hours_spent = Float(required=True)
+    percentage = Float(required=True)
+
+
+class TopicPerformanceSchema(BaseSchema):
+    topic_name = String(required=True)
+    subject_name = String(required=True)
+    severity = String(required=False)
+
+
+class TopicPerformanceQuerySchema(Schema):
+    student_id = Integer(required=False, allow_none=False)
+    subject_id = Integer(required=False, allow_none=False)
+    batch_id = Integer(required=False, allow_none=False)
+
+class PerformanceCategorySchema(BaseSchema):
+    student_number = Integer(required=True)
+    percent_number = Float(required=True)
+
+
+class StudentPerformanceSchema(BaseSchema):
+    passing = Nested(PerformanceCategorySchema, required=True)
+    credit = Nested(PerformanceCategorySchema, required=True)
+    failing = Nested(PerformanceCategorySchema, required=True)
+
+
+class PerformanceSummarySchema(BaseSchema):
+    batch_average = Float(required=True)
+    test_completion = Float(required=True)
+    failing_student_ids = List(Integer(), required=True)
+
+
+class TopicMasteryItemSchema(BaseSchema):
+    topic_name = String(required=True)
+    average = Float(required=True)
+
+
+class TopicMasteryDataSchema(BaseSchema):
+    strong_topics = List(Nested(TopicMasteryItemSchema), required=True)
+    weak_topics = List(Nested(TopicMasteryItemSchema), required=True)
+
+
+class PracticeRateQuerySchema(BaseSchema):
+    subject_id = Integer(required=False, allow_none=True)
+    batch_id = Integer(required=True, allow_none=False)
+    time_range = String(required=True, allow_none=False, validate=[OneOf(['this_week', 'this_month', 'all_time'])])
+
+
+class AnalyticsQuerySchema(BaseSchema):
+    batch_id = Integer(required=True, allow_none=False)
+    subject_id = Integer(required=False, allow_none=True)
+    stage = String(required=False, allow_none=True)
+    level = String(required=False, allow_none=True)
+
+
+class BandStatSchema(Schema):
+    class Meta:
+        ordered = True
+    count = Integer(required=True, example=25, description="Number of students in this band")
+    percentage = Float(required=True, example=62.5, description="Percent of students in this band")
+
+
+class ValueUnitSchema(Schema):
+    class Meta:
+        ordered = True
+    value = Float(required=True, example=3.2)
+    unit = String(required=True, example="/week")
+
+
+class PracticeTierBucketSchema(Schema):
+    number = Integer(required=True, validate=Range(min=0), example=42)
+    percent = Float(required=True, validate=Range(min=0, max=100), example=37.5)
+
+# ---------- Groups ----------
+class TierDistributionSchema(Schema):
+    class Meta:
+        ordered = True
+    highly_proficient = Nested(BandStatSchema, required=True)
+    proficient = Nested(BandStatSchema, required=True)
+    approaching = Nested(BandStatSchema, required=True)  # per your key
+    developing = Nested(BandStatSchema, required=True)
+    emerging = Nested(BandStatSchema, required=True)
+
+class SummaryDistributionSchema(Schema):
+    class Meta:
+        ordered = True
+    proficiency_above = Nested(BandStatSchema, required=True)
+    at_risk = Nested(BandStatSchema, required=True)
+    average_tests = Nested(ValueUnitSchema, required=True)        # e.g., {"value": 12, "unit": "/week"}
+    average_time_spent = Nested(ValueUnitSchema, required=True)   # e.g., {"value": 15.4, "unit": "min/student"}
+
+
+class PracticeTierDistributionSchema(Schema):
+    no_practice = Nested(PracticeTierBucketSchema, required=True)
+    minimal_practice = Nested(PracticeTierBucketSchema, required=True)
+    consistent_practice = Nested(PracticeTierBucketSchema, required=True)
+    high_practice = Nested(PracticeTierBucketSchema, required=True)
+
+
+# ---------- Top-level ----------
+class PerformanceDistributionDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+
+    subject_name = String(required=True, example="Mathematics")
+    proficiency_percent = Float(required=True, example=71.3)
+    proficiency_status = String(
+        required=True,
+        validate=OneOf(["highly_proficient", "proficient", "approaching_proficient", "developing", "emerging"]),
+        example="proficient"
+    )
+    tier_distribution = Nested(TierDistributionSchema, required=True)
+    summary_distribution = Nested(SummaryDistributionSchema, required=True)
+    last_updated = DateTime(required=False, allow_none=True, example="2025-08-14T22:10:00Z")
+
+
+class PracticeRateDataSchema(BaseSchema):
+    rate = Float(required=True, validate=Range(min=0), example=2.8)  # tests per student
+    unit = String(required=True, validate=OneOf(["tests/student"]), dump_default="tests/student", example="tests/student")
+    change_from = Float(required=True, example=0.3)  # delta vs prior period
+    change_direction = String(required=True, validate=OneOf(["up", "down"]), example="up")
+    total_students = Integer(required=True, validate=Range(min=0), example=120)
+
+    practiced_percent = Float(required=True, validate=Range(min=0, max=100), example=72.0)
+    practiced_number = Integer(required=True, validate=Range(min=0), example=86)
+    not_practiced_percent = Float(required=True, validate=Range(min=0, max=100), example=28.0)
+    not_practiced_number = Integer(required=True, validate=Range(min=0), example=34)
+
+    tier_distribution = Nested(PracticeTierDistributionSchema, required=True)
+
+
+class SubjectPerformanceDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    subject_name = String(required=True, example="Mathematics")
+    student_readiness_number = Integer(required=True, validate=Range(min=0), example=86)
+    student_readiness_percent = Float(required=True, validate=Range(min=0, max=100), example=28.0)
+    status = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+
+
+class RecentTestActivitiesSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    description = String(required=True, example="John Doe completed a test in 'Mathematics'")
+    time = Integer(required=True, example=2)
+    type = String(required=True, example="user_activity")
+
+
+class ProficiencyDistributionDataSchema(BaseSchema):
+    name = String(required=True, example="Highly Proficient")
+    students = Integer(required=True, validate=Range(min=0), example=86)
+    percentage = Float(required=True, validate=Range(min=0, max=100), example=28.0)
+    
+
+class AverageScoreTrendSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    average_score = Float(required=True, example=28.0)
+    month = String(required=True, example="August")
+
+
+class PerformanceGeneralDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    average_score = Float(required=True, example=28.0)
+    highly_proficient_students = Integer(required=True, validate=Range(min=0), example=86)
+    total_students = Integer(required=True, validate=Range(min=0), example=120)
+
+
+class StudentsProficiencyDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    student_id = Integer(required=True, validate=Range(min=0), example=86)
+    student_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    batch_name = String(required=True, example="Batch 1")
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+
+
+class PerformanceIndicatorsDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    student_id = Integer(required=True, validate=Range(min=0), example=86)
+    student_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    average_proficiency = Float(required=True, example=28.0)
+    total_tests_taken = Integer(required=True, validate=Range(min=0), example=86)
+    practice_tier = String(required=True, validate=OneOf(["no_practice", "minimal_practice", "consistent_practice", "high_practice"]), example="no_practice")
+    total_time_spent = Integer(required=True, validate=Range(min=0), example=86)
+
+
+class SubjectProficiencyDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    subject_id = Integer(required=True, validate=Range(min=0), example=86)
+    subject_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    
+
+class TestHistoryDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    test_id = Integer(required=True, validate=Range(min=0), example=86)
+    subject_id = Integer(required=True, validate=Range(min=0), example=86)
+    subject_name = String(required=True, example="English")
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    score = Float(required=True, example=28.0)
+    points = Integer(required=True, validate=Range(min=0), example=86)
+    
+
+class ProficiencyGraphDataSchema(BaseSchema):
+    proficiency_band = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    count = Integer(required=True, validate=Range(min=0), example=86)
+    topics = List(String(required=True, example="Nouns"))
+
+
+class FailingTopicsDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    topic_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    
+
+class StudentProficiencyDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    student_id = Integer(required=True, validate=Range(min=0), example=86)
+    student_name = String(required=True, example="John Doe")
+    average_score = Float(required=True, example=28.0)
+    proficiency = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+
+
+class StrugglingStudentSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    id = Integer(required=True, example=123)
+    name = String(required=True, example="Kofi Mensah")
+    score = Float(required=True, validate=Range(min=0, max=100), example=35.5)
+    proficiency_level = String(required=True, validate=OneOf(["EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "PROFICIENT", "HIGHLY_PROFICIENT"]), example="EMERGING")
+
+
+class TopicLevelBreakdownItemSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    topic = String(required=True, example="Fractions")
+    topic_id = Integer(required=True, example=123)
+    total_students = Integer(required=True, validate=Range(min=0), example=45)
+    students_affected = Integer(required=True, validate=Range(min=0), example=12)
+    percentage = Float(required=True, validate=Range(min=0, max=100), example=62.5)
+    level = String(required=True, validate=OneOf(["EMERGING", "DEVELOPING", "APPROACHING_PROFICIENT", "PROFICIENT", "HIGHLY_PROFICIENT"]), example="EMERGING")
+    stage = String(required=True, validate=OneOf(["Stage 1-3", "Stage 4-6", "Stage 7-9"]), example="Stage 1-3")
+    struggling_students = List(Nested(StrugglingStudentSchema), required=True)
+
+
+class StudentDashboardOverviewDataSchema(BaseSchema):
+    total_tests = Integer(required=True, validate=Range(min=0), example=42)
+    current_streak = Integer(required=True, validate=Range(min=0), example=5)
+    highest_streak = Integer(required=True, validate=Range(min=0), example=12)
+    total_achievements = Integer(required=True, validate=Range(min=0), example=15)
+
+
+class TopicMasteryLevelItem(BaseSchema):
+    topic_id = Integer(required=True, validate=Range(min=0), example=86)
+    topic_name = String(required=True, example="Algebra")
+    mastery_level = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    avg_score = Float(required=True, validate=Range(min=0, max=100), example=75.5)
+
+class PracticeOverviewDataSchema(BaseSchema):
+    mastery_percent = Float(required=True, validate=Range(min=0, max=100), example=75.0)
+    mastery_stage = String(required=True, validate=OneOf(["highly_proficient", "proficient", "approaching", "developing", "emerging"]), example="proficient")
+    topics = List(Nested(TopicMasteryLevelItem), required=True)
+    mastery_zone = List(Nested(TopicMasteryLevelItem), required=True)
+    power_up_zone = List(Nested(TopicMasteryLevelItem), required=True)
+
+class AchievementItemData(BaseSchema):
+    achievement_id = Integer(required=True, validate=Range(min=0), example=86)
+    name = String(required=True, example="Math Whiz")
+    achievement_class = String(required=False, allow_none=True, example="gold")
+    description = String(required=True, example="Awarded for excellence in mathematics.")
+    image_url = String(required=True, example="http://example.com/images/achievement/math_whiz.png")
+    number_of_times = Integer(required=True, validate=Range(min=1), example=3)
+    first_awarded_at = DateTime(required=True, example="2025-09-15T10:20:30Z")
+    last_awarded_at = DateTime(required=True, example="2025-09-15T10:20:30Z")
+
+
+class WeeklyGoalItemSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    goal_id = Integer(required=True, validate=Range(min=0), example=123)
+    subject_id = Integer(required=False, allow_none=True, example=5)
+    subject_name = String(required=False, allow_none=True, example="Mathematics")
+    week_start_date = String(required=True, example="2025-10-20")
+    week_end_date = String(required=True, example="2025-10-26")
+    status = String(required=True, validate=OneOf(["pending", "in_progress", "achieved", "expired"]), example="in_progress")
+    target_metric = String(required=True, validate=OneOf(["xp", "streak_days"]), example="xp")
+    target_value = Integer(required=True, validate=Range(min=0), example=275)
+    current_value = Integer(required=True, validate=Range(min=0), example=150)
+    progress_percent = Float(required=True, validate=Range(min=0, max=100), example=54.5)
+    achieved_at = DateTime(required=False, allow_none=True, example="2025-10-24T14:30:00Z")
+
+
+class WeeklyWinsMessageSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    message = String(required=True, example="Great job! You hit your Mathematics XP goal 🙌")
+    goal_id = Integer(required=True, validate=Range(min=0), example=123)
+    subject_name = String(required=False, allow_none=True, example="Mathematics")
+    metric = String(required=True, validate=OneOf(["xp", "streak_days"]), example="xp")
+    variant = String(required=True, validate=OneOf(["info", "success", "warning", "danger"]), example="success")
+    icon = String(required=True, example="trophy")
+
+
+class Responses:
+    WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
+    TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
+    StudentPerformanceSchema = make_response_schema(StudentPerformanceSchema)
+    PerformanceSummarySchema = make_response_schema(PerformanceSummarySchema)
+    TopicMasteryDataSchema = make_response_schema(TopicMasteryDataSchema)
+    PracticeRateDataSchema = make_response_schema(PracticeRateDataSchema)
+    PerformanceDistributionDataSchema = make_response_schema(PerformanceDistributionDataSchema)
+    SubjectPerformanceDataSchema = make_response_schema(SubjectPerformanceDataSchema, is_list=True)
+    RecentTestActivitiesSchema = make_response_schema(RecentTestActivitiesSchema, is_list=True)
+    ProficiencyDistributionDataSchema = make_response_schema(ProficiencyDistributionDataSchema, is_list=True)
+    AverageScoreTrendSchema = make_response_schema(AverageScoreTrendSchema, is_list=True)
+    PerformanceGeneralDataSchema = make_response_schema(PerformanceGeneralDataSchema)
+    StudentsProficiencyDataSchema = make_response_schema(StudentsProficiencyDataSchema, is_list=True)
+    PerformanceIndicatorsDataSchema = make_response_schema(PerformanceIndicatorsDataSchema)
+    SubjectProficiencyDataSchema = make_response_schema(SubjectProficiencyDataSchema, is_list=True)
+    TestHistoryDataSchema = make_response_schema(TestHistoryDataSchema, is_list=True)
+    ProficiencyGraphDataSchema = make_response_schema(ProficiencyGraphDataSchema, is_list=True)
+    FailingTopicsDataSchema = make_response_schema(FailingTopicsDataSchema, is_list=True)
+    StudentProficiencyDataSchema = make_response_schema(StudentProficiencyDataSchema)
+    TopicLevelBreakdownDataSchema = make_response_schema(TopicLevelBreakdownItemSchema)
+    StudentDashboardOverviewDataSchema = make_response_schema(StudentDashboardOverviewDataSchema)
+    PracticeOverviewDataSchema = make_response_schema(PracticeOverviewDataSchema)
+    AchievementDataSchema = make_response_schema(AchievementItemData, is_list=True)
+    WeeklyGoalsDataSchema = make_response_schema(WeeklyGoalItemSchema, is_list=True)
+    WeeklyWinsMessagesDataSchema = make_response_schema(WeeklyWinsMessageSchema, is_list=True)
+
+
+class Requests:
+    TopicPerformanceQuerySchema = TopicPerformanceQuerySchema
+    RateDistributionQuerySchema = PracticeRateQuerySchema
+    AnalyticsQuerySchema = AnalyticsQuerySchema

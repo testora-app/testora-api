@@ -1,0 +1,141 @@
+from app.extensions import db, admin
+from app._shared.models import BaseModel
+from app.staff.models import staff_batches
+from flask_admin.contrib.sqla import ModelView
+
+from datetime import datetime
+
+# Association table for many-to-many relationship
+student_batches = db.Table(
+    "student_batches",
+    db.Column("student_id", db.Integer, db.ForeignKey("student.id"), primary_key=True),
+    db.Column("batch_id", db.Integer, db.ForeignKey("batch.id"), primary_key=True),
+)
+
+
+class Batch(BaseModel):
+    id = db.Column(db.Integer, primary_key=True)
+    batch_name = db.Column(db.String, nullable=False)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+    curriculum = db.Column(db.String, nullable=False)
+    students = db.relationship(
+        "Student", secondary=student_batches, backref=db.backref("batches", lazy=True)
+    )
+    staff = db.relationship(
+        "Staff", secondary=staff_batches, backref=db.backref("batches", lazy=True)
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("batch_name", "school_id", name="uix_batch_name_school_id"),
+    )
+
+    def to_json(self, include_students=True, include_subjects=True, include_staff=True):
+        from app.app_admin.operations import subject_manager
+        data = {
+            "id": self.id,
+            "batch_name": self.batch_name,
+            "school_id": self.school_id,
+            "curriculum": self.curriculum
+        }
+        if include_staff:
+            data["staff"] = [staff.to_json() for staff in self.staff]
+            
+        if include_students:
+            data["students"] = [
+                student.to_json(include_batch=False) for student in self.students
+            ]
+        
+        if include_subjects:
+            subjects = subject_manager.get_subject_by_curriculum(self.curriculum)
+            data["subjects"] = [subject.to_json() for subject in subjects]
+        return data
+
+
+class Student(BaseModel):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String, nullable=False)
+    other_names = db.Column(db.String, nullable=True)
+    surname = db.Column(db.String, nullable=False)
+    email = db.Column(db.String, unique=True, nullable=False)
+    password_hash = db.Column(db.String, nullable=False)
+    school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
+    is_approved = db.Column(db.Boolean, default=False)
+    is_archived = db.Column(db.Boolean, default=False)
+    current_streak = db.Column(db.Integer, default=0)
+    highest_streak = db.Column(db.Integer, default=0)
+    last_login = db.Column(db.DateTime, default=None, nullable=True)
+    gender = db.Column(db.String, nullable=True, default="other")
+
+    def __repr__(self):
+        return f"Student {self.first_name} {self.surname}"
+
+    def to_json(self, include_batch=True):
+        student = {
+            "id": self.id,
+            "first_name": self.first_name,
+            "other_names": self.other_names,
+            "surname": self.surname,
+            "email": self.email,
+            "school_id": self.school_id,
+            "is_approved": self.is_approved,
+            "is_archived": self.is_archived,
+            "current_streak": self.current_streak,
+            "highest_streak": self.highest_streak,
+            "last_login": self.last_login,
+            "gender": self.gender,
+        }
+
+        if include_batch:
+            student["batches"] = [
+                batch.to_json(include_students=False) for batch in self.batches
+            ]
+
+        return student
+
+
+class StudentSubjectLevel(BaseModel):
+    __tablename__ = "student_subject_level"
+
+    student_id = db.Column(db.Integer, db.ForeignKey("student.id"), primary_key=True)
+    subject_id = db.Column(db.Integer, db.ForeignKey("subject.id"), primary_key=True)
+    level = db.Column(db.Integer, nullable=False)
+    points = db.Column(db.Integer, nullable=False)
+
+    def to_json(self):
+        return {
+            "student_id": self.student_id,
+            "subject_id": self.subject_id,
+            "level": self.level,
+            "points": self.points,
+        }
+
+
+class StudentLevellingHistory(BaseModel):
+    __tablename__ = "student_levelling_history"
+
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey("student.id"), nullable=False)
+    subject_id = db.Column(db.Integer, db.ForeignKey("subject.id"), nullable=False)
+    level_from = db.Column(db.Integer, nullable=False)
+    level_to = db.Column(db.Integer, nullable=False)
+    levelled_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+    meta = db.Column(db.JSON, nullable=True)
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "student_id": self.student_id,
+            "subject_id": self.subject_id,
+            "level_from": self.level_from,
+            "level_to": self.level_to,
+            "levelled_at": self.levelled_at,
+            "meta": self.meta,
+        }
+
+
+# admin.add_view(ModelView(Student, db.session, name="AdminStudent"))
+# admin.add_view(ModelView(StudentSubjectLevel, db.session, name="AdminStudentSubjectLevel"))
+# admin.add_view(ModelView(StudentLevellingHistory, db.session, name="AdminStudentLevellingHistory"))
+# admin.add_view(ModelView(Batch, db.session, name="AdminBatch"))

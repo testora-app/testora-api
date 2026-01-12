@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .header {
+      background-color: #4CAF50;
+      padding: 20px;
+      text-align: center;
+    }
+    .header img {
+      max-width: 150px;
+    }
+    .content {
+      padding: 20px;
+    }
+    .content h1 {
+      font-size: 24px;
+      color: #333;
+    }
+    .content p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .cta-button {
+      display: inline-block;
+      padding: 12px 20px;
+      margin: 20px 0;
+      background-color: #4CAF50;
+      color: #ffffff;
+      text-decoration: none;
+      font-size: 16px;
+      border-radius: 4px;
+    }
+    .cta-button:hover {
+      background-color: #45a049;
+    }
+    .footer {
+      background-color: #f1f1f1;
+      text-align: center;
+      padding: 15px;
+      font-size: 14px;
+      color: #555;
+    }
+    .footer a {
+      color: #4CAF50;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <img src="https://wedidtech.com/img/logos/PNG/Text/Preppee%20logo%20Text%20colour%204.png" alt="Preppee Logo">
+    </div>
+    <div class="content">
+      <h1>You’re In! Welcome to Your Preppee Classroom</h1>
+      <p>Hello {{ teacher_name }},</p>
+      <p>Thank you for joining Preppee! Your account has been successfully created and linked to your school - <strong>{{ school_name }}</strong>.</p>
+      <p>Here’s what you can expect from Preppee, your new teaching assistant:</p>
+      <ul>
+        <li><strong>In-depth student analysis:</strong> Uncover each student's strengths and weaknesses across all subjects to inform targeted support.</li>
+        <li><strong>Class performance insights:</strong> Spot patterns in overall class performance to inform your targeted teaching strategies.</li>
+        <li><strong>Student Progress Tracking:</strong> Monitor student performance and improvement over time and provide timely interventions.</li>
+      </ul>
+      <p>Preppee is designed to work hand in hand with you, providing data-driven insights on your students’ performance to refine your teaching strategies and ensure your students are exam-ready. Welcome to a new era of teaching support.</p>
+      <a href="{{ login_url }}" class="cta-button">Let’s Get Started</a>
+      <p>Check out this quick guide on how to navigate the app:</p>
+      <a href="{{ guide_url }}" class="cta-button">Explore the App Guide Here</a>
+      <p>If you need further assistance or have any questions, please contact our support team at <a href="mailto:support@wedidtech.com">support@wedidtech.com</a> or call us at {{ phone_number }}.</p>
+    </div>
+    <div class="footer">
+      <p>Thank you for choosing Preppee!</p>
+    </div>
+  </div>
+</body>
+</html>

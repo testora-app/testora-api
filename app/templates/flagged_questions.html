@@ -1,0 +1,15 @@
+<!-- Flagged Questions Notification -->
+<html>
+<head>
+    <title>Flagged Questions Notification</title>
+</head>
+<body>
+    <h1>Flagged Questions Notification</h1>
+    <p>The following questions have been flagged:</p>
+    <ul>
+        {% for question in questions %}
+            <li>{{ question.id }} - {{ question.flag_reason }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

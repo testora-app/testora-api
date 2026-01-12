@@ -1,16 +1,17 @@
-from flask import render_template
+from flask import jsonify
+
 
 def page_not_found(e):
-    return 'Error 404', 404
+    return jsonify({"message": "Not Found"})
 
 
 def method_not_allowed(e):
-    return 'Error 405', 405
+    return jsonify({"message": "Method Not Allowed"})
 
 
 def internal_server_error(e):
-    return 'Error 500', 500
+    return jsonify({"message": "Yie! Something happened and we are fixing it!"})
 
 
 def forbidden(e):
-    return 'Error 403', 403
+    return jsonify({"message": "You cannot do that."})
