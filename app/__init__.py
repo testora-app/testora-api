@@ -11,6 +11,7 @@ from flask import jsonify, request
 from flask_migrate import upgrade
 from marshmallow.exceptions import ValidationError
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text
 
 from app._shared.api_errors import BaseError
 from app._shared.services import (
@@ -60,6 +61,20 @@ def create_super_admin_if_not_exists():
             admin_username, admin_email, admin_password, is_super_admin=True
         )
 
+
+def run_migrations_once():
+    # Any consistent lock key (bigint). Keep it constant for this app.
+    lock_key = 987654321  
+
+    db.session.execute(text("SELECT pg_advisory_lock(:k)"), {"k": lock_key})
+    try:
+        upgrade()
+    except Exception as e:
+        log_error(f"Error during migrations: {e}")
+        print(f"Error during migrations: {e}")
+    finally:
+        db.session.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": lock_key})
+        db.session.commit()
 
 def create_app():
 
@@ -118,8 +133,7 @@ def create_app():
 
     with app.app_context():
         # run the necessary migrations
-        db.create_all()
-        upgrade()
+        run_migrations_once
         create_super_admin_if_not_exists()
 
         # register errorhandlers
