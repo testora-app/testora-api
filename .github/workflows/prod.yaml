@@ -47,6 +47,8 @@ jobs:
         image: europe-west1-docker.pkg.dev/${{ secrets.PROJECT_ID }}/github-images/${{ secrets.SERVICE_NAME }}:${{ github.sha }}
         region: ${{ secrets.PROJECT_LOCATION }}
         tag: production
+        no_traffic: false
+        revision_traffic: LATEST=100
         labels: |
             service-name=preppee-api
             service-id=preppee-api
