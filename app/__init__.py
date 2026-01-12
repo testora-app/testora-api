@@ -118,7 +118,7 @@ def create_app():
 
     with app.app_context():
         # run the necessary migrations
-        # db.create_all()
+        db.create_all()
         upgrade()
         create_super_admin_if_not_exists()
 
