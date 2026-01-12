@@ -133,7 +133,7 @@ def create_app():
 
     with app.app_context():
         # run the necessary migrations
-        run_migrations_once
+        run_migrations_once()
         create_super_admin_if_not_exists()
 
         # register errorhandlers
