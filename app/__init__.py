@@ -67,14 +67,14 @@ def run_migrations_once():
     lock_key = 987654321  
 
     db.session.execute(text("SELECT pg_advisory_lock(:k)"), {"k": lock_key})
-# try:
-    upgrade()
-    # except Exception as e:
-    #     log_error(f"Error during migrations: {e}")
-    #     print(f"Error during migrations: {e}")
-    # finally:
-    db.session.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": lock_key})
-    db.session.commit()
+    try:
+        upgrade()
+    except Exception as e:
+        log_error(f"Error during migrations: {e}")
+        print(f"Error during migrations: {e}")
+    finally:
+        db.session.execute(text("SELECT pg_advisory_unlock(:k)"), {"k": lock_key})
+        db.session.commit()
 
 def create_app():
 
