@@ -39,7 +39,7 @@ class StaffSchema(BaseSchema):
     email = String(required=True, allow_none=False, validate=[Email()])
     first_name = String(required=True, allow_none=False, validate=[Length(min=3)])
     surname = String(required=True, allow_none=False, validate=[Length(min=3)])
-    other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
+    other_names = String(required=False, allow_none=True, validate=[Length(min=0)])
     is_approved = Boolean(required=False, allow_none=False)
     is_admin = Boolean(required=False, allow_none=False)
     subjects = List(ID_FIELD, required=False, allow_none=True, validate=[Length(min=0)])
