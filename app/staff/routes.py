@@ -9,6 +9,7 @@ from app._shared.api_errors import (
     not_found,
     bad_request,
     unapproved_account,
+    permissioned_denied,
 )
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
@@ -24,7 +25,7 @@ from app.staff.schemas import (
 from app.staff.operations import staff_manager
 from app.subscriptions.constants import SubscriptionLimits, Features
 from app.integrations.mailer import mailer
-
+import os
 
 from app.school.operations import school_manager
 
@@ -55,9 +56,9 @@ def register_school_admin(json_data):
         "institutional_code": new_school.code,
         "email": school_admin.email,
         "year": datetime.now().year,
-        "guide_link": "https://testora-web.onrender.com",
-        "login_url": "https://testora-web.onrender.com",
-        "phone_number": "+233240126470",
+        "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
+        "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+        "phone_number": "+233 24 142 3514",
     }
     html_body = mailer.generate_email_text("school_admin_signup.html", context)
 
@@ -88,9 +89,9 @@ def register_staff(json_data):
         context = {
             "school_name": school.name,
             "teacher_name": teacher.first_name,
-            "guide_link": "https://testora-web.onrender.com",
-            "login_url": "https://testora-web.onrender.com",
-            "phone_number": "+233240126470",
+            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
+            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+            "phone_number": "+233 24 142 3514",
         }
 
         html = mailer.generate_email_text("staff_signup.html", context)
@@ -116,6 +117,11 @@ def login(json_data):
     if staff and check_password(staff.password_hash, json_data["password"]):
         school = school_manager.get_school_by_id(staff.school_id)
 
+        if school.is_suspended:
+            return permissioned_denied(
+                "Your institution's account is suspended. Please contact support."
+            )
+
         user_type = UserTypes.school_admin if staff.is_admin else UserTypes.staff
         access_token = generate_access_token(
             staff.id,
@@ -133,16 +139,18 @@ def login(json_data):
         staff_json = staff.to_json(include_batches=True)
         if user_type == UserTypes.school_admin:
             from app.student.operations import batch_manager
-            batches = batch_manager.get_batches_by_school_id(staff.school_id)
-            staff_json["batches"] = [batch.to_json(include_subjects=True) for batch in batches]
 
-    
+            batches = batch_manager.get_batches_by_school_id(staff.school_id)
+            staff_json["batches"] = [
+                batch.to_json(include_subjects=True) for batch in batches
+            ]
+
         return success_response(
             data={
                 "user": staff_json,
                 "auth_token": access_token,
                 "school": school_data,
-                "user_type": user_type
+                "user_type": user_type,
             }
         )
 
@@ -234,15 +242,15 @@ def edit_staff_details(staff_id, json_data):
     return not_found(message="Staff does not exist")
 
 
-
-#region ANALYTICS
+# region ANALYTICS
 @staff.get("/school-admin/dashboard-general/")
 @staff.output(Responses.DashboardGeneralSchema)
 @token_auth([UserTypes.school_admin])
 def dashboard_general():
     from app.student.operations import student_manager, batch_manager
     from app.test.operations import test_manager
-    '''
+
+    """
     Get the general dashboard data for the staff
     Returns:
         total_students (int): Total number of students
@@ -252,11 +260,11 @@ def dashboard_general():
         package_information (dict): Package information
             subscription_package (str): Subscription package
             subscription_expiry (str): Subscription expiry date
-    '''
+    """
 
     school_id = get_current_user()["school_id"]
     students = student_manager.get_active_students_by_school(school_id)
-    total_staff = len(staff_manager.get_staff_by_school(school_id))
+    total_staff = len(staff_manager.get_staff_by_school(school_id, approved_only=True))
     total_batches = len(batch_manager.get_batches_by_school_id(school_id))
     total_tests = len(test_manager.get_tests_by_school_id(school_id))
     school = school_manager.get_school_by_id(school_id)

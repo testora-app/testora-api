@@ -71,5 +71,5 @@ jobs:
             SECRET_KEY=SECRET_KEY:latest
         env_vars: |
             ENVIRONMENT=staging
-            FRONTEND_BASE_URL=staging.preppee.online
+            FRONTEND_BASE_URL=https://staging.preppee.online
 

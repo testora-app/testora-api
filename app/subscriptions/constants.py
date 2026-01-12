@@ -24,7 +24,7 @@ class PaymentStatus:
 
 
 class PackagePrices:
-    prices = {SubscriptionPackages.free: 0, SubscriptionPackages.premium: 55}
+    prices = {SubscriptionPackages.free: 0, SubscriptionPackages.premium: 100}
 
     discount_threshold = 15  # number of students per threshold for discount of 10 cedis
     discount = 10

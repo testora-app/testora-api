@@ -763,7 +763,7 @@ class AnalyticsService:
             ]
         )  # filter to make sure deleted students are not part of the count
 
-        total_students = len(student_ids)
+        total_students = len(set(student_ids))
 
         return {
             "average_score": average_score,

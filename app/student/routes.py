@@ -14,6 +14,7 @@ from app._shared.api_errors import (
     not_found,
     bad_request,
     unapproved_account,
+    permissioned_denied
 )
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
@@ -45,6 +46,7 @@ from app.notifications.operations import recipient_manager
 
 from app.integrations.pusher import pusher
 from app.integrations.mailer import mailer
+import os
 
 
 student = APIBlueprint("student", __name__)
@@ -66,9 +68,9 @@ def student_register(json_data: Dict):
         context = {
             "student_name": new_student.first_name,
             "school_name": school.name,
-            "guide_link": "https://testora-web.onrender.com",
-            "login_url": "https://testora-web.onrender.com",
-            "phone_number": "+233240126470",
+            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs/student-guide",
+            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+            "phone_number": "+233 24 142 3514",
         }
         html = mailer.generate_email_text("student_signup.html", context)
         mailer.send_email(
@@ -92,6 +94,9 @@ def login(json_data):
 
     if student and check_password(student.password_hash, json_data["password"]):
         school = school_manager.get_school_by_id(student.school_id)
+
+        if school.is_suspended:
+            return permissioned_denied("Your institution's account is suspended. Please contact  your school administrator or support.")
 
         access_token = generate_access_token(
             student.id,
