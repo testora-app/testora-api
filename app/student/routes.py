@@ -14,6 +14,7 @@ from app._shared.api_errors import (
     not_found,
     bad_request,
     unapproved_account,
+    permissioned_denied
 )
 from app._shared.decorators import token_auth
 from app._shared.services import check_password, generate_access_token, get_current_user
@@ -92,6 +93,9 @@ def login(json_data):
 
     if student and check_password(student.password_hash, json_data["password"]):
         school = school_manager.get_school_by_id(student.school_id)
+
+        if school.is_suspended:
+            return permissioned_denied("Your institution's account is suspended. Please contact  your school administrator or support.")
 
         access_token = generate_access_token(
             student.id,

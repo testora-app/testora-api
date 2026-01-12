@@ -13,6 +13,7 @@ class SchoolSchema(BaseSchema):
     code = String(required=False, allow_none=True)
     subscription_package = String(required=False, allow_none=False)
     subscription_expiry_date = Date(required=False, allow_none=True)
+    subscription_package_description = String(required=False, allow_none=True)
 
 
 class AddSchoolSchema(BaseSchema):
