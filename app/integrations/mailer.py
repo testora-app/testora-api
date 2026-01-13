@@ -17,7 +17,7 @@ class Mailer(object):
         recipients,
         subject,
         text,
-        sender="Preppee Support <support@wedidtech.com>",
+        sender="Preppee Support <info@preppee.online>",
         html=False,
     ):
         """
