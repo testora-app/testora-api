@@ -264,7 +264,7 @@ def dashboard_general():
 
     school_id = get_current_user()["school_id"]
     students = student_manager.get_active_students_by_school(school_id)
-    total_staff = len(staff_manager.get_staff_by_school(school_id, approved_only=True))
+    total_staff = staff_manager.get_staff_by_school(school_id)
     total_batches = len(batch_manager.get_batches_by_school_id(school_id))
     total_tests = len(test_manager.get_tests_by_school_id(school_id))
     school = school_manager.get_school_by_id(school_id)
@@ -275,10 +275,25 @@ def dashboard_general():
     if subscription_package == "free":
         subscription_description = "You have limited access to advanced analytics, 10 student capacity, and dedicated support for your institution."
 
+
+    pending_staff = len([st for st in total_staff if not st.is_approved])
+    approved_staff = len(total_staff) - pending_staff
+
+    pending_students = len(
+        [
+            st
+            for st in students
+            if not st.is_approved
+        ]
+    )
+    approved_students = len(students) - pending_students
+
     return success_response(
         data={
-            "total_students": len(students),
-            "total_staff": total_staff,
+            "total_students": approved_students,
+            "pending_students": pending_students,
+            "pending_staff": pending_staff,
+            "total_staff": approved_staff,
             "total_batches": total_batches,
             "total_tests": total_tests,
             "package_information": {
