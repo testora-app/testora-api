@@ -53,7 +53,7 @@ class GoalMessageGenerator:
                 "XP goal reached—way to push through! Keep the rhythm going 💪",
             ],
             PerfTier.falling_behind: [
-                "You made it! XP target achieved—let’s build from here 🚀",
+                "You made it! XP target achieved—let's build from here 🚀",
             ],
         },
         GoalMetric.streak_days: {
@@ -65,7 +65,7 @@ class GoalMessageGenerator:
                 "Streak unlocked: {value} days! Keep that heat 🔥",
             ],
             PerfTier.needs_nudge: [
-                "Nice! {value}-day streak achieved—let’s stack another 📆",
+                "Nice! {value}-day streak achieved—let's stack another 📆",
             ],
             PerfTier.falling_behind: [
                 "Streak reached—great bounce back! Ready for the next one? 💫",
@@ -91,7 +91,7 @@ class GoalMessageGenerator:
     PROGRESS = {
         GoalMetric.xp: {
             PerfTier.outstanding: [
-                "{progress}/{target} XP in {subject}—you’re flying! Only {remaining} to spare ✨",
+                "{progress}/{target} XP in {subject}—you're flying! Only {remaining} to spare ✨",
                 "Almost there: {progress}/{target} XP in {subject}. Finish strong 💪",
             ],
             PerfTier.on_track: [
@@ -100,10 +100,10 @@ class GoalMessageGenerator:
             ],
             PerfTier.needs_nudge: [
                 "{progress}/{target} XP so far. Try one more quick set today—just {remaining} to go!",
-                "You’ve got this: {progress}/{target} XP. A short session can move the needle 🎯",
+                "You've got this: {progress}/{target} XP. A short session can move the needle 🎯",
             ],
             PerfTier.falling_behind: [
-                "Let’s spark it up: start with a 10-minute {subject} drill. {remaining} XP to the goal ⚡",
+                "Let's spark it up: start with a 10-minute {subject} drill. {remaining} XP to the goal ⚡",
                 "Slow start—but totally doable. Aim for a small session now. {remaining} XP left.",
             ],
         },
@@ -115,7 +115,7 @@ class GoalMessageGenerator:
                 "{progress}/{target} streak days—nice rhythm! 📆",
             ],
             PerfTier.needs_nudge: [
-                "You’re at {progress} day(s). A quick practice today keeps the streak going ✅",
+                "You're at {progress} day(s). A quick practice today keeps the streak going ✅",
             ],
             PerfTier.falling_behind: [
                 "No worries—start a streak today. {target} day goal within reach 🌱",
@@ -156,7 +156,7 @@ class GoalMessageGenerator:
         """
         remaining = max(0, target - progress)
         tier = _tier_from_progress(progress, target, week_progress)
-        templates = cls.PROGRESS.get(metric, {}).get(tier) or ["Keep going—you’re doing great!"]
+        templates = cls.PROGRESS.get(metric, {}).get(tier) or ["Keep going—you're doing great!"]
         t = random.choice(templates)
         return t.format(progress=progress, target=target, remaining=remaining, subject=subject or "this subject")
 
