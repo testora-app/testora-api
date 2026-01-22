@@ -162,17 +162,17 @@ def login(json_data):
             # Log error but don't fail the login
             log_error(f"Error generating weekly goals for student {student.id}: {str(e)}")
         
-        # Check for weekly wins (achieved goals in current week)
+        # Check for weekly wins (achieved goals from last week)
         if week_start_date:
             try:
                 from app.goals.operations import get_weekly_wins_message
-                
-                weekly_wins = get_weekly_wins_message(student.id, week_start_date)
-                
+
+                weekly_wins = get_weekly_wins_message(student.id, week_start_date, week_offset=-1)
+
                 if weekly_wins["has_wins"]:
                     student_json["weekly_wins"] = weekly_wins
                     log_info(f"Weekly wins found for student {student.id}: {len(weekly_wins['achievements'])} achievements")
-                    
+
             except Exception as e:
                 # Log error but don't fail the login
                 log_error(f"Error generating weekly wins message for student {student.id}: {str(e)}")
@@ -326,14 +326,38 @@ def edit_batch(batch_id, json_data):
 
 @student.get("/batches/")
 @student.output(BatchListSchema)
-@token_auth([UserTypes.admin, UserTypes.school_admin])
+@token_auth([UserTypes.admin, UserTypes.school_admin, UserTypes.staff, UserTypes.student])
 def get_batches():
-    school_id = get_current_user()["school_id"]
+    current_user = get_current_user()
+    school_id = current_user["school_id"]
+    user_type = current_user["user_type"]
 
+    # Get all batches for the school (or all if admin)
     if school_id:
-        batches = batch_manager.get_batches_by_school_id(school_id)
+        all_batches = batch_manager.get_batches_by_school_id(school_id)
     else:
-        batches = batch_manager.get_all_batches()
+        all_batches = batch_manager.get_all_batches()
+
+    # Filter batches based on user type
+    if user_type == UserTypes.student:
+        # Students only see batches they belong to
+        student = student_manager.get_student_by_id(current_user["user_id"])
+        if student:
+            user_batch_ids = {batch.id for batch in student.batches}
+            batches = [batch for batch in all_batches if batch.id in user_batch_ids]
+        else:
+            batches = []
+    elif user_type == UserTypes.staff:
+        # Staff only see batches they belong to
+        staff = staff_manager.get_staff_by_id(current_user["user_id"])
+        if staff:
+            user_batch_ids = {batch.id for batch in staff.batches}
+            batches = [batch for batch in all_batches if batch.id in user_batch_ids]
+        else:
+            batches = []
+    else:
+        # Admins see all batches
+        batches = all_batches
 
     batches = (
         [batch.to_json(include_students=True) for batch in batches] if batches else []
