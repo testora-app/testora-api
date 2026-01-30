@@ -40,6 +40,7 @@ from app.notifications.routes import notification
 from app.analytics.routes import analytics
 from app.subscriptions.routes import subscription
 from app.achievements.routes import achievements
+from app.qa.routes import qa
 
 
 load_dotenv()
@@ -153,6 +154,7 @@ def create_app():
         app.register_blueprint(analytics)
         app.register_blueprint(subscription)
         app.register_blueprint(achievements)
+        app.register_blueprint(qa, url_prefix='/api/qa')
 
         app.config["VALIDATION_ERROR_SCHEMA"] = validation_error_schema
 
@@ -215,7 +217,7 @@ def create_app():
 
         @app.teardown_appcontext
         def teardown_context(e):
-            db.session.commit()
+            # db.session.commit()
             db.session.close()
 
     return app

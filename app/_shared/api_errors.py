@@ -8,7 +8,7 @@ def success_response(status_code=200, data=None, message="success", pagination=N
     )
 
 
-def response_builder(status_code, message=None, data=None, pagination=None):
+def response_builder(status_code=200, message=None, data=None, pagination=None):
     if status_code > 299:
         payload = {"error": HTTP_STATUS_CODES.get(status_code, "Unknown error")}
     else:
