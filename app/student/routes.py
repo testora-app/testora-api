@@ -64,21 +64,7 @@ def student_register(json_data: Dict):
     school = school_manager.get_school_by_code(json_data.pop("school_code"))
 
     if school:
-        new_student = student_manager.create_student(**json_data, school_id=school.id)
-        context = {
-            "student_name": new_student.first_name,
-            "school_name": school.name,
-            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs/student-guide",
-            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
-            "phone_number": "+233 24 142 3514",
-        }
-        html = mailer.generate_email_text("student_signup.html", context)
-        mailer.send_email(
-            [new_student.email],
-            "You're In- Let's Get You Exam Ready With Preppee",
-            html,
-            html=html,
-        )
+        student_manager.create_student(**json_data, school_id=school.id) 
         return success_response()
     return bad_request("Invalid School Code")
 
@@ -212,6 +198,21 @@ def approve_student(json_data):
         if student:
             student.is_approved = True
             student.save()
+
+            context = {
+                "student_name": student.first_name,
+                "school_name": school.name,
+                "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs/student-guide",
+                "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+                "phone_number": "+233 24 142 3514",
+            }
+            html = mailer.generate_email_text("student_signup.html", context)
+            mailer.send_email(
+                [student.email],
+                "You're In- Let's Get You Exam Ready With Preppee",
+                html,
+                html=html,
+            )
     return success_response()
 
 

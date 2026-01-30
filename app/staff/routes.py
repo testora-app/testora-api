@@ -82,24 +82,8 @@ def register_staff(json_data):
     code = json_data.pop("school_code")
     school = school_manager.get_school_by_code(code)
     if school:
-        teacher = staff_manager.create_staff(
+        staff_manager.create_staff(
             **json_data, is_admin=False, school_id=school.id
-        )
-
-        context = {
-            "school_name": school.name,
-            "teacher_name": teacher.first_name,
-            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
-            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
-            "phone_number": "+233 24 142 3514",
-        }
-
-        html = mailer.generate_email_text("staff_signup.html", context)
-        mailer.send_email(
-            [teacher.email],
-            "You're In!  Welcome to Your Preppee Classroom ",
-            html,
-            html=html,
         )
         return success_response()
     return unauthorized_request("Invalid School Code")
@@ -180,6 +164,22 @@ def approve_staff(json_data):
         if staff:
             staff.is_approved = True
             staff.save()
+
+            context = {
+                "school_name": school.name,
+                "teacher_name": staff.first_name,
+                "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
+                "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+                "phone_number": "+233 24 142 3514",
+            }
+
+            html = mailer.generate_email_text("staff_signup.html", context)
+            mailer.send_email(
+                [staff.email],
+                "You're In!  Welcome to Your Preppee Classroom ",
+                html,
+                html=html,
+        )
     return success_response()
 
 
