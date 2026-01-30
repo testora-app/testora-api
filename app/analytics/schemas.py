@@ -321,6 +321,12 @@ class WeeklyWinsMessageSchema(BaseSchema):
     icon = String(required=True, example="trophy")
 
 
+
+class OverallPreparednessDataSchema(BaseSchema):
+    average_mastery = Float(required=True, validate=Range(min=0, max=100), example=78.5)
+    subjects = List(Nested(SubjectPerformanceDataSchema), required=True)
+
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -347,6 +353,7 @@ class Responses:
     AchievementDataSchema = make_response_schema(AchievementItemData, is_list=True)
     WeeklyGoalsDataSchema = make_response_schema(WeeklyGoalItemSchema, is_list=True)
     WeeklyWinsMessagesDataSchema = make_response_schema(WeeklyWinsMessageSchema, is_list=True)
+    OverallPreparednessDataSchema = make_response_schema(OverallPreparednessDataSchema)
 
 
 class Requests:

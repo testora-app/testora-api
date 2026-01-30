@@ -136,6 +136,10 @@ class BatchManager(BaseManager):
 
     def get_batch_by_curriculum(self, curriculum) -> List[Batch]:
         return Batch.query.filter_by(curriculum=curriculum).all()
+    
+    @staticmethod
+    def get_batches_by_ids(batch_ids) -> List[Batch]:
+        return Batch.query.filter(Batch.id.in_(batch_ids)).all()
 
 
 class StudentSubjectLevelManager(BaseManager):

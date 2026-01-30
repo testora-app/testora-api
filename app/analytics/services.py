@@ -1425,6 +1425,24 @@ class AnalyticsService:
             reverse=True,
         )
         return results
+    
+    def get_overall_preparedness(self, student_id, subject_id=None, batch_id=None):
+        """
+        Get overall preparedness data for a student including average mastery and subject-wise performance.
+        """
+        subject_performance = self.get_subject_proficiency(student_id, subject_id, batch_id)
+        
+        if not subject_performance:
+            average_mastery = 0.0
+        else:
+            average_mastery = round(
+                sum(subj["average_score"] for subj in subject_performance) / len(subject_performance), 2
+            )
+        
+        return {
+            "average_mastery": average_mastery,
+            "subjects": subject_performance
+        }
 
 
 analytics_service = AnalyticsService()

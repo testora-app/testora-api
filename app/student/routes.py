@@ -257,6 +257,39 @@ def get_student_details(student_id):
     return not_found("Student does not exist!")
 
 
+@student.put("/students/<int:student_id>/")
+@student.input(Requests.UpdateStudentSchema)
+@student.output(Responses.StudentSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+def update_student(student_id, json_data):
+    student = student_manager.get_student_by_id(student_id)
+    if not student:
+        return not_found("Student does not exist!")
+    
+    data = json_data.get("data", json_data)
+    
+    # Update basic student fields
+    if "first_name" in data:
+        student.first_name = data["first_name"]
+    if "surname" in data:
+        student.surname = data["surname"]
+    if "email" in data:
+        student.email = data["email"]
+    if "other_names" in data:
+        student.other_names = data["other_names"]
+    if "gender" in data:
+        student.gender = data["gender"]
+    
+    # Update batch assignments if provided
+    if "batch_ids" in data and data["batch_ids"] is not None:
+        batch_ids = data["batch_ids"]
+        batches = batch_manager.get_batches_by_ids(batch_ids) if batch_ids else []
+        student.batches = batches
+    
+    student.save()
+    return success_response(data=student.to_json())
+
+
 @student.post("/students/end-session/")
 @student.input(Requests.EndSessionSchema)
 @student.output(SuccessMessage)

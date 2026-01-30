@@ -188,6 +188,13 @@ def student_proficiency(student_id, query_data):
     return success_response(data=student_proficiency_results)
 
 
+@analytics.get('/analytics/<student_id>/overall-preparedness')
+@analytics.output(Responses.OverallPreparednessDataSchema)
+@token_auth([UserTypes.student])
+def overall_preparedness(student_id):
+    overall_preparedness_results = analytics_service.get_overall_preparedness(student_id)
+    return success_response(data=overall_preparedness_results)
+
 #region NEW STUDENT ANALYTICS
 @analytics.get('/analytics/<student_id>/dashboard-overview')
 @analytics.output(Responses.StudentDashboardOverviewDataSchema)

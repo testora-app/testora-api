@@ -24,6 +24,16 @@ class StudentRegister(BaseSchema):
     gender = String(required=False, allow_none=True)
 
 
+class UpdateStudentSchema(BaseSchema):
+    id = ID_FIELD
+    email = String(required=False, allow_none=False, validate=[Email()])
+    first_name = String(required=False, allow_none=False, validate=[Length(min=1)])
+    surname = String(required=False, allow_none=False, validate=[Length(min=1)])
+    other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
+    gender = String(required=False, allow_none=True)
+    batch_ids = List(Integer(), required=False, allow_none=True)
+
+
 class StudentSchema(BaseSchema):
     id = ID_FIELD
     email = String(required=True, allow_none=False, validate=[Email()])
@@ -140,6 +150,7 @@ class StudentQueryParams(Schema):
 class Requests:
     CreateBatchSchema = make_response_schema(BatchSchema)
     EndSessionSchema = make_response_schema(EndSessionSchema, is_list=True)
+    UpdateStudentSchema = make_response_schema(UpdateStudentSchema)
     StudentQueryParams = StudentQueryParams
 
 
