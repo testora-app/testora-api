@@ -19,10 +19,9 @@ class AchievementEngine:
         ).first()
 
         if exists:
-            print("exists", exists.number_of_times)
             if repeatable:
-                print("repeatable")
                 exists.number_of_times += 1
+                exists.updated_at = datetime.now(timezone.utc)
                 db.session.commit()
                 return
             return
@@ -32,13 +31,15 @@ class AchievementEngine:
                 student_id=self.student_id,
                 achievement_id=achievement.id,
                 number_of_times=1,
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
             )
         
             db.session.add(new_achievement)
             db.session.commit()
         except Exception as e:
-            print(e)
+            print(f"Error assigning achievement {name}: {e}")
+            db.session.rollback()
 
     def check_test_achievements(self, subject_id, score, test_count, email=None):
         if test_count == 1:

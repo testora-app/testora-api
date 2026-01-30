@@ -1,5 +1,5 @@
 from apiflask import Schema
-from apiflask.fields import Float, String, Integer, Nested, List, DateTime
+from apiflask.fields import Float, String, Integer, Nested, List, DateTime, Boolean
 from apiflask.validators import OneOf, Range
 
 from app._shared.schemas import BaseSchema, make_response_schema
@@ -289,9 +289,11 @@ class AchievementItemData(BaseSchema):
     achievement_class = String(required=False, allow_none=True, example="gold")
     description = String(required=True, example="Awarded for excellence in mathematics.")
     image_url = String(required=True, example="http://example.com/images/achievement/math_whiz.png")
-    number_of_times = Integer(required=True, validate=Range(min=1), example=3)
-    first_awarded_at = DateTime(required=True, example="2025-09-15T10:20:30Z")
-    last_awarded_at = DateTime(required=True, example="2025-09-15T10:20:30Z")
+    is_earned = Boolean(required=True, example=True)
+    progress_percentage = Float(required=True, validate=Range(min=0, max=100), example=75.5)
+    number_of_times = Integer(required=True, validate=Range(min=0), example=3)
+    first_awarded_at = DateTime(required=False, allow_none=True, example="2025-09-15T10:20:30Z")
+    last_awarded_at = DateTime(required=False, allow_none=True, example="2025-09-15T10:20:30Z")
 
 
 class WeeklyGoalItemSchema(BaseSchema):
