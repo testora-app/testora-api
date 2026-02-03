@@ -233,9 +233,7 @@ def create_test(json_data):
     )
 
     test_obj = new_test.to_json()
-    test_obj["duration"] = TestService.determine_test_duration_in_seconds(
-        subject.max_duration, len(questions)
-    )
+    test_obj["duration"] = TestService.determine_test_duration(subject.short_name.lower(), student_level.level)
 
     return success_response(data=test_obj, status_code=201)
 
