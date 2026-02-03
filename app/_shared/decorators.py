@@ -4,9 +4,11 @@ from typing import List
 import jwt
 from flask import current_app as app
 from flask import request
+from sqlalchemy import func
 
 from app._shared.api_errors import unauthorized_request, permissioned_denied
 from app._shared.services import set_current_user, get_current_user
+from app._shared.schemas import UserTypes
 from threading import Thread
 import os
 
@@ -46,6 +48,31 @@ def require_params_by_usertype(param_rules):
     return decorator
 
 
+def can_access_info():
+    user = get_current_user()
+    student_id = request.view_args.get("student_id")
+    batch_id = request.args.get("batch_id")
+
+    if user["user_type"] in [UserTypes.admin, UserTypes.school_admin, UserTypes.staff]:
+        if student_id:
+            from app.student.operations import student_manager
+            student = student_manager.get_student_by_id(student_id)
+            if student and student.school_id == user["school_id"]:
+                return True
+        elif batch_id:
+            from app.student.operations import BatchManager
+            batch = BatchManager().get_batch_by_id(batch_id)
+            if batch and batch.school_id == user["school_id"]:
+                return True
+        else:
+            return True
+        
+    else:
+        if student_id and student_id == user["user_id"]:
+            return True
+    return False
+
+
 # we are going to have a wrapper to check tokens
 def token_auth(user_types: List[str] = None):
     def decorator(func):
@@ -75,14 +102,17 @@ def token_auth(user_types: List[str] = None):
                 return permissioned_denied(
                     "Your school account has been suspended. Please contact your school admin."
                 )
-
+            
             set_current_user(**payload)
+
+            access_granted = can_access_info()
+            if not access_granted:
+                return permissioned_denied("You do not have permission to access this resource.")
             return func(*args, **kwargs)
 
         return wrapper
 
     return decorator
-
 
 def public_protected(func):
     @wraps(func)
