@@ -146,6 +146,7 @@ class StudentLevelSchema(Schema):
 class StudentQueryParams(Schema):
     batch_id = Integer(required=False, allow_none=False)
     pending = String(required=False, allow_none=False, validate=OneOf(["true", "false"]))
+    no_batch = String(required=False, allow_none=False, validate=OneOf(["true", "false"]))
 
 
 class Requests:

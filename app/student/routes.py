@@ -237,6 +237,8 @@ def get_student_list(query_data):
     school_id = get_current_user()["school_id"]
     pending_students = query_data.get("pending", None)
     pending_only = True if pending_students == "true" else False
+    no_batch = query_data.get("no_batch", None)
+    no_batch_only = True if no_batch == "true" else False
 
     if query_data.get("batch_id", None) is not None:
         batch = batch_manager.get_batch_by_id(query_data["batch_id"])
@@ -245,7 +247,13 @@ def get_student_list(query_data):
             return success_response(data=students)
         
     student = student_manager.get_student_by_school(school_id, pending_only=pending_only)
-    student_data = [st.to_json() for st in student] if student else []
+    
+
+    if no_batch_only:
+        student_data = [st.to_json(include_batch=True) for st in student] if student else []
+        student_data = [st for st in student_data if len(st.get("batches", [])) == 0]
+    else:
+        student_data = [st.to_json() for st in student] if student else []
     return success_response(data=student_data)
 
 
