@@ -162,7 +162,7 @@ def async_method(f):
                     f(*args, **kwargs)
                 except Exception as e:
                     # Handle exceptions that occur in the thread
-                    current_app.logger.error(f"Error in async method: {e}")
+                    print(f"Error in async method: {e}")
 
         thr = Thread(target=inner)
         thr.start()
