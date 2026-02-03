@@ -258,7 +258,7 @@ def get_student_list(query_data):
 
     if no_batch_only:
         student_data = [st.to_json(include_batch=True) for st in student] if student else []
-        student_data = [st for st in student_data if len(st.get("batches", [])) == 0]
+        student_data = [st for st in student_data if len(st.get("batches", [])) == 0 and st.get("is_approved", True)]
     else:
         student_data = [st.to_json() for st in student] if student else []
     return success_response(data=student_data)
