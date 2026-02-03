@@ -70,6 +70,7 @@ jobs:
             PAYSTACK_CALLBACK_URL=PAYSTACK_CALLBACK_URL_PROD:latest
             APP_SECRET_KEY=APP_SECRET_KEY:latest
             SECRET_KEY=SECRET_KEY:latest
+            APP_ACCESS_TOKEN=APP_ACCESS_TOKEN:latest
         env_vars: |
             ENVIRONMENT=production
             FRONTEND_BASE_URL=https://preppee.online

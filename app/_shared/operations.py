@@ -23,7 +23,7 @@ class BaseManager(object):
         except Exception as e:
             log_info(entities)
             db.session.rollback()
-            raise e
+            print("Error occurred while saving multiple entities", e)
 
     @staticmethod
     def commit():

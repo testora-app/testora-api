@@ -90,6 +90,8 @@ class DashboardGeneralSchema(BaseSchema):
     total_batches = Integer(required=True)
     total_tests = Integer(required=True)
     package_information = Dict(required=True)
+    pending_students = Integer(required=True)
+    pending_staff = Integer(required=True)
 
 
 class Responses:

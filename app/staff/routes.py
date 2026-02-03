@@ -82,24 +82,8 @@ def register_staff(json_data):
     code = json_data.pop("school_code")
     school = school_manager.get_school_by_code(code)
     if school:
-        teacher = staff_manager.create_staff(
+        staff_manager.create_staff(
             **json_data, is_admin=False, school_id=school.id
-        )
-
-        context = {
-            "school_name": school.name,
-            "teacher_name": teacher.first_name,
-            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
-            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
-            "phone_number": "+233 24 142 3514",
-        }
-
-        html = mailer.generate_email_text("staff_signup.html", context)
-        mailer.send_email(
-            [teacher.email],
-            "You're In!  Welcome to Your Preppee Classroom ",
-            html,
-            html=html,
         )
         return success_response()
     return unauthorized_request("Invalid School Code")
@@ -180,6 +164,22 @@ def approve_staff(json_data):
         if staff:
             staff.is_approved = True
             staff.save()
+
+            context = {
+                "school_name": school.name,
+                "teacher_name": staff.first_name,
+                "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
+                "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+                "phone_number": "+233 24 142 3514",
+            }
+
+            html = mailer.generate_email_text("staff_signup.html", context)
+            mailer.send_email(
+                [staff.email],
+                "You're In!  Welcome to Your Preppee Classroom ",
+                html,
+                html=html,
+        )
     return success_response()
 
 
@@ -264,7 +264,7 @@ def dashboard_general():
 
     school_id = get_current_user()["school_id"]
     students = student_manager.get_active_students_by_school(school_id)
-    total_staff = len(staff_manager.get_staff_by_school(school_id, approved_only=True))
+    total_staff = staff_manager.get_staff_by_school(school_id)
     total_batches = len(batch_manager.get_batches_by_school_id(school_id))
     total_tests = len(test_manager.get_tests_by_school_id(school_id))
     school = school_manager.get_school_by_id(school_id)
@@ -275,10 +275,25 @@ def dashboard_general():
     if subscription_package == "free":
         subscription_description = "You have limited access to advanced analytics, 10 student capacity, and dedicated support for your institution."
 
+
+    pending_staff = len([st for st in total_staff if not st.is_approved])
+    approved_staff = len(total_staff) - pending_staff
+
+    pending_students = len(
+        [
+            st
+            for st in students
+            if not st.is_approved
+        ]
+    )
+    approved_students = len(students) - pending_students
+
     return success_response(
         data={
-            "total_students": len(students),
-            "total_staff": total_staff,
+            "total_students": approved_students,
+            "pending_students": pending_students,
+            "pending_staff": pending_staff,
+            "total_staff": approved_staff,
             "total_batches": total_batches,
             "total_tests": total_tests,
             "package_information": {

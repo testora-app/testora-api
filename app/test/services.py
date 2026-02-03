@@ -86,6 +86,29 @@ class TestService:
         if max_duration:
             return max_duration // question_length
         return 3000
+    
+    @staticmethod
+    def determine_test_duration(subject_short_name, student_subject_level) -> int:
+        # default duration is 10 minutes per test in seconds
+        default_duration = 600
+
+        # custom durations per subject can be defined here
+        subject_durations = {
+            'maths': {1: 14 * 60, 2: 18 * 60, 3: 22 * 60, 4: 28 * 60, 5: 34 * 60, 6: 38 * 60, 7: 42* 60, 8: 46*60, 9: 50*60, 10: 50*60},
+            'english': {1: 12 * 60, 2: 15 * 60, 3: 18 * 60, 4: 11 * 60, 5: 16 * 60, 6: 20 * 60, 7: 34* 60, 8: 38*60, 9: 42*60, 10: 42*60},
+        }
+
+        default_duration ={
+            1: 10 * 60, 2: 12 * 60, 3: 16 * 60, 4: 20 * 60, 5: 24 * 60, 6: 26 * 60, 7: 29* 60, 8: 32*60, 9: 35*60, 10: 35*60
+        }
+
+        if subject_short_name in subject_durations:
+            return subject_durations[subject_short_name].get(
+                student_subject_level, default_duration
+            )
+        
+        return default_duration.get(student_subject_level, 600)
+
 
     # DEPRECATED: Use generate_adaptive_questions instead
     @staticmethod

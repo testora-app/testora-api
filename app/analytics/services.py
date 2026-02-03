@@ -1381,50 +1381,196 @@ class AnalyticsService:
 
         return messages
 
+    def calculate_achievement_progress(
+        self, student_id: int, achievement_name: str, achievement_description: str
+    ) -> float:
+        """
+        Calculate progress percentage (0.0 - 100.0) for an achievement based on patterns.
+        Uses existing patterns from achievement names and descriptions.
+        """
+        from app.test.operations import test_manager
+        from app.student.operations import student_manager
+        from app.student.models import StudentSubjectLevel
+        import re
+
+        # Get student data
+        student = student_manager.get_student_by_id(student_id)
+        if not student:
+            return 0.0
+
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        test_count = len(tests)
+
+        description_lower = achievement_description.lower()
+        name_lower = achievement_name.lower()
+
+        # Pattern 1: "Completed X tests"
+        match = re.search(r"completed (\d+) test", description_lower)
+        if match:
+            target = int(match.group(1))
+            current = min(test_count, target)
+            return round((current / target) * 100.0, 2)
+
+        # Pattern 2: "Scored X% or more" (binary: either achieved or not)
+        match = re.search(r"scored (\d+)%", description_lower)
+        if match:
+            target_score = int(match.group(1))
+            # Check if student has any test with this score
+            has_achieved = any(test.score_acquired >= target_score for test in tests)
+            return 100.0 if has_achieved else 0.0
+
+        # Pattern 3: "Practiced X days in a row" (streak-based)
+        match = re.search(r"practiced (\d+) day", description_lower)
+        if match:
+            target_streak = int(match.group(1))
+            current_streak = student.current_streak or 0
+            current = min(current_streak, target_streak)
+            return round((current / target_streak) * 100.0, 2)
+
+        # Pattern 4: "Reached Level X" or "Level X"
+        match = re.search(r"level (\d+)", description_lower)
+        if match:
+            target_level = int(match.group(1))
+            # Check student subject levels
+            levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
+            if levels:
+                max_level = max(lvl.level for lvl in levels)
+                current = min(max_level, target_level)
+                return round((current / target_level) * 100.0, 2)
+            return 0.0
+
+        # Pattern 5: Test count for various achievements
+        if "first" in name_lower and "test" in description_lower:
+            return 100.0 if test_count >= 1 else 0.0
+
+        # Pattern 6: Multi-subject achievements
+        if "multi-subject" in name_lower or "different subjects" in description_lower:
+            match = re.search(r"(\d+) different subjects", description_lower)
+            if match:
+                target = int(match.group(1))
+                subject_ids = set(test.subject_id for test in tests)
+                current = min(len(subject_ids), target)
+                return round((current / target) * 100.0, 2)
+
+        # Pattern 7: Level 3 in multiple subjects
+        if "level 3" in description_lower and "subjects" in description_lower:
+            match = re.search(r"level 3 in (\d+)", description_lower)
+            if match:
+                target = int(match.group(1))
+                levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
+                subjects_at_level3 = sum(1 for lvl in levels if lvl.level >= 3)
+                current = min(subjects_at_level3, target)
+                return round((current / target) * 100.0, 2)
+
+        # Pattern 8: Consecutive achievements (X times in a row)
+        match = re.search(r"(\d+) times in a row", description_lower)
+        if match:
+            # This requires more complex tracking - return 0 for now
+            return 0.0
+
+        # Pattern 9: Score above X% in Y tests
+        match = re.search(r"above (\d+)% in (\d+)", description_lower)
+        if match:
+            target_score = int(match.group(1))
+            target_count = int(match.group(2))
+            tests_above_score = sum(1 for test in tests if test.score_acquired > target_score)
+            current = min(tests_above_score, target_count)
+            return round((current / target_count) * 100.0, 2)
+
+        # Pattern 10: Improved by X%
+        if "improved" in description_lower:
+            # Complex calculation - return 0 for now
+            return 0.0
+
+        # Default: if we can't determine progress, return 0
+        return 0.0
+
     def get_student_achievements(
         self, student_id: int, include_requirements: bool = False
     ) -> List[Dict[str, Any]]:
-        """Return a student's achievements with metadata and counts."""
+        """Return ALL achievements (earned and locked) with progress percentages."""
         from app.achievements.models import StudentHasAchievement, Achievement
         from app.extensions import db
 
-        rows = (
+        # Get all achievements
+        all_achievements = Achievement.query.filter_by(is_deleted=False).all()
+        
+        # Get student's earned achievements
+        earned_achievements = (
             db.session.query(StudentHasAchievement, Achievement)
             .join(Achievement, Achievement.id == StudentHasAchievement.achievement_id)
             .filter(StudentHasAchievement.student_id == student_id)
             .all()
         )
+        
+        # Create a map of earned achievements
+        earned_map = {sha.achievement_id: sha for sha, _ in earned_achievements}
 
         results: List[Dict[str, Any]] = []
-        for sha, ach in rows:
-            item = ach.to_json(
-                include_requirements=include_requirements
-            )  # id, name, description, image_url, class[, requirements]
-            # Ensure stable keys expected by callers
-            item.update(
-                {
-                    "achievement_id": ach.id,  # redundant with "id", but convenient
-                    "number_of_times": sha.number_of_times or 1,
-                    "first_awarded_at": (
-                        sha.created_at.isoformat()
-                        if getattr(sha, "created_at", None)
-                        else None
-                    ),
-                    "last_awarded_at": (
-                        getattr(sha, "updated_at", None).isoformat()
-                        if getattr(sha, "updated_at", None)
-                        else None
-                    ),
-                }
+        
+        for ach in all_achievements:
+            item = ach.to_json(include_requirements=include_requirements)
+            
+            # Check if achievement is earned
+            is_earned = ach.id in earned_map
+            sha = earned_map.get(ach.id)
+            
+            # Calculate progress
+            progress_percentage = self.calculate_achievement_progress(
+                student_id, ach.name, ach.description
             )
+            
+            # If earned, progress is always 100%
+            if is_earned:
+                progress_percentage = 100.0
+            
+            item.update({
+                "achievement_id": ach.id,
+                "is_earned": is_earned,
+                "progress_percentage": progress_percentage,
+                "number_of_times": sha.number_of_times if sha else 0,
+                "first_awarded_at": (
+                    sha.created_at.isoformat()
+                    if sha and getattr(sha, "created_at", None)
+                    else None
+                ),
+                "last_awarded_at": (
+                    sha.updated_at.isoformat()
+                    if sha and getattr(sha, "updated_at", None)
+                    else (sha.created_at.isoformat() if sha and getattr(sha, "created_at", None) else None)
+                ),
+            })
             results.append(item)
 
-        # Sort newest awards first (fallback to first_awarded)
+        # Sort: earned achievements first (by last_awarded_at), then by progress percentage
         results.sort(
-            key=lambda x: x.get("last_awarded_at") or x.get("first_awarded_at") or "",
-            reverse=True,
+            key=lambda x: (
+                not x["is_earned"],  # False (earned) comes before True (not earned)
+                -x["progress_percentage"],  # Higher progress first
+                x.get("last_awarded_at") or x.get("first_awarded_at") or ""
+            ),
+            reverse=False
         )
+        
         return results
+    
+    def get_overall_preparedness(self, student_id, subject_id=None, batch_id=None):
+        """
+        Get overall preparedness data for a student including average mastery and subject-wise performance.
+        """
+        subject_performance = self.get_subject_proficiency(student_id, subject_id, batch_id)
+        
+        if not subject_performance:
+            average_mastery = 0.0
+        else:
+            average_mastery = round(
+                sum(subj["average_score"] for subj in subject_performance) / len(subject_performance), 2
+            )
+        
+        return {
+            "average_mastery": average_mastery,
+            "subjects": subject_performance
+        }
 
 
 analytics_service = AnalyticsService()

@@ -30,11 +30,16 @@ class StudentHasAchievement(BaseModel):
         db.Integer, db.ForeignKey("achievement.id"), nullable=False, primary_key=True
     )
     number_of_times = db.Column(db.Integer, nullable=True, default=1)
-
-
+    updated_at = db.Column(db.DateTime, nullable=True, onupdate=db.func.now())
 
     def to_json(self):
-        return {"student_id": self.student_id, "achievement_id": self.achievement_id, "number_of_times": self.number_of_times, "created_at": self.created_at}
+        return {
+            "student_id": self.student_id, 
+            "achievement_id": self.achievement_id, 
+            "number_of_times": self.number_of_times, 
+            "created_at": self.created_at,
+            "updated_at": self.updated_at
+        }
 
 
 admin.add_view(ModelView(Achievement, db.session, name="Achievements"))

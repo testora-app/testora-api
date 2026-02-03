@@ -176,14 +176,15 @@ def select_subjects_for_goals(subjects: List[Dict]) -> List[Dict]:
     return selected
 
 
-def get_weekly_wins_message(student_id: int, week_start_date: date) -> Dict:
+def get_weekly_wins_message(student_id: int, week_start_date: date, week_offset: int = 0) -> Dict:
     """
-    Generate weekly wins celebration message for achieved goals in the current week.
-    
+    Generate weekly wins celebration message for achieved goals in a specified week.
+
     Args:
         student_id: The student's ID
-        week_start_date: Start date of the current week
-        
+        week_start_date: Start date of the reference week
+        week_offset: Number of weeks to offset from week_start_date (e.g., -1 for previous week, 1 for next week)
+
     Returns:
         {
             "has_wins": bool,
@@ -191,10 +192,13 @@ def get_weekly_wins_message(student_id: int, week_start_date: date) -> Dict:
             "achievements": [...]  # Individual achievement details
         }
     """
-    # Query achieved goals for the current week
+    # Calculate target week start date based on offset
+    target_week_start = week_start_date + timedelta(days=7 * week_offset)
+
+    # Query achieved goals for the target week
     achieved_goals = db.session.query(WeeklyGoal).filter(
         WeeklyGoal.student_id == student_id,
-        WeeklyGoal.week_start_date == week_start_date,
+        WeeklyGoal.week_start_date == target_week_start,
         WeeklyGoal.status == GoalStatus.achieved
     ).all()
     

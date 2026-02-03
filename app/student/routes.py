@@ -64,21 +64,7 @@ def student_register(json_data: Dict):
     school = school_manager.get_school_by_code(json_data.pop("school_code"))
 
     if school:
-        new_student = student_manager.create_student(**json_data, school_id=school.id)
-        context = {
-            "student_name": new_student.first_name,
-            "school_name": school.name,
-            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs/student-guide",
-            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
-            "phone_number": "+233 24 142 3514",
-        }
-        html = mailer.generate_email_text("student_signup.html", context)
-        mailer.send_email(
-            [new_student.email],
-            "You're In- Let's Get You Exam Ready With Preppee",
-            html,
-            html=html,
-        )
+        student_manager.create_student(**json_data, school_id=school.id) 
         return success_response()
     return bad_request("Invalid School Code")
 
@@ -162,17 +148,17 @@ def login(json_data):
             # Log error but don't fail the login
             log_error(f"Error generating weekly goals for student {student.id}: {str(e)}")
         
-        # Check for weekly wins (achieved goals in current week)
+        # Check for weekly wins (achieved goals from last week)
         if week_start_date:
             try:
                 from app.goals.operations import get_weekly_wins_message
-                
-                weekly_wins = get_weekly_wins_message(student.id, week_start_date)
-                
+
+                weekly_wins = get_weekly_wins_message(student.id, week_start_date, week_offset=-1)
+
                 if weekly_wins["has_wins"]:
                     student_json["weekly_wins"] = weekly_wins
                     log_info(f"Weekly wins found for student {student.id}: {len(weekly_wins['achievements'])} achievements")
-                    
+
             except Exception as e:
                 # Log error but don't fail the login
                 log_error(f"Error generating weekly wins message for student {student.id}: {str(e)}")
@@ -207,11 +193,33 @@ def approve_student(json_data):
     ):
         return bad_request("You have reached your student limit!")
 
+    batch_ids = json_data.get("batch_ids")
+    if batch_ids and len(batch_ids) > 1:
+        return bad_request("Only one batch can be assigned to a student.")
+    batches = batch_manager.get_batches_by_ids(batch_ids) if batch_ids else []
+
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
         if student:
             student.is_approved = True
+            if batch_ids is not None:
+                student.batches = batches
             student.save()
+
+            context = {
+                "student_name": student.first_name,
+                "school_name": school.name,
+                "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs/student-guide",
+                "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+                "phone_number": "+233 24 142 3514",
+            }
+            html = mailer.generate_email_text("student_signup.html", context)
+            mailer.send_email(
+                [student.email],
+                "You're In- Let's Get You Exam Ready With Preppee",
+                html,
+                html=html,
+            )
     return success_response()
 
 
@@ -234,6 +242,10 @@ def unapprove_student(json_data):
 @token_auth([UserTypes.school_admin])
 def get_student_list(query_data):
     school_id = get_current_user()["school_id"]
+    pending_students = query_data.get("pending", None)
+    pending_only = True if pending_students == "true" else False
+    no_batch = query_data.get("no_batch", None)
+    no_batch_only = True if no_batch == "true" else False
 
     if query_data.get("batch_id", None) is not None:
         batch = batch_manager.get_batch_by_id(query_data["batch_id"])
@@ -241,8 +253,14 @@ def get_student_list(query_data):
             students = batch.to_json(include_students=True).get("students", [])
             return success_response(data=students)
         
-    student = student_manager.get_student_by_school(school_id)
-    student_data = [st.to_json() for st in student] if student else []
+    student = student_manager.get_student_by_school(school_id, pending_only=pending_only)
+    
+
+    if no_batch_only:
+        student_data = [st.to_json(include_batch=True) for st in student] if student else []
+        student_data = [st for st in student_data if len(st.get("batches", [])) == 0 and st.get("is_approved", True)]
+    else:
+        student_data = [st.to_json() for st in student] if student else []
     return success_response(data=student_data)
 
 
@@ -254,6 +272,41 @@ def get_student_details(student_id):
     if student:
         return success_response(data=student.to_json())
     return not_found("Student does not exist!")
+
+
+@student.put("/students/<int:student_id>/")
+@student.input(Requests.UpdateStudentSchema)
+@student.output(Responses.StudentSchema)
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+def update_student(student_id, json_data):
+    student = student_manager.get_student_by_id(student_id)
+    if not student:
+        return not_found("Student does not exist!")
+    
+    data = json_data.get("data", json_data)
+    
+    # Update basic student fields
+    if "first_name" in data:
+        student.first_name = data["first_name"]
+    if "surname" in data:
+        student.surname = data["surname"]
+    if "email" in data:
+        student.email = data["email"]
+    if "other_names" in data:
+        student.other_names = data["other_names"]
+    if "gender" in data:
+        student.gender = data["gender"]
+    
+    # Update batch assignments if provided (max 1 batch)
+    if "batch_ids" in data and data["batch_ids"] is not None:
+        batch_ids = data["batch_ids"]
+        if batch_ids and len(batch_ids) > 1:
+            return bad_request("Only one batch can be assigned to a student.")
+        batches = batch_manager.get_batches_by_ids(batch_ids) if batch_ids else []
+        student.batches = batches
+    
+    student.save()
+    return success_response(data=student.to_json())
 
 
 @student.post("/students/end-session/")
@@ -326,14 +379,38 @@ def edit_batch(batch_id, json_data):
 
 @student.get("/batches/")
 @student.output(BatchListSchema)
-@token_auth([UserTypes.admin, UserTypes.school_admin])
+@token_auth([UserTypes.admin, UserTypes.school_admin, UserTypes.staff, UserTypes.student])
 def get_batches():
-    school_id = get_current_user()["school_id"]
+    current_user = get_current_user()
+    school_id = current_user["school_id"]
+    user_type = current_user["user_type"]
 
+    # Get all batches for the school (or all if admin)
     if school_id:
-        batches = batch_manager.get_batches_by_school_id(school_id)
+        all_batches = batch_manager.get_batches_by_school_id(school_id)
     else:
-        batches = batch_manager.get_all_batches()
+        all_batches = batch_manager.get_all_batches()
+
+    # Filter batches based on user type
+    if user_type == UserTypes.student:
+        # Students only see batches they belong to
+        student = student_manager.get_student_by_id(current_user["user_id"])
+        if student:
+            user_batch_ids = {batch.id for batch in student.batches}
+            batches = [batch for batch in all_batches if batch.id in user_batch_ids]
+        else:
+            batches = []
+    elif user_type == UserTypes.staff:
+        # Staff only see batches they belong to
+        staff = staff_manager.get_staff_by_id(current_user["user_id"])
+        if staff:
+            user_batch_ids = {batch.id for batch in staff.batches}
+            batches = [batch for batch in all_batches if batch.id in user_batch_ids]
+        else:
+            batches = []
+    else:
+        # Admins see all batches
+        batches = all_batches
 
     batches = (
         [batch.to_json(include_students=True) for batch in batches] if batches else []

@@ -4,14 +4,18 @@ from globals import SMTP2GO_API_KEY
 from flask import render_template
 
 
+
 class Mailer(object):
     def __init__(self):
         self.api_key = SMTP2GO_API_KEY
         self.api_url = "https://api.smtp2go.com/v3/email/send"
 
+    from app._shared.decorators import async_method
+
     def generate_email_text(self, template_name, context={}):
         return render_template(template_name, **context)
 
+    @async_method
     def send_email(
         self,
         recipients,
