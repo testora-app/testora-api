@@ -8,6 +8,7 @@ from flask import request
 from app._shared.api_errors import unauthorized_request, permissioned_denied
 from app._shared.services import set_current_user, get_current_user
 from threading import Thread
+import os
 
 
 def require_params_by_usertype(param_rules):
@@ -20,6 +21,7 @@ def require_params_by_usertype(param_rules):
         "student": ["student_id"]
     }
     """
+
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
@@ -38,7 +40,9 @@ def require_params_by_usertype(param_rules):
                 return permissioned_denied(f"Missing query parameters for {user_type}")
 
             return f(*args, **kwargs)
+
         return wrapper
+
     return decorator
 
 
@@ -80,20 +84,40 @@ def token_auth(user_types: List[str] = None):
     return decorator
 
 
-def premium_feature():
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            user = get_current_user()
-            if user and user["school_package"] == "premium":
-                return func(*args, **kwargs)
-            return permissioned_denied(
-                "You need a premium subscription to access this feature."
-            )
+def public_protected(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        header = request.headers.get("Authorization")
+        if not header:
+            return unauthorized_request("No Authorization Present")
 
-        return wrapper
+        user_token = header.split()[1]
 
-    return decorator
+        try:
+            app_token = os.getenv("APP_ACCESS_TOKEN")
+            if app_token != user_token:
+                return unauthorized_request("Invalid App Access Token")
+        except jwt.ExpiredSignatureError:
+            return unauthorized_request("Token has expired")
+        except jwt.InvalidTokenError:
+            return unauthorized_request("Invalid Token")
+
+        return func(*args, **kwargs)
+
+    return wrapper
+
+
+def premium_feature(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        user = get_current_user()
+        if user and "premium" in user["school_package"]:
+            return func(*args, **kwargs)
+        return permissioned_denied(
+            "You need a premium subscription to access this feature."
+        )
+
+    return wrapper
 
 
 def async_method(f):
