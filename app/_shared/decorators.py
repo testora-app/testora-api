@@ -155,13 +155,14 @@ def premium_feature(func):
 
 def async_method(f):
     def wrapper(*args, **kwargs):
+        current_app = app._get_current_object()
         def inner():
-            with app.app_context():  # Ensure Flask context is available
+            with current_app.app_context():  # Ensure Flask context is available
                 try:
                     f(*args, **kwargs)
                 except Exception as e:
                     # Handle exceptions that occur in the thread
-                    app.logger.error(f"Error in async method: {e}")
+                    current_app.logger.error(f"Error in async method: {e}")
 
         thr = Thread(target=inner)
         thr.start()

@@ -1,5 +1,4 @@
 import datetime
-import random
 import os
 import jwt
 from flask import current_app as app, g
@@ -7,7 +6,6 @@ from flask import current_app as app, g
 from globals import FRONTEND_BASE_URL
 
 from app.extensions import bcrypt
-from app.integrations.mailer import mailer
 from app._shared.api_errors import AuthenticationFailedError
 
 
@@ -28,6 +26,7 @@ def is_in_staging_environment():
 def generate_and_send_reset_password_email(
     user_id, user_type, user_email, school_id, name
 ):
+    from app.integrations.mailer import mailer
     payload_data = {
         "user_id": user_id,
         "user_type": user_type,
@@ -59,6 +58,7 @@ def generate_and_send_reset_password_email(
 
 
 def generate_and_send_password_changed(email, name):
+    from app.integrations.mailer import mailer
     context = {"name": name}
 
     html = mailer.generate_email_text("password_changed.html", context)

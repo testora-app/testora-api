@@ -193,10 +193,17 @@ def approve_student(json_data):
     ):
         return bad_request("You have reached your student limit!")
 
+    batch_ids = json_data.get("batch_ids")
+    if batch_ids and len(batch_ids) > 1:
+        return bad_request("Only one batch can be assigned to a student.")
+    batches = batch_manager.get_batches_by_ids(batch_ids) if batch_ids else []
+
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
         if student:
             student.is_approved = True
+            if batch_ids is not None:
+                student.batches = batches
             student.save()
 
             context = {

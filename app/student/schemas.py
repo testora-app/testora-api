@@ -79,6 +79,7 @@ class BatchListSchema(BaseSchema):
 
 class ApproveStudentSchema(BaseSchema):
     student_ids = List(ID_FIELD)
+    batch_ids = List(Integer(), required=False, allow_none=True, validate=Length(max=1))
 
 
 class GetStudentListSchema(BaseSchema):
