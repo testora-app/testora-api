@@ -235,6 +235,8 @@ def unapprove_student(json_data):
 @token_auth([UserTypes.school_admin])
 def get_student_list(query_data):
     school_id = get_current_user()["school_id"]
+    pending_students = query_data.get("pending", None)
+    pending_only = True if pending_students == "true" else False
 
     if query_data.get("batch_id", None) is not None:
         batch = batch_manager.get_batch_by_id(query_data["batch_id"])
@@ -242,7 +244,7 @@ def get_student_list(query_data):
             students = batch.to_json(include_students=True).get("students", [])
             return success_response(data=students)
         
-    student = student_manager.get_student_by_school(school_id)
+    student = student_manager.get_student_by_school(school_id, pending_only=pending_only)
     student_data = [st.to_json() for st in student] if student else []
     return success_response(data=student_data)
 

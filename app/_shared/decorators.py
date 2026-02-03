@@ -53,6 +53,9 @@ def can_access_info():
     student_id = request.view_args.get("student_id")
     batch_id = request.args.get("batch_id")
 
+    if not student_id or not batch_id:
+        return True
+
     if user["user_type"] in [UserTypes.admin, UserTypes.school_admin, UserTypes.staff]:
         if student_id:
             from app.student.operations import student_manager

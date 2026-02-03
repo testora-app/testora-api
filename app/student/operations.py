@@ -48,8 +48,11 @@ class StudentManager(BaseManager):
     def get_student(self) -> List[Student]:
         return Student.query.all()
 
-    def get_student_by_school(self, school_id) -> List[Student]:
-        return Student.query.filter_by(school_id=school_id, is_deleted=False).all()
+    def get_student_by_school(self, school_id, pending_only=False) -> List[Student]:
+        query = Student.query.filter_by(school_id=school_id, is_deleted=False)
+        if pending_only:
+            query = query.filter_by(is_approved=False)
+        return query.all()
 
     def get_active_students_by_school(self, school_id, only_approved=True) -> List[Student]:
         if only_approved:
