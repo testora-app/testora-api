@@ -290,9 +290,11 @@ def update_student(student_id, json_data):
     if "gender" in data:
         student.gender = data["gender"]
     
-    # Update batch assignments if provided
+    # Update batch assignments if provided (max 1 batch)
     if "batch_ids" in data and data["batch_ids"] is not None:
         batch_ids = data["batch_ids"]
+        if batch_ids and len(batch_ids) > 1:
+            return bad_request("Only one batch can be assigned to a student.")
         batches = batch_manager.get_batches_by_ids(batch_ids) if batch_ids else []
         student.batches = batches
     

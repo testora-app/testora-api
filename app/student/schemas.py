@@ -29,9 +29,9 @@ class UpdateStudentSchema(BaseSchema):
     email = String(required=False, allow_none=False, validate=[Email()])
     first_name = String(required=False, allow_none=False, validate=[Length(min=1)])
     surname = String(required=False, allow_none=False, validate=[Length(min=1)])
-    other_names = String(required=False, allow_none=True, validate=[Length(min=1)])
+    other_names = String(required=False, allow_none=True, validate=[Length(min=0)])
     gender = String(required=False, allow_none=True)
-    batch_ids = List(Integer(), required=False, allow_none=True)
+    batch_ids = List(Integer(), required=False, allow_none=True, validate=Length(max=1))
 
 
 class StudentSchema(BaseSchema):
