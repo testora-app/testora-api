@@ -122,7 +122,7 @@ def flag_questions(json_data):
     # send notification to admins here
     mailer.send_email(
         subject="Flagged Questions Notification",
-        recipients=["support@preppee.online"],
+        recipients=["support@preppee.online", "sg.apawu@gmail.com", "jaytaser@gmail.com"],
         text=html,
         html=True,
     )
