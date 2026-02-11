@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from typing import List, Dict, Tuple, Any, Optional, Iterable
 
+import json
+
 from apiflask.exceptions import HTTPError
 
 from app.student.operations import student_manager, batch_manager
@@ -1391,97 +1393,124 @@ class AnalyticsService:
         from app.test.operations import test_manager
         from app.student.operations import student_manager
         from app.student.models import StudentSubjectLevel
-        import re
+        from app.achievements.models import Achievement
 
-        # Get student data
         student = student_manager.get_student_by_id(student_id)
         if not student:
             return 0.0
 
+        achievement = Achievement.query.filter_by(name=achievement_name).first()
+        requirements: Dict[str, Any] = {}
+        if achievement and achievement.requirements:
+            try:
+                requirements = json.loads(achievement.requirements)
+            except Exception:
+                requirements = {}
+
         tests = test_manager.get_tests_by_student_ids([student_id])
-        test_count = len(tests)
 
-        description_lower = achievement_description.lower()
-        name_lower = achievement_name.lower()
-
-        # Pattern 1: "Completed X tests"
-        match = re.search(r"completed (\d+) test", description_lower)
-        if match:
-            target = int(match.group(1))
-            current = min(test_count, target)
-            return round((current / target) * 100.0, 2)
-
-        # Pattern 2: "Scored X% or more" (binary: either achieved or not)
-        match = re.search(r"scored (\d+)%", description_lower)
-        if match:
-            target_score = int(match.group(1))
-            # Check if student has any test with this score
-            has_achieved = any(test.score_acquired >= target_score for test in tests)
-            return 100.0 if has_achieved else 0.0
-
-        # Pattern 3: "Practiced X days in a row" (streak-based)
-        match = re.search(r"practiced (\d+) day", description_lower)
-        if match:
-            target_streak = int(match.group(1))
-            current_streak = student.current_streak or 0
-            current = min(current_streak, target_streak)
-            return round((current / target_streak) * 100.0, 2)
-
-        # Pattern 4: "Reached Level X" or "Level X"
-        match = re.search(r"level (\d+)", description_lower)
-        if match:
-            target_level = int(match.group(1))
-            # Check student subject levels
-            levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
-            if levels:
-                max_level = max(lvl.level for lvl in levels)
-                current = min(max_level, target_level)
-                return round((current / target_level) * 100.0, 2)
-            return 0.0
-
-        # Pattern 5: Test count for various achievements
-        if "first" in name_lower and "test" in description_lower:
-            return 100.0 if test_count >= 1 else 0.0
-
-        # Pattern 6: Multi-subject achievements
-        if "multi-subject" in name_lower or "different subjects" in description_lower:
-            match = re.search(r"(\d+) different subjects", description_lower)
-            if match:
-                target = int(match.group(1))
-                subject_ids = set(test.subject_id for test in tests)
-                current = min(len(subject_ids), target)
+        # ---- Metadata-driven progress (preferred) ----
+        if requirements:
+            # Volume practice
+            if achievement and achievement.achievement_class == "volume_practice":
+                target = int(requirements.get("number_of_tests") or 0)
+                if target <= 0:
+                    return 0.0
+                current = min(len(tests), target)
                 return round((current / target) * 100.0, 2)
 
-        # Pattern 7: Level 3 in multiple subjects
-        if "level 3" in description_lower and "subjects" in description_lower:
-            match = re.search(r"level 3 in (\d+)", description_lower)
-            if match:
-                target = int(match.group(1))
+            # Continuous practice (streak)
+            if achievement and achievement.achievement_class == "continuous_practice":
+                target = int(requirements.get("streak_days") or 0)
+                if target <= 0:
+                    return 0.0
+                current = min(int(student.current_streak or 0), target)
+                return round((current / target) * 100.0, 2)
+
+            # Level ups
+            if achievement and achievement.achievement_class == "level_ups":
+                target = int(requirements.get("level") or 0)
+                if target <= 0:
+                    return 0.0
                 levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
-                subjects_at_level3 = sum(1 for lvl in levels if lvl.level >= 3)
-                current = min(subjects_at_level3, target)
+                max_level = max((lvl.level for lvl in levels), default=0)
+                current = min(max_level, target)
                 return round((current / target) * 100.0, 2)
 
-        # Pattern 8: Consecutive achievements (X times in a row)
-        match = re.search(r"(\d+) times in a row", description_lower)
-        if match:
-            # This requires more complex tracking - return 0 for now
-            return 0.0
+            # Mastery level (score bands)
+            if achievement and achievement.achievement_class == "mastery_level":
+                score_min = float(requirements.get("score_band_min") or 0)
+                score_max = float(requirements.get("score_band_max") or 0)
+                target = int(requirements.get("number_of_tests") or 0)
+                if target <= 0:
+                    return 0.0
+                within = sum(1 for t in tests if score_min <= float(t.score_acquired) <= score_max)
+                current = min(within, target)
+                return round((current / target) * 100.0, 2)
 
-        # Pattern 9: Score above X% in Y tests
-        match = re.search(r"above (\d+)% in (\d+)", description_lower)
-        if match:
-            target_score = int(match.group(1))
-            target_count = int(match.group(2))
-            tests_above_score = sum(1 for test in tests if test.score_acquired > target_score)
-            current = min(tests_above_score, target_count)
-            return round((current / target_count) * 100.0, 2)
+            # Speed and accuracy
+            if achievement and achievement.achievement_class == "speed_and_accuracy":
+                expected_q = requirements.get("questions_count")
+                if expected_q is None:
+                    return 0.0
 
-        # Pattern 10: Improved by X%
-        if "improved" in description_lower:
-            # Complex calculation - return 0 for now
-            return 0.0
+                # Find best progress across tests matching the expected question count
+                candidate_tests = []
+                for t in tests:
+                    tmeta = t.meta or {}
+                    tq = (tmeta.get("total_questions") if isinstance(tmeta, dict) else None) or t.question_number
+                    if tq is None:
+                        continue
+                    if int(tq) == int(expected_q):
+                        candidate_tests.append(t)
 
+                if not candidate_tests:
+                    return 0.0
+
+                # Progress is binary-ish for these, but we can still return best partial on mistakes.
+                metric = requirements.get("metric")
+                requires_finish = bool(requirements.get("requires_finish_before_time_end"))
+
+                best = 0.0
+                for t in candidate_tests:
+                    tmeta = t.meta or {}
+                    out_time = (tmeta.get("out_time") or 0) if isinstance(tmeta, dict) else 0
+                    if requires_finish and not (out_time and int(out_time) > 0):
+                        continue
+
+                    if metric == "score_percent":
+                        score_min = float(requirements.get("score_min") or 0)
+                        score_max = float(requirements.get("score_max") or 100)
+                        pct = 100.0 if (score_min <= float(t.score_acquired) <= score_max) else 0.0
+                        best = max(best, pct)
+                        continue
+
+                    if metric == "mistakes_count":
+                        max_mistakes = int(requirements.get("max_mistakes") or 0)
+                        mistakes = tmeta.get("mistakes_count") if isinstance(tmeta, dict) else None
+                        if mistakes is None:
+                            continue
+
+                        mistakes = int(mistakes)
+                        if mistakes <= max_mistakes:
+                            best = max(best, 100.0)
+                        else:
+                            # map mistakes to progress: 0..max_mistakes => 100%, otherwise decay
+                            # 1 extra mistake => 50%, 2 extra => 0% (simple)
+                            extra = mistakes - max_mistakes
+                            if extra == 1:
+                                best = max(best, 50.0)
+                            else:
+                                best = max(best, 0.0)
+                        continue
+
+                return best
+
+            # comeback_rewards progress is hard to quantify; return 0 for locked.
+            if achievement and achievement.achievement_class == "comeback_rewards":
+                return 0.0
+
+        # ---- Legacy fallback (description regex) ----
         # Default: if we can't determine progress, return 0
         return 0.0
 

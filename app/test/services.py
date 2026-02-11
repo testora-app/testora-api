@@ -421,7 +421,7 @@ class TestService:
         # we need a way to determine if we're deducting points lost or half points
 
         points_acquired = 0
-        score_acquired = 0  # correct/total * 100
+        correct_count = 0  # correct answers across main + sub questions (excluding flagged)
 
         # recommended topic, recommendation_level = high
         # a break down of topics and the percentage acquired
@@ -445,7 +445,7 @@ class TestService:
                 topic_totals[q.topic_id] += 1
                 if q.correct_answer == question["student_answer"]:
                     main_question_correct = True
-                    score_acquired += 1
+                    correct_count += 1
                     topic_scores[q.topic_id] += 1
                 else:
                     if deduct_points:
@@ -482,14 +482,18 @@ class TestService:
             points_acquired += points
             question["correct_answer"] = q.correct_answer
             question["points"] = points
-            score_acquired += no_subs_correct
+            correct_count += no_subs_correct
 
-        score_acquired = (score_acquired / total_number) * 100  # correct/total * 100
+        score_acquired = (correct_count / total_number) * 100 if total_number else 0
+        mistakes_count = max(0, int(total_number - correct_count))
 
         return {
             "questions": questions,
             "points_acquired": round(points_acquired, 2),
             "score_acquired": score_acquired,
+            "correct_count": int(correct_count),
+            "total_questions": int(total_number),
+            "mistakes_count": int(mistakes_count),
             "topic_scores": topic_scores,
             "topic_totals": topic_totals,
         }

@@ -259,9 +259,21 @@ def mark_test(test_id, json_data):
         marked_test = TestService.mark_test(json_data["questions"])
         # update the questions with the correct answer, it'll already have their answer
         test.finished_on = datetime.now(timezone.utc)
-        test.meta = json_data["meta"]
+        # persist computed marking stats into meta so other services (achievements/analytics)
+        # can evaluate speed/accuracy + progress without schema changes.
+        test_meta = json_data.get("meta") or {}
+        test_meta.update(
+            {
+                "total_questions": marked_test.get("total_questions"),
+                "correct_count": marked_test.get("correct_count"),
+                "mistakes_count": marked_test.get("mistakes_count"),
+            }
+        )
+        test.meta = test_meta
         test.questions = marked_test["questions"]
-        test.questions_correct = marked_test["score_acquired"]
+        # questions_correct should be a count, not the percent score.
+        test.questions_correct = marked_test.get("correct_count")
+        test.question_number = marked_test.get("total_questions")
         test.points_acquired = marked_test["points_acquired"]
         test.score_acquired = marked_test["score_acquired"]
         test.save()
@@ -290,13 +302,20 @@ def mark_test(test_id, json_data):
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
         RemarksAnalyzer.add_remarks_to_test(test, last_test)
 
+        streak_update = student_manager.update_streak(student_id, datetime.now(timezone.utc))
+
+        # Evaluate achievements after streak update so streak-based achievements
+        # use the latest streak value.
         test_count = len(test_manager.get_tests_by_student_ids([student_id]))
 
         engine = AchievementEngine(student_id)
-        engine.check_test_achievements(test.subject_id, test.score_acquired, test_count, email=student["user_email"])
+        engine.check_test_achievements(
+            test.subject_id,
+            test.score_acquired,
+            test_count,
+            email=student["user_email"],
+        )
         engine.check_level_achievements(email=student["user_email"])
-
-        streak_update = student_manager.update_streak(student_id, datetime.now(timezone.utc))
 
         if streak_update["streak_modified"]:
             recipient = recipient_manager.get_recipient_by_email(
