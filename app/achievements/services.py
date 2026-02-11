@@ -98,6 +98,7 @@ class AchievementEngine:
         total_questions = meta.get("total_questions") or test.question_number
         mistakes_count = meta.get("mistakes_count")
         out_time = (meta.get("out_time") or 0) if isinstance(meta, dict) else 0
+        # (available for future achievement rules)
 
         for ach in all_achievements:
             req = self._parse_requirements(ach)
@@ -193,6 +194,56 @@ class AchievementEngine:
                 streak_days = int(req.get("streak_days") or 0)
                 if streak_days and self._student_current_streak() >= streak_days:
                     self.assign(ach.name)
+                    unlocked.append(ach.name)
+                continue
+
+            # Honor system badge (windowed)
+            if aclass == "honor_system":
+                tests_window = int(req.get("tests_window") or 20)
+                max_event_ms = int(req.get("max_event_ms") or 15000)
+                max_events_per_test = int(req.get("max_outside_events_per_test") or 2)
+                max_outside_time_ms_per_test = int(req.get("max_outside_time_ms_per_test") or 30000)
+
+                if tests_window <= 0:
+                    continue
+
+                recent = (
+                    Test.query.filter_by(student_id=self.student_id, is_completed=True)
+                    .order_by(Test.finished_on.desc())
+                    .limit(tests_window)
+                    .all()
+                )
+                if len(recent) < tests_window:
+                    continue
+
+                # Only award on boundaries (every 20 tests)
+                if self._tests_completed_total() % tests_window != 0:
+                    continue
+
+                clean = True
+                for t in recent:
+                    tmeta = t.meta or {}
+                    if not isinstance(tmeta, dict):
+                        clean = False
+                        break
+
+                    t_out_ms = int((tmeta.get("outside_time_ms") or tmeta.get("out_time") or 0))
+                    t_events = int(tmeta.get("outside_events") or 0)
+                    t_max_event = int(tmeta.get("max_outside_event_ms") or 0)
+
+                    # Grace is applied in frontend; still guard here.
+                    if t_max_event >= max_event_ms:
+                        clean = False
+                        break
+                    if t_events >= max_events_per_test:
+                        clean = False
+                        break
+                    if t_out_ms >= max_outside_time_ms_per_test:
+                        clean = False
+                        break
+
+                if clean:
+                    self.assign(ach.name, repeatable=True)
                     unlocked.append(ach.name)
                 continue
 

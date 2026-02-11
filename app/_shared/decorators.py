@@ -71,7 +71,7 @@ def can_access_info():
             return True
         
     else:
-        if student_id and student_id == user["user_id"]:
+        if student_id and str(student_id) == str(user["user_id"]):
             return True
     return False
 

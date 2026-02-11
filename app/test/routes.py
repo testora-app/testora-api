@@ -37,6 +37,7 @@ from app.notifications.operations import recipient_manager
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
 from app.achievements.services import AchievementEngine
+from app.honor_system.services import HonorSystemService
 from app.integrations.pusher import pusher
 from app.integrations.mailer import mailer
 
@@ -256,19 +257,37 @@ def mark_test(test_id, json_data):
         test.is_completed = True
         # TODO: Determine the level that'll deduct points
 
+        # --- Honor system / anti-cheat evaluation (best-effort) ---
+        test_meta = json_data.get("meta") or {}
+        honor = HonorSystemService()
+        anti = honor.evaluate_test_meta(test_meta)
+
+        # mark (normal path)
         marked_test = TestService.mark_test(json_data["questions"])
         # update the questions with the correct answer, it'll already have their answer
         test.finished_on = datetime.now(timezone.utc)
         # persist computed marking stats into meta so other services (achievements/analytics)
         # can evaluate speed/accuracy + progress without schema changes.
-        test_meta = json_data.get("meta") or {}
         test_meta.update(
             {
                 "total_questions": marked_test.get("total_questions"),
                 "correct_count": marked_test.get("correct_count"),
                 "mistakes_count": marked_test.get("mistakes_count"),
+                # anti-cheat metrics
+                "outside_time_ms": anti.get("outside_time_ms"),
+                "outside_events": anti.get("outside_events"),
+                "max_outside_event_ms": anti.get("max_outside_event_ms"),
+                "penalty_flag": anti.get("penalty_flag"),
+                "is_suspicious": anti.get("is_suspicious"),
             }
         )
+
+        # If student spent too long outside test -> force 0 score
+        if anti.get("should_auto_end"):
+            marked_test["points_acquired"] = 0
+            marked_test["score_acquired"] = 0
+            marked_test["correct_count"] = 0
+            test_meta["terminated_reason"] = "anti_cheat"
         test.meta = test_meta
         test.questions = marked_test["questions"]
         # questions_correct should be a count, not the percent score.
@@ -316,6 +335,14 @@ def mark_test(test_id, json_data):
             email=student["user_email"],
         )
         engine.check_level_achievements(email=student["user_email"])
+
+        # Teacher notifications: cheating too much / honor vibes
+        try:
+            student_obj = student_manager.get_student_by_id(student_id)
+            if student_obj:
+                honor.notify_if_needed(test, student_obj)
+        except Exception:
+            pass
 
         if streak_update["streak_modified"]:
             recipient = recipient_manager.get_recipient_by_email(

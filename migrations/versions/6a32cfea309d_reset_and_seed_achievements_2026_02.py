@@ -685,6 +685,20 @@ def upgrade():
                 "scope": "all_subjects",
             },
         },
+
+        # Honor system
+        {
+            "name": "Honour Badge",
+            "description": "Stayed focused across 20 tests — no long tab switches and minimal time outside the test.",
+            "achievement_class": "honor_system",
+            "metadata": {
+                "tests_window": 20,
+                "grace_ms": 5000,
+                "max_event_ms": 15000,
+                "max_outside_events_per_test": 2,
+                "max_outside_time_ms_per_test": 30000,
+            },
+        },
     ]
 
     def _dedupe_name(name: str, meta: dict, seen: dict) -> str:
