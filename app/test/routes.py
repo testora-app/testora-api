@@ -30,7 +30,13 @@ from app.test.services import TestService
 from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
 from app.school.operations import school_manager
-from app.subscriptions.constants import SubscriptionPackages, SubscriptionLimits, Features, FeatureStatus
+from app.subscriptions.constants import (
+    SubscriptionPackages,
+    SubscriptionLimits,
+    Features,
+    FeatureStatus,
+    TierNames,
+)
 from app.notifications.operations import recipient_manager
 
 
@@ -184,7 +190,8 @@ def create_test(json_data):
     # get the name of the course, check if it's in the school's subscription thingy or not
     subject = subject_manager.get_subject_by_id(subject_id)
 
-    if subject.is_premium and school.subscription_package != SubscriptionPackages.premium:
+    # Premium content gating: if subject is premium, require paid tier
+    if subject.is_premium and school.subscription_tier == TierNames.free:
         return premium_only_feature()
 
     # validate the mode of the exam
@@ -193,10 +200,8 @@ def create_test(json_data):
             f"{exam_mode} is not in valid modes: {ExamModes.get_valid_exam_modes()}."
         )
 
-    if (
-        SubscriptionLimits.get_limits(school.subscription_package)[Features.ExamMode]
-        == FeatureStatus.DISABLED
-    ):
+    # Exam mode is paid-only
+    if SubscriptionLimits.get_limits(school.subscription_package)[Features.ExamMode] == FeatureStatus.DISABLED:
         return premium_only_feature()
 
     # get the student level for the particular subject

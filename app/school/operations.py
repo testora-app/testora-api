@@ -2,6 +2,13 @@ from app.school.models import School
 from app.school.services import create_school_code
 from app._shared.operations import BaseManager
 from app.subscriptions.constants import SubscriptionPackages
+from app.subscriptions.constants import (
+    TierNames,
+    BillingCycles,
+    FeatureStatus,
+    TRIAL_DEFAULT_SEATS,
+    TRIAL_DURATION_DAYS,
+)
 
 from typing import List
 from datetime import datetime, timezone, timedelta
@@ -39,10 +46,15 @@ class SchoolManager(BaseManager):
         )
 
         new_school.subscription_expiry_date = (
-            datetime.now(timezone.utc) + timedelta(days=30)
+            datetime.now(timezone.utc) + timedelta(days=TRIAL_DURATION_DAYS)
         ).date()
 
+        # New schools start on a 30-day trial with 100 seats
         new_school.subscription_package = SubscriptionPackages.premium
+        new_school.subscription_tier = TierNames.trial
+        new_school.billing_cycle = None
+        new_school.price_per_seat = 0
+        new_school.total_seats = TRIAL_DEFAULT_SEATS
 
         self.save(new_school)
         return new_school

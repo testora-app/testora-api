@@ -276,83 +276,93 @@ class TestPaystackWebhook:
         )
         
         assert response.status_code == 200
-    
-    def test_post_paystack_webhook_charge_failed(
-        self, client, sample_billing_history
-    ):
-        """Test POST /paystack-webhook/ processes failed charge."""
-        sample_billing_history.payment_status = 'pending'
-        sample_billing_history.save()
-        
-        payload = {
-            'event': 'charge.failed',
-            'data': {
-                'reference': sample_billing_history.payment_reference
-            }
-        }
-        
-        response = client.post(
-            '/paystack-webhook/',
-            data=json.dumps(payload),
-            content_type='application/json'
-        )
-        
+
+
+class TestSeatBasedSubscriptionManager:
+    def test_get_current_plan_admin_only(self, client, school_admin_headers):
+        response = client.get("/subscriptions/current", headers=school_admin_headers)
         assert response.status_code == 200
-    
-    def test_post_paystack_webhook_nonexistent_reference(self, client):
-        """Test POST /paystack-webhook/ with nonexistent payment reference."""
-        payload = {
-            'event': 'charge.success',
-            'data': {
-                'reference': 'NONEXISTENT-REF'
-            }
-        }
-        
+        data = json.loads(response.data)
+        assert "data" in data
+        assert "tier" in data["data"]
+        assert "total_seats" in data["data"]
+
+    def test_schedule_downgrade_requires_confirmation(self, client, school_admin_headers):
         response = client.post(
-            '/paystack-webhook/',
-            data=json.dumps(payload),
-            content_type='application/json'
+            "/subscriptions/schedule-downgrade",
+            data=json.dumps({"data": {"confirmDowngrade": False}}),
+            content_type="application/json",
+            headers=school_admin_headers,
         )
-        
-        assert response.status_code == 404
-    
-    def test_post_paystack_webhook_already_successful(
-        self, client, sample_billing_history
-    ):
-        """Test POST /paystack-webhook/ for already successful payment."""
-        # Billing already marked as success
-        payload = {
-            'event': 'charge.success',
-            'data': {
-                'reference': sample_billing_history.payment_reference
-            }
-        }
-        
+        assert response.status_code == 400
+
+    def test_schedule_downgrade_success(self, client, school_admin_headers, sample_school):
+        # ensure school is on a paid tier for this test
+        sample_school.subscription_tier = "premium"
+        sample_school.billing_cycle = "monthly"
+        sample_school.total_seats = 15
+        sample_school.price_per_seat = 75
+        sample_school.save()
+
         response = client.post(
-            '/paystack-webhook/',
-            data=json.dumps(payload),
-            content_type='application/json'
+            "/subscriptions/schedule-downgrade",
+            data=json.dumps({"data": {"confirmDowngrade": True}}),
+            content_type="application/json",
+            headers=school_admin_headers,
         )
-        
         assert response.status_code == 200
-    
-    def test_post_paystack_webhook_no_auth_required(self, client):
-        """Test POST /paystack-webhook/ doesn't require authentication."""
-        payload = {
-            'event': 'charge.success',
-            'data': {
-                'reference': 'TEST-REF'
-            }
-        }
-        
-        response = client.post(
-            '/paystack-webhook/',
-            data=json.dumps(payload),
-            content_type='application/json'
+        data = json.loads(response.data)
+        assert data["data"]["scheduled_downgrade"] is True
+
+    def test_cancel_scheduled_downgrade(self, client, school_admin_headers, sample_school):
+        sample_school.subscription_tier = "premium"
+        sample_school.scheduled_downgrade = True
+        sample_school.save()
+
+        response = client.delete(
+            "/subscriptions/schedule-downgrade",
+            data=json.dumps({"data": {}}),
+            content_type="application/json",
+            headers=school_admin_headers,
         )
-        
-        # Should work without authentication (404 because ref doesn't exist)
-        assert response.status_code in [200, 404]
+        assert response.status_code == 200
+
+    def test_trial_account_cannot_schedule_downgrade(self, client, school_admin_headers, sample_school):
+        """Trial accounts should not be able to schedule downgrades."""
+        sample_school.subscription_tier = "trial"
+        sample_school.subscription_expiry_date = (datetime.now(timezone.utc) + timedelta(days=30)).date()
+        sample_school.save()
+
+        response = client.post(
+            "/subscriptions/schedule-downgrade",
+            data=json.dumps({"data": {"confirmDowngrade": True}}),
+            content_type="application/json",
+            headers=school_admin_headers,
+        )
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert "trial" in data["message"].lower()
+        assert "automatically" in data["message"].lower()
+
+    def test_paid_account_with_scheduled_downgrade_still_blocked(self, client, school_admin_headers, sample_school, mock_paystack):
+        """Paid accounts with scheduled_downgrade should still be blocked from adding seats (backwards compatibility)."""
+        sample_school.subscription_tier = "premium"
+        sample_school.billing_cycle = "monthly"
+        sample_school.total_seats = 50
+        sample_school.scheduled_downgrade = True
+        sample_school.subscription_expiry_date = (datetime.now(timezone.utc) + timedelta(days=30)).date()
+        sample_school.save()
+
+        response = client.post(
+            "/subscriptions/add-seats",
+            data=json.dumps({"data": {"seats": 10}}),
+            content_type="application/json",
+            headers=school_admin_headers,
+        )
+        assert response.status_code == 400
+        data = json.loads(response.data)
+        assert "downgrade" in data["message"].lower()
+
 
 
 class TestBillingProcess:

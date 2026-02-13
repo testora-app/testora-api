@@ -183,15 +183,18 @@ def approve_student(json_data):
     # do a prior check here to see if there's a limit hihi
     school_id = get_current_user()["school_id"]
     school = school_manager.get_school_by_id(school_id)
-    student_number = len(student_manager.get_active_students_by_school(school_id))
 
-    if (
-        student_number
-        >= SubscriptionLimits.get_limits(school.subscription_package)[
-            Features.StudentLimit
-        ]
-    ):
-        return bad_request("You have reached your student limit!")
+    # Seats used are locked only by APPROVED students.
+    # Unapproved/archived/deleted students should not consume seats.
+    seats_used = len(student_manager.get_active_students_by_school(school_id, only_approved=True))
+
+    # New subscription manager enforcement:
+    # - Free tier defaults to 10 seats
+    # - Paid tiers are seat-based
+    # NOTE: We keep legacy SubscriptionLimits elsewhere for older feature gating,
+    # but for seat locking we use total_seats.
+    if school.total_seats is not None and seats_used >= int(school.total_seats):
+        return bad_request("You have reached your student seat limit!")
 
     batch_ids = json_data.get("batch_ids")
     if batch_ids and len(batch_ids) > 1:

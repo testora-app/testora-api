@@ -202,6 +202,7 @@ def sample_school(app, db_session):
     """Create a sample school."""
     school = School(
         name='Test High School',
+        short_name='TestHS',
         code='TEST001',
         location='Test City',
         subscription_package='premium',
@@ -218,6 +219,7 @@ def sample_free_school(app, db_session):
     """Create a sample school with free subscription."""
     school = School(
         name='Free Test School',
+        short_name='FreeTS',
         code='FREE001',
         location='Test City',
         subscription_package='free',
@@ -234,6 +236,7 @@ def suspended_school(app, db_session):
     """Create a suspended school."""
     school = School(
         name='Suspended School',
+        short_name='SuspSch',
         code='SUSP001',
         location='Test City',
         subscription_package='free',
@@ -666,7 +669,8 @@ def mock_pusher():
 @pytest.fixture
 def mock_paystack():
     """Mock the Paystack payment service."""
-    with patch('app.integrations.paystack.paystack') as mock:
+    # Patch the paystack instance used by routes (app/subscriptions/routes.py imports it).
+    with patch('app.subscriptions.routes.paystack') as mock:
         mock.create_payment = MagicMock(return_value={
             'status': True,
             'data': {

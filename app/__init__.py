@@ -109,12 +109,35 @@ def create_app():
     }
     app = APIFlask(__name__)
 
+    # If we're running under pytest, force TESTING early so we can skip
+    # migrations/super-admin creation before the test harness overrides config.
+    try:
+        import sys
+        import os
+
+        if "pytest" in sys.modules or os.getenv("PYTEST_CURRENT_TEST"):
+            app.config["TESTING"] = True
+    except Exception:
+        pass
+
     if is_in_staging_environment():
         app.config.from_object("config.StagingConfig")
     elif is_in_development_environment():
         app.config.from_object("config.DevelopmentConfig")
     else:
         app.config.from_object("config.DevelopmentConfig")
+
+    # Ensure a deterministic DB for tests even if the caller updates config later.
+    # pytest's conftest currently calls create_app() and *then* overrides config,
+    # which is too late for db.init_app(engine) binding.
+    if app.config.get("TESTING", False):
+        app.config.update(
+            {
+                "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+                "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+                "SECRET_KEY": "test-secret-key",
+            }
+        )
 
     # initialize the extensions
     cors.init_app(app, resources={r"/*": {"origins": "*"}})
@@ -132,9 +155,11 @@ def create_app():
     }
 
     with app.app_context():
-        # run the necessary migrations
-        run_migrations_once()
-        create_super_admin_if_not_exists()
+        # In test mode we don't run alembic migrations nor auto-create super admin.
+        # The pytest harness uses an in-memory sqlite DB and calls db.create_all().
+        if not app.config.get("TESTING", False):
+            run_migrations_once()
+            create_super_admin_if_not_exists()
 
         # register errorhandlers
         app.register_error_handler(403, forbidden)
