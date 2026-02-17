@@ -28,6 +28,8 @@ from app.app_admin.schemas import (
     Requests,
 )
 
+from app.extensions import limiter
+
 app_admin = APIBlueprint("app_admin", __name__)
 
 
@@ -55,6 +57,7 @@ def add_admin(json_data):
 @app_admin.post("/app-admins/authenticate/")
 @app_admin.input(LoginSchema)
 @app_admin.output(Responses.VerifiedAdminResponse)
+@limiter.limit("10 per minute")
 def admin_login(json_data):
     admin = admin_manager.get_admin_by_email(json_data["email"])
     if not admin:

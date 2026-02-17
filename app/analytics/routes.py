@@ -10,10 +10,23 @@ from app.analytics.operations import ssm_manager, ssr_manager, sts_manager
 from app.analytics.services import analytics_service
 
 
+from app._shared.api_errors import permissioned_denied
 from app.app_admin.operations import topic_manager, subject_manager
 from app.student.operations import student_manager, batch_manager
 
 analytics = APIBlueprint("analytics", __name__)
+
+
+def _verify_student_access(student_id):
+    current_user = get_current_user()
+    if current_user["user_type"] == UserTypes.student:
+        if str(student_id) != str(current_user["user_id"]):
+            return False
+    else:
+        student = student_manager.get_student_by_id(student_id)
+        if not student or student.school_id != current_user["school_id"]:
+            return False
+    return True
 
 
 #region NEW ANALYTICS
@@ -139,6 +152,8 @@ def performance_topics(query_data):
 @analytics.output(Responses.PerformanceIndicatorsDataSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
 def performance_indicators(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     performance_indicators_results = analytics_service.get_performance_indicators(student_id, **query_data)
     return success_response(data=performance_indicators_results)
 
@@ -148,6 +163,8 @@ def performance_indicators(student_id, query_data):
 @analytics.output(Responses.SubjectProficiencyDataSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
 def subject_proficiency(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     subject_proficiency_results = analytics_service.get_subject_proficiency(student_id, **query_data)
     return success_response(data=subject_proficiency_results)
 
@@ -157,6 +174,8 @@ def subject_proficiency(student_id, query_data):
 @analytics.output(Responses.TestHistoryDataSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
 def test_history(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     test_history_results = analytics_service.get_test_history(student_id, **query_data)
     return success_response(data=test_history_results)
 
@@ -166,6 +185,8 @@ def test_history(student_id, query_data):
 @analytics.output(Responses.ProficiencyGraphDataSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
 def proficiency_graph(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     proficiency_graph_results = analytics_service.get_proficiency_graph(student_id, **query_data)
     return success_response(data=proficiency_graph_results)
 
@@ -175,6 +196,8 @@ def proficiency_graph(student_id, query_data):
 @analytics.output(Responses.FailingTopicsDataSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
 def failing_topics(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     failing_topics_results = analytics_service.get_failing_topics(student_id, **query_data)
     return success_response(data=failing_topics_results)
 
@@ -184,6 +207,8 @@ def failing_topics(student_id, query_data):
 @analytics.output(Responses.StudentProficiencyDataSchema)
 @token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
 def student_proficiency(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     student_proficiency_results = analytics_service.get_student_average_and_band(student_id, **query_data)
     return success_response(data=student_proficiency_results)
 
@@ -192,6 +217,8 @@ def student_proficiency(student_id, query_data):
 @analytics.output(Responses.OverallPreparednessDataSchema)
 @token_auth([UserTypes.student])
 def overall_preparedness(student_id):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     overall_preparedness_results = analytics_service.get_overall_preparedness(student_id)
     return success_response(data=overall_preparedness_results)
 
@@ -200,6 +227,8 @@ def overall_preparedness(student_id):
 @analytics.output(Responses.StudentDashboardOverviewDataSchema)
 @token_auth([UserTypes.student])
 def student_dashboard_overview(student_id):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     dashboard_overview_results = analytics_service.get_student_dashboard_overview(student_id)
     return success_response(data=dashboard_overview_results)
 
@@ -209,6 +238,8 @@ def student_dashboard_overview(student_id):
 @analytics.output(Responses.PracticeOverviewDataSchema)
 @token_auth([UserTypes.student])
 def student_practice_overview(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     practice_overview_results = analytics_service.get_student_practice_overview(student_id, **query_data)
     return success_response(data=practice_overview_results)
 
@@ -217,6 +248,8 @@ def student_practice_overview(student_id, query_data):
 @analytics.output(Responses.AchievementDataSchema)
 @token_auth([UserTypes.student])
 def get_student_achievements(student_id):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     student_achievements_results = analytics_service.get_student_achievements(student_id)
     return success_response(data=student_achievements_results)
 
@@ -225,6 +258,8 @@ def get_student_achievements(student_id):
 @analytics.output(Responses.WeeklyGoalsDataSchema)
 @token_auth([UserTypes.student])
 def get_student_weekly_goals(student_id):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     weekly_goals_results = analytics_service.get_student_weekly_goals(student_id)
     return success_response(data=weekly_goals_results)
 
@@ -233,6 +268,8 @@ def get_student_weekly_goals(student_id):
 @analytics.output(Responses.WeeklyWinsMessagesDataSchema)
 @token_auth([UserTypes.student])
 def get_student_weekly_wins_messages(student_id):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
     weekly_wins_messages_results = analytics_service.get_student_weekly_wins_messages(student_id)
     return success_response(data=weekly_wins_messages_results)
 

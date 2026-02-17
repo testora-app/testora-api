@@ -46,6 +46,7 @@ from app.notifications.operations import recipient_manager
 
 from app.integrations.pusher import pusher
 from app.integrations.mailer import mailer
+from app.extensions import limiter
 import os
 
 
@@ -72,6 +73,7 @@ def student_register(json_data: Dict):
 @student.post("/students/authenticate/")
 @student.input(LoginSchema)
 @student.output(Responses.VerifiedStudentSchema)
+@limiter.limit("10 per minute")
 def login(json_data):
     student = student_manager.get_student_by_email(json_data["email"].strip())
 
@@ -203,7 +205,7 @@ def approve_student(json_data):
 
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
-        if student:
+        if student and student.school_id == school_id:
             student.is_approved = True
             if batch_ids is not None:
                 student.batches = batches
@@ -231,9 +233,10 @@ def approve_student(json_data):
 @student.input(ApproveStudentSchema)
 @token_auth([UserTypes.school_admin])
 def unapprove_student(json_data):
+    school_id = get_current_user()["school_id"]
     for student_id in json_data["student_ids"]:
         student = student_manager.get_student_by_id(student_id)
-        if student:
+        if student and student.school_id == school_id:
             student.is_approved = False
             student.save()
     return success_response()

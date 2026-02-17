@@ -57,6 +57,7 @@ testr = APIBlueprint("testr", __name__)
 
 @testr.get("/questions/")
 @testr.output(QuestionListSchema, 200)
+@token_auth([UserTypes.admin])
 def get_questions():
     questions = question_manager.get_questions()
     return success_response(data=[question.to_json() for question in questions])
@@ -65,6 +66,7 @@ def get_questions():
 @testr.post("/questions/")
 @testr.input(Requests.AddQuestionSchema)
 @testr.output(Responses.QuestionSchema)
+@token_auth([UserTypes.admin])
 def post_questions(json_data):
     json_data = json_data["data"]
     sub = json_data.pop("sub_questions") if json_data.get("sub_questions", None) else []
@@ -79,6 +81,7 @@ def post_questions(json_data):
 @testr.post("/questions-multiple/")
 @testr.input(QuestionListSchema)
 @testr.output(Responses.QuestionSchema)
+@token_auth([UserTypes.admin])
 def post_multiple(json_data):
     questions = question_manager.save_multiple_questions(json_data["data"])
     return success_response(data=[question.to_json() for question in questions])
@@ -87,6 +90,7 @@ def post_multiple(json_data):
 @testr.put("/questions/<int:question_id>/")
 @testr.input(Requests.EditQuestionSchema)
 @testr.output(Responses.QuestionSchema)
+@token_auth([UserTypes.admin])
 def edit_questions(question_id, json_data):
     # implement edit
     question = question_manager.get_question_by_id(question_id)
@@ -96,6 +100,7 @@ def edit_questions(question_id, json_data):
 
 @testr.delete("/questions/<int:question_id>/")
 @testr.output(SuccessMessage)
+@token_auth([UserTypes.admin])
 def delete_questions(question_id):
     question = question_manager.get_question_by_id(question_id)
     subquestions = question_manager.get_subquestion_by_parent(question_id)
@@ -111,6 +116,7 @@ def delete_questions(question_id):
 @testr.post("/flag-questions/")
 @testr.input(Requests.FlagQuestionSchema)
 @testr.output(SuccessMessage)
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def flag_questions(json_data):
     data = json_data["data"]
     question_ids = [q["question_id"] for q in data]

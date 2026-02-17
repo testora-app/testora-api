@@ -23,6 +23,10 @@ def is_in_staging_environment():
     return os.getenv("ENVIRONMENT", "naah").lower().startswith("staging")
 
 
+def is_in_production_environment():
+    return os.getenv("ENVIRONMENT", "naah").lower().startswith("prod")
+
+
 def generate_and_send_reset_password_email(
     user_id, user_type, user_email, school_id, name
 ):

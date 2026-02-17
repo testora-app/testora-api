@@ -53,7 +53,7 @@ def can_access_info():
     student_id = request.view_args.get("student_id")
     batch_id = request.args.get("batch_id")
 
-    if not student_id or not batch_id:
+    if not student_id and not batch_id:
         return True
 
     if user["user_type"] in [UserTypes.admin, UserTypes.school_admin, UserTypes.staff]:
@@ -62,14 +62,14 @@ def can_access_info():
             student = student_manager.get_student_by_id(student_id)
             if student and student.school_id == user["school_id"]:
                 return True
-        elif batch_id:
+        if batch_id:
             from app.student.operations import BatchManager
             batch = BatchManager().get_batch_by_id(batch_id)
             if batch and batch.school_id == user["school_id"]:
                 return True
-        else:
+        if not student_id and not batch_id:
             return True
-        
+
     else:
         if student_id and str(student_id) == str(user["user_id"]):
             return True
@@ -85,7 +85,10 @@ def token_auth(user_types: List[str] = None):
             if not header:
                 return unauthorized_request("No Authorization Present")
 
-            bearer_token = header.split()[1]
+            parts = header.split()
+            if len(parts) != 2 or parts[0].lower() != "bearer":
+                return unauthorized_request("Invalid Authorization header format")
+            bearer_token = parts[1]
 
             try:
                 payload = jwt.decode(
@@ -124,16 +127,14 @@ def public_protected(func):
         if not header:
             return unauthorized_request("No Authorization Present")
 
-        user_token = header.split()[1]
+        parts = header.split()
+        if len(parts) != 2 or parts[0].lower() != "bearer":
+            return unauthorized_request("Invalid Authorization header format")
+        user_token = parts[1]
 
-        try:
-            app_token = os.getenv("APP_ACCESS_TOKEN")
-            if app_token != user_token:
-                return unauthorized_request("Invalid App Access Token")
-        except jwt.ExpiredSignatureError:
-            return unauthorized_request("Token has expired")
-        except jwt.InvalidTokenError:
-            return unauthorized_request("Invalid Token")
+        app_token = os.getenv("APP_ACCESS_TOKEN")
+        if not app_token or app_token != user_token:
+            return unauthorized_request("Invalid App Access Token")
 
         return func(*args, **kwargs)
 

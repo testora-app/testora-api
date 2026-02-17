@@ -28,6 +28,7 @@ from app.integrations.mailer import mailer
 import os
 
 from app.school.operations import school_manager
+from app.extensions import limiter
 
 staff = APIBlueprint("staff", __name__)
 
@@ -92,6 +93,7 @@ def register_staff(json_data):
 @staff.post("/staff/authenticate/")
 @staff.input(LoginSchema)
 @staff.output(Responses.VerifiedStaffSchema)
+@limiter.limit("10 per minute")
 def login(json_data):
 
     staff = staff_manager.get_staff_by_email(json_data["email"].strip())
@@ -161,7 +163,7 @@ def approve_staff(json_data):
 
     for staff_id in json_data["staff_ids"]:
         staff = staff_manager.get_staff_by_id(staff_id)
-        if staff:
+        if staff and staff.school_id == school_id:
             staff.is_approved = True
             staff.save()
 
@@ -188,9 +190,10 @@ def approve_staff(json_data):
 @staff.output(SuccessMessage)
 @token_auth([UserTypes.school_admin])
 def unapprove_staff(json_data):
+    school_id = get_current_user()["school_id"]
     for staff_id in json_data["staff_ids"]:
         staff = staff_manager.get_staff_by_id(staff_id)
-        if staff:
+        if staff and staff.school_id == school_id:
             staff.is_approved = False
             staff.save()
     return success_response()
@@ -209,10 +212,13 @@ def get_staff_list():
 @staff.output(Responses.StaffResponseSchema)
 @token_auth(["*"])
 def get_staff_details(staff_id):
+    current_user = get_current_user()
     staff = staff_manager.get_staff_by_id(staff_id)
-    if staff:
-        return success_response(data=staff.to_json(include_batches=True))
-    return not_found(message="Staff does not exist")
+    if not staff:
+        return not_found(message="Staff does not exist")
+    if current_user["user_type"] != UserTypes.admin and staff.school_id != current_user["school_id"]:
+        return permissioned_denied("You do not have permission to access this resource.")
+    return success_response(data=staff.to_json(include_batches=True))
 
 
 @staff.put("/staff/<int:staff_id>/")
@@ -220,11 +226,14 @@ def get_staff_details(staff_id):
 @staff.output(Responses.StaffResponseSchema)
 @token_auth([UserTypes.school_admin])
 def edit_staff_details(staff_id, json_data):
+    school_id = get_current_user()["school_id"]
     staff = staff_manager.get_staff_by_id(staff_id)
 
     data = json_data["data"]
     subjects = data.pop("subjects", [])
 
+    if staff and staff.school_id != school_id:
+        return permissioned_denied("You do not have permission to access this resource.")
     if staff:
         staff.first_name = data.get("first_name", staff.first_name)
         staff.surname = data.get("surname", staff.surname)

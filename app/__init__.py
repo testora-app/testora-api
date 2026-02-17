@@ -17,6 +17,7 @@ from app._shared.api_errors import BaseError
 from app._shared.services import (
     is_in_staging_environment,
     is_in_development_environment,
+    is_in_production_environment,
 )
 from app.errorhandlers import (
     forbidden,
@@ -24,7 +25,7 @@ from app.errorhandlers import (
     method_not_allowed,
     page_not_found,
 )
-from app.extensions import cors, db, migrate, admin as admin_extension
+from app.extensions import cors, db, migrate, admin as admin_extension, limiter
 
 # models
 from app.goals import *
@@ -96,7 +97,8 @@ def create_app():
 
     # setting the logging level
     basicConfig()
-    getLogger().setLevel("DEBUG")
+    log_level = "DEBUG" if is_in_development_environment() else "INFO"
+    getLogger().setLevel(log_level)
 
     # schema for validation error response
     validation_error_schema = {
@@ -125,7 +127,7 @@ def create_app():
     elif is_in_development_environment():
         app.config.from_object("config.DevelopmentConfig")
     else:
-        app.config.from_object("config.DevelopmentConfig")
+        app.config.from_object("config.ProductionConfig")
 
     # Ensure a deterministic DB for tests even if the caller updates config later.
     # pytest's conftest currently calls create_app() and *then* overrides config,
@@ -135,15 +137,17 @@ def create_app():
             {
                 "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
                 "SQLALCHEMY_TRACK_MODIFICATIONS": False,
+                "SQLALCHEMY_ENGINE_OPTIONS": {},
                 "SECRET_KEY": "test-secret-key",
             }
         )
 
     # initialize the extensions
-    cors.init_app(app, resources={r"/*": {"origins": "*"}})
+    cors.init_app(app, resources={r"/*": {"origins": app.config.get("CORS_ORIGIN", [])}})
     db.init_app(app)
     migrate.init_app(app, db)
     admin_extension.init_app(app)
+    limiter.init_app(app)
 
     # security settings
     app.security_schemes = {  # equals to use config SECURITY_SCHEMES
@@ -214,8 +218,10 @@ def create_app():
             db.session.rollback()
             db.session.close()
             log_error(traceback.format_exc())
+            if is_in_production_environment():
+                return jsonify({"message": "A data conflict occurred. Please try again."}), 500
             return jsonify({"error": str(error), "message": error._message()}), 500
-        
+
 
         @app.errorhandler(Exception)
         def handle_exceptions(exception):
@@ -225,7 +231,6 @@ def create_app():
             return (
                 jsonify(
                     {
-                        "error": str(exception),
                         "message": "Something went wrong! Our Developers are working on it!",
                     }
                 ),
@@ -234,13 +239,25 @@ def create_app():
 
         @app.before_request
         def log_request_body():
-            if request.method != "GET" and request.method != "OPTIONS":
-                log_info("Logging Request Body")
-                log_info(request.get_json())
+            if request.method not in ("GET", "OPTIONS"):
+                body = request.get_json(silent=True)
+                if body:
+                    safe_body = {k: "***" if "password" in k.lower() else v for k, v in body.items()}
+                    log_info(f"Request: {request.method} {request.path}")
+                    log_info(safe_body)
+
+        @app.after_request
+        def set_security_headers(response):
+            response.headers["X-Content-Type-Options"] = "nosniff"
+            response.headers["X-Frame-Options"] = "DENY"
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+            response.headers["X-XSS-Protection"] = "1; mode=block"
+            return response
 
         @app.teardown_appcontext
         def teardown_context(e):
-            db.session.commit()
-            db.session.close()
+            if e:
+                db.session.rollback()
+            db.session.remove()
 
     return app

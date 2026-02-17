@@ -1,3 +1,6 @@
+import hashlib
+import hmac
+
 from apiflask import APIBlueprint
 from flask import request
 from datetime import datetime, timezone, timedelta
@@ -22,7 +25,7 @@ from app.subscriptions.constants import PaymentStatus, PackagePrices, Subscripti
 
 from app.school.operations import school_manager
 
-from globals import APP_SECRET_KEY
+from globals import APP_SECRET_KEY, PAYSTACK_API_KEY
 
 
 subscription = APIBlueprint("subscription", __name__)
@@ -347,7 +350,7 @@ def settle_billing_history(billing_id):
 # an endpoint to confirm payment
 @subscription.get("/payment/<string:reference>/confirm/")
 @subscription.output(Responses.SingleSchoolBillingHistorySchema, 200)
-# @token_auth([UserTypes.school_admin])
+@token_auth([UserTypes.school_admin])
 def confirm_payment(reference):
 
     billing_history = sb_history_manager.get_school_billing_history_by_payment_ref(
@@ -401,7 +404,14 @@ def confirm_payment(reference):
 @subscription.post("/paystack-webhook/")
 @subscription.output(SuccessMessage, 200)
 def paystack_webhook():
-    # Process event
+    signature = request.headers.get("X-Paystack-Signature", "")
+    body = request.get_data()
+    expected = hmac.new(
+        PAYSTACK_API_KEY.encode("utf-8"), body, hashlib.sha512
+    ).hexdigest()
+    if not hmac.compare_digest(expected, signature):
+        return permissioned_denied("Invalid webhook signature")
+
     event = request.get_json()
     event_type = event.get('event')
 
@@ -437,17 +447,12 @@ def paystack_webhook():
 
 
 # an endpoint that will be hit everyday to run billing process
-@subscription.get("/billing-process/")
+@subscription.post("/billing-process/")
 @subscription.output(SuccessMessage, 200)
 def run_billing():
-    code = request.args.get("code")
-    if not code:
+    auth_header = request.headers.get("X-Internal-Key", "")
+    if not auth_header or not hmac.compare_digest(auth_header, APP_SECRET_KEY):
         return permissioned_denied()
 
-    if code == APP_SECRET_KEY:
-        bill_data = run_billing_process()
-    else:
-        return permissioned_denied()
-
-    # send them notification/email
+    bill_data = run_billing_process()
     return success_response()

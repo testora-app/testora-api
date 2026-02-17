@@ -3,7 +3,8 @@ import bisect
 
 from apiflask import Schema
 from apiflask.fields import Integer, String, Nested, Dict, List
-from apiflask.validators import Range
+from apiflask.validators import Range, Length
+from marshmallow import validates
 from marshmallow.exceptions import ValidationError
 
 
@@ -54,7 +55,7 @@ class ResetPassword(BaseSchema):
 
 
 class ChangePassword(BaseSchema):
-    new_password = String(allow_none=False, required=True)
+    new_password = String(allow_none=False, required=True, validate=Length(min=8))
     confirmation_code = String(allow_none=False, required=True)
 
 

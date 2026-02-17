@@ -23,6 +23,7 @@ from app.student.operations import student_manager
 from app.staff.operations import staff_manager
 
 from app.integrations.mailer import mailer
+from app.extensions import limiter
 
 main = APIBlueprint("main", __name__)
 
@@ -37,6 +38,7 @@ def index():
 @main.post("/contact-us/")
 @main.input(ContactUsSchema)
 @main.output(SuccessMessage, 200)
+@limiter.limit("5 per minute")
 def contact_us(json_data):
     data = json_data["data"]
 
@@ -65,6 +67,7 @@ def contact_us(json_data):
 @main.post("/account/reset-password/")
 @main.input(ResetPasswordSchema)
 @main.output(SuccessMessage, 200)
+@limiter.limit("5 per minute")
 def reset_password(json_data):
     user_type = request.args.get("user_type")
 
@@ -92,6 +95,7 @@ def reset_password(json_data):
 @main.post("/account/change-password/")
 @main.input(ChangePasswordSchema)
 @main.output(SuccessMessage, 200)
+@limiter.limit("5 per minute")
 def change_password(json_data):
     data = json_data["data"]
 
