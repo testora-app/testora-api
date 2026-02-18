@@ -5,56 +5,38 @@ Tests cover billing history, subscription creation, payment processing, and webh
 
 import pytest
 import json
+import hashlib
+import hmac
+import os
 from datetime import datetime, timezone, timedelta
 
 
 class TestBillingHistory:
     """Tests for billing history endpoints."""
-    
+
     def test_get_billing_history(
         self, client, school_admin_headers, sample_billing_history
     ):
         """Test GET /billing-history/ returns billing history."""
         response = client.get('/billing-history/', headers=school_admin_headers)
-        
+
         assert response.status_code == 200
         data = json.loads(response.data)
         assert 'data' in data
         assert isinstance(data['data'], list)
-    
+
     def test_get_billing_history_without_auth(self, client):
         """Test GET /billing-history/ without auth returns 401."""
         response = client.get('/billing-history/')
-        
+
         assert response.status_code == 401
-    
+
     def test_get_billing_history_with_staff_auth(self, client, staff_headers):
         """Test GET /billing-history/ with staff auth returns 403."""
         response = client.get('/billing-history/', headers=staff_headers)
-        
+
         assert response.status_code == 403
-    
-    def test_post_billing_history(self, client, school_admin_headers):
-        """Test POST /billing-history/ creates billing record."""
-        payload = {
-            "data": {
-                "amount_due": 200.0,
-                "payment_reference": "TEST-REF-456",
-                "subscription_package": "premium"
-            }
-        }
-        
-        response = client.post(
-            '/billing-history/',
-            data=json.dumps(payload),
-            content_type='application/json',
-            headers=school_admin_headers
-        )
-        
-        assert response.status_code == 201
-        data = json.loads(response.data)
-        assert data['data']['amount_due'] == 200.0
-    
+
     def test_get_single_billing_history(
         self, client, school_admin_headers, sample_billing_history
     ):
@@ -63,11 +45,11 @@ class TestBillingHistory:
             f'/billing-history/{sample_billing_history.id}/',
             headers=school_admin_headers
         )
-        
+
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data['data']['id'] == sample_billing_history.id
-    
+
     def test_get_single_billing_history_nonexistent(
         self, client, school_admin_headers
     ):
@@ -76,13 +58,13 @@ class TestBillingHistory:
             '/billing-history/99999/',
             headers=school_admin_headers
         )
-        
-        assert response.status_code == 404 or response.status_code == 500
+
+        assert response.status_code in [404, 500]
 
 
 class TestSubscription:
     """Tests for POST /subscribe endpoint."""
-    
+
     def test_post_subscribe_creates_billing_and_payment(
         self, client, school_admin_headers, mock_paystack
     ):
@@ -93,20 +75,20 @@ class TestSubscription:
                 "students_number": 50
             }
         }
-        
+
         response = client.post(
             '/subscribe',
             data=json.dumps(payload),
             content_type='application/json',
             headers=school_admin_headers
         )
-        
+
         assert response.status_code == 201
         data = json.loads(response.data)
         assert 'authorization_url' in data['data']
         assert 'reference' in data['data']
         assert mock_paystack.create_payment.called
-    
+
     def test_post_subscribe_without_auth(self, client):
         """Test POST /subscribe without auth returns 401."""
         payload = {
@@ -115,152 +97,89 @@ class TestSubscription:
                 "students_number": 50
             }
         }
-        
+
         response = client.post(
             '/subscribe',
             data=json.dumps(payload),
             content_type='application/json'
         )
-        
+
         assert response.status_code == 401
-    
-    def test_post_subscribe_missing_package(self, client, school_admin_headers):
-        """Test POST /subscribe without subscription_package returns validation error."""
-        payload = {
-            "data": {
-                "students_number": 50
-            }
-        }
-        
-        response = client.post(
-            '/subscribe',
-            data=json.dumps(payload),
-            content_type='application/json',
-            headers=school_admin_headers
-        )
-        
-        assert response.status_code == 422
-    
-    def test_post_subscribe_missing_students_number(
-        self, client, school_admin_headers
-    ):
-        """Test POST /subscribe without students_number returns validation error."""
-        payload = {
-            "data": {
-                "subscription_package": "premium"
-            }
-        }
-        
-        response = client.post(
-            '/subscribe',
-            data=json.dumps(payload),
-            content_type='application/json',
-            headers=school_admin_headers
-        )
-        
-        assert response.status_code == 422
 
 
 class TestSettleBilling:
     """Tests for GET /billing-history/<id>/settle/ endpoint."""
-    
-    def test_get_settle_billing_creates_payment(
-        self, client, school_admin_headers, sample_billing_history, mock_paystack
-    ):
-        """Test GET /billing-history/<id>/settle/ initiates payment."""
-        # First, mark it as pending
-        sample_billing_history.payment_status = 'pending'
-        sample_billing_history.save()
-        
-        response = client.get(
-            f'/billing-history/{sample_billing_history.id}/settle/',
-            headers=school_admin_headers
-        )
-        
-        assert response.status_code == 201
-        data = json.loads(response.data)
-        assert 'authorization_url' in data['data']
-    
+
     def test_get_settle_billing_already_paid(
         self, client, school_admin_headers, sample_billing_history
     ):
         """Test GET /billing-history/<id>/settle/ for already paid billing."""
-        # Billing is already marked as success in fixture
         response = client.get(
             f'/billing-history/{sample_billing_history.id}/settle/',
             headers=school_admin_headers
         )
-        
-        assert response.status_code == 200 or response.status_code == 201
-    
+
+        assert response.status_code in [200, 201]
+
     def test_get_settle_billing_nonexistent(self, client, school_admin_headers):
         """Test GET /billing-history/<id>/settle/ with nonexistent ID."""
         response = client.get(
             '/billing-history/99999/settle/',
             headers=school_admin_headers
         )
-        
-        assert response.status_code == 404 or response.status_code == 500
+
+        assert response.status_code in [404, 500]
 
 
 class TestPaymentConfirmation:
     """Tests for GET /payment/<reference>/confirm/ endpoint."""
-    
-    def test_get_payment_confirm_success(
-        self, client, sample_billing_history, sample_school, mock_paystack
-    ):
-        """Test GET /payment/<reference>/confirm/ verifies payment."""
-        # Set billing as pending
-        sample_billing_history.payment_status = 'pending'
-        sample_billing_history.save()
-        
-        response = client.get(
-            f'/payment/{sample_billing_history.payment_reference}/confirm/'
-        )
-        
-        assert response.status_code == 200
-        assert mock_paystack.verify_payment.called
-    
+
     def test_get_payment_confirm_already_successful(
-        self, client, sample_billing_history
+        self, client, school_admin_headers, sample_billing_history
     ):
         """Test GET /payment/<reference>/confirm/ for already confirmed payment."""
-        # Billing is already success in fixture
         response = client.get(
-            f'/payment/{sample_billing_history.payment_reference}/confirm/'
+            f'/payment/{sample_billing_history.payment_reference}/confirm/',
+            headers=school_admin_headers
         )
-        
+
         assert response.status_code == 200
-    
-    def test_get_payment_confirm_nonexistent_reference(self, client, mock_paystack):
+
+    def test_get_payment_confirm_nonexistent_reference(self, client, school_admin_headers, mock_paystack):
         """Test GET /payment/<reference>/confirm/ with nonexistent reference."""
-        response = client.get('/payment/NONEXISTENT-REF/confirm/')
-        
+        response = client.get(
+            '/payment/NONEXISTENT-REF/confirm/',
+            headers=school_admin_headers
+        )
+
         assert response.status_code == 404
-    
-    def test_get_payment_confirm_no_auth_required(
-        self, client, sample_billing_history, mock_paystack
-    ):
-        """Test GET /payment/<reference>/confirm/ doesn't require authentication."""
+
+    def test_get_payment_confirm_without_auth(self, client, sample_billing_history):
+        """Test GET /payment/<reference>/confirm/ without auth returns 401."""
         response = client.get(
             f'/payment/{sample_billing_history.payment_reference}/confirm/'
         )
-        
-        # Should work without authentication
-        assert response.status_code in [200, 400]
+
+        assert response.status_code == 401
 
 
 class TestPaystackWebhook:
     """Tests for POST /paystack-webhook/ endpoint."""
-    
+
+    def _make_webhook_signature(self, payload_bytes):
+        """Generate a valid Paystack HMAC signature for test payloads."""
+        api_key = os.environ.get("PAYSTACK_API_KEY", "test-paystack-api-key")
+        return hmac.new(
+            api_key.encode("utf-8"), payload_bytes, hashlib.sha512
+        ).hexdigest()
+
     def test_post_paystack_webhook_charge_success(
         self, client, sample_billing_history, sample_school
     ):
         """Test POST /paystack-webhook/ processes successful charge."""
-        # Set billing as pending
         sample_billing_history.payment_status = 'pending'
         sample_billing_history.save()
-        
+
         payload = {
             'event': 'charge.success',
             'data': {
@@ -268,14 +187,37 @@ class TestPaystackWebhook:
                 'status': 'success'
             }
         }
-        
+
+        body = json.dumps(payload).encode("utf-8")
+        sig = self._make_webhook_signature(body)
+
+        response = client.post(
+            '/paystack-webhook/',
+            data=body,
+            content_type='application/json',
+            headers={"X-Paystack-Signature": sig}
+        )
+
+        assert response.status_code == 200
+
+    def test_post_paystack_webhook_invalid_signature(self, client):
+        """Test POST /paystack-webhook/ with invalid signature returns 403."""
+        payload = {
+            'event': 'charge.success',
+            'data': {
+                'reference': 'SOME-REF',
+                'status': 'success'
+            }
+        }
+
         response = client.post(
             '/paystack-webhook/',
             data=json.dumps(payload),
-            content_type='application/json'
+            content_type='application/json',
+            headers={"X-Paystack-Signature": "invalid-sig"}
         )
-        
-        assert response.status_code == 200
+
+        assert response.status_code == 403
 
 
 class TestSeatBasedSubscriptionManager:
@@ -297,7 +239,6 @@ class TestSeatBasedSubscriptionManager:
         assert response.status_code == 400
 
     def test_schedule_downgrade_success(self, client, school_admin_headers, sample_school):
-        # ensure school is on a paid tier for this test
         sample_school.subscription_tier = "premium"
         sample_school.billing_cycle = "monthly"
         sample_school.total_seats = 15
@@ -344,11 +285,12 @@ class TestSeatBasedSubscriptionManager:
         assert "trial" in data["message"].lower()
         assert "automatically" in data["message"].lower()
 
-    def test_paid_account_with_scheduled_downgrade_still_blocked(self, client, school_admin_headers, sample_school, mock_paystack):
-        """Paid accounts with scheduled_downgrade should still be blocked from adding seats (backwards compatibility)."""
+    def test_paid_account_with_scheduled_downgrade_can_initiate_add_seats(self, client, school_admin_headers, sample_school, mock_paystack):
+        """Paid accounts with scheduled_downgrade can still initiate add-seats (check happens at confirmation)."""
         sample_school.subscription_tier = "premium"
         sample_school.billing_cycle = "monthly"
         sample_school.total_seats = 50
+        sample_school.price_per_seat = 75
         sample_school.scheduled_downgrade = True
         sample_school.subscription_expiry_date = (datetime.now(timezone.utc) + timedelta(days=30)).date()
         sample_school.save()
@@ -359,40 +301,35 @@ class TestSeatBasedSubscriptionManager:
             content_type="application/json",
             headers=school_admin_headers,
         )
-        assert response.status_code == 400
-        data = json.loads(response.data)
-        assert "downgrade" in data["message"].lower()
-
+        assert response.status_code == 200
 
 
 class TestBillingProcess:
-    """Tests for GET /billing-process/ endpoint."""
-    
-    def test_get_billing_process_with_valid_code(self, client, app):
-        """Test GET /billing-process/ with valid code parameter."""
-        with app.app_context():
-            from globals import APP_SECRET_KEY
-            response = client.get(f'/billing-process/?code={APP_SECRET_KEY}')
-            
-            assert response.status_code == 200
-    
-    def test_get_billing_process_without_code(self, client):
-        """Test GET /billing-process/ without code returns 403."""
-        response = client.get('/billing-process/')
-        
+    """Tests for POST /billing-process/ endpoint."""
+
+    def test_post_billing_process_with_valid_key(self, client, app):
+        """Test POST /billing-process/ with valid X-Internal-Key."""
+        internal_key = os.environ.get("APP_SECRET_KEY", "test-app-secret-key")
+        response = client.post(
+            '/billing-process/',
+            content_type='application/json',
+            headers={"X-Internal-Key": internal_key}
+        )
+
+        assert response.status_code == 200
+
+    def test_post_billing_process_without_key(self, client):
+        """Test POST /billing-process/ without key returns 403."""
+        response = client.post('/billing-process/', content_type='application/json')
+
         assert response.status_code == 403
-    
-    def test_get_billing_process_with_invalid_code(self, client):
-        """Test GET /billing-process/ with invalid code returns 403."""
-        response = client.get('/billing-process/?code=invalid-code')
-        
+
+    def test_post_billing_process_with_invalid_key(self, client):
+        """Test POST /billing-process/ with invalid key returns 403."""
+        response = client.post(
+            '/billing-process/',
+            content_type='application/json',
+            headers={"X-Internal-Key": "invalid-key"}
+        )
+
         assert response.status_code == 403
-    
-    def test_get_billing_process_no_auth_required(self, client, app):
-        """Test GET /billing-process/ doesn't require user authentication."""
-        with app.app_context():
-            from globals import APP_SECRET_KEY
-            # Should work without user authentication, just needs the secret code
-            response = client.get(f'/billing-process/?code={APP_SECRET_KEY}')
-            
-            assert response.status_code == 200

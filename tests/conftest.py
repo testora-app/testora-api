@@ -11,6 +11,11 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+# Set test env vars before any app imports
+os.environ["APP_ACCESS_TOKEN"] = "test-app-access-token"
+os.environ["APP_SECRET_KEY"] = "test-app-secret-key"
+os.environ["PAYSTACK_API_KEY"] = "test-paystack-api-key"
+
 import pytest
 import jwt
 from datetime import datetime, timezone, timedelta
@@ -47,7 +52,7 @@ def app():
         'SECRET_KEY': 'test-secret-key',
         'WTF_CSRF_ENABLED': False,
     })
-    
+
     with test_app.app_context():
         db.create_all()
         yield test_app
@@ -173,6 +178,12 @@ def staff_headers(staff_token):
 def student_headers(student_token):
     """Return authorization headers with student token."""
     return {'Authorization': f'Bearer {student_token}'}
+
+
+@pytest.fixture
+def app_access_headers():
+    """Return authorization headers for @public_protected endpoints."""
+    return {'Authorization': f'Bearer {os.environ["APP_ACCESS_TOKEN"]}'}
 
 
 # ============================================================================
@@ -322,8 +333,7 @@ def sample_student(app, db_session, sample_school):
         is_approved=True,
         school_id=sample_school.id,
         current_streak=5,
-        longest_streak=10,
-        last_test_date=datetime.now(timezone.utc).date()
+        highest_streak=10,
     )
     db_session.add(student)
     db_session.commit()
@@ -437,6 +447,7 @@ def sample_topic(app, db_session, sample_subject, sample_theme):
     topic = Topic(
         name='Linear Equations',
         short_name='Lin Eq',
+        level=1,
         subject_id=sample_subject.id,
         theme_id=sample_theme.id
     )
@@ -477,13 +488,10 @@ def multiple_subjects(app, db_session):
 def sample_question(app, db_session, sample_subject, sample_topic):
     """Create a sample question."""
     question = Question(
-        question_text='What is 2 + 2?',
-        question_type='multiple_choice',
-        options=['2', '3', '4', '5'],
+        text='What is 2 + 2?',
+        possible_answers="['2', '3', '4', '5']",
         correct_answer='4',
-        subject_id=sample_subject.id,
         topic_id=sample_topic.id,
-        difficulty_level=1,
         year=2024,
         is_flagged=False
     )
@@ -498,13 +506,10 @@ def multiple_questions(app, db_session, sample_subject, sample_topic):
     questions = []
     for i in range(10):
         question = Question(
-            question_text=f'Test question {i}?',
-            question_type='multiple_choice',
-            options=[f'A{i}', f'B{i}', f'C{i}', f'D{i}'],
+            text=f'Test question {i}?',
+            possible_answers=f"['A{i}', 'B{i}', 'C{i}', 'D{i}']",
             correct_answer=f'A{i}',
-            subject_id=sample_subject.id,
             topic_id=sample_topic.id,
-            difficulty_level=1,
             year=2024,
             is_flagged=False
         )
@@ -521,8 +526,10 @@ def sample_test(app, db_session, sample_student, sample_subject, sample_question
         student_id=sample_student.id,
         subject_id=sample_subject.id,
         school_id=sample_student.school_id,
-        questions=[sample_question.to_json(include_correct_answer=False)],
+        questions=[{"id": sample_question.id, "text": "What is 2 + 2?"}],
         total_points=1,
+        points_acquired=0,
+        score_acquired=0,
         question_number=1,
         is_completed=False
     )
@@ -578,7 +585,7 @@ def student_subject_level(app, db_session, sample_student, sample_subject):
 def sample_recipient(app, db_session):
     """Create a sample notification recipient."""
     recipient = Recipient(
-        user_type=UserTypes.student,
+        category=UserTypes.student,
         device_ids=['test-device-id'],
         email='student@testora.test'
     )
@@ -593,7 +600,7 @@ def sample_notification(app, db_session, sample_recipient):
     notification = Notification(
         title='Test Notification',
         content='This is a test notification',
-        notification_type='test',
+        alert_type='test',
         recipient_id=sample_recipient.id,
         is_read=False
     )
@@ -638,7 +645,6 @@ def sample_achievement(app, db_session):
         description='Complete your first test',
         achievement_class='test',
         image_url='https://example.com/achievement.png',
-        points=10
     )
     db_session.add(achievement)
     db_session.commit()
@@ -651,25 +657,45 @@ def sample_achievement(app, db_session):
 
 @pytest.fixture
 def mock_mailer():
-    """Mock the mailer service."""
-    with patch('app.integrations.mailer.mailer') as mock:
-        mock.send_email = MagicMock(return_value=True)
-        mock.generate_email_text = MagicMock(return_value='<html>Test Email</html>')
-        yield mock
+    """Mock the mailer service in all modules that import it."""
+    mock = MagicMock()
+    mock.send_email = MagicMock(return_value=True)
+    mock.generate_email_text = MagicMock(return_value='<html>Test Email</html>')
+    patches = [
+        patch('app.integrations.mailer.mailer', mock),
+        patch('app.routes.mailer', mock),
+        patch('app.student.routes.mailer', mock),
+        patch('app.staff.routes.mailer', mock),
+        patch('app.test.routes.mailer', mock),
+    ]
+    for p in patches:
+        p.start()
+    yield mock
+    for p in patches:
+        p.stop()
 
 
 @pytest.fixture
 def mock_pusher():
-    """Mock the Pusher notification service."""
-    with patch('app.integrations.pusher.pusher') as mock:
-        mock.notify_devices = MagicMock(return_value=True)
-        yield mock
+    """Mock the Pusher notification service in all modules that import it."""
+    mock = MagicMock()
+    mock.notify_devices = MagicMock(return_value=True)
+    patches = [
+        patch('app.integrations.pusher.pusher', mock),
+        patch('app.notifications.routes.pusher', mock),
+        patch('app.student.routes.pusher', mock),
+        patch('app.test.routes.pusher', mock),
+    ]
+    for p in patches:
+        p.start()
+    yield mock
+    for p in patches:
+        p.stop()
 
 
 @pytest.fixture
 def mock_paystack():
     """Mock the Paystack payment service."""
-    # Patch the paystack instance used by routes (app/subscriptions/routes.py imports it).
     with patch('app.subscriptions.routes.paystack') as mock:
         mock.create_payment = MagicMock(return_value={
             'status': True,

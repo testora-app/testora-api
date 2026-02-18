@@ -47,6 +47,7 @@ def get_admins():
 @app_admin.output(Responses.AdminResponseSchema)
 @public_protected
 def add_admin(json_data):
+    json_data = json_data["data"]
     if admin_manager.get_admin_by_email(json_data["email"]):
         return response_builder(400, "Admin with that email already exists!")
 
