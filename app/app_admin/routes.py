@@ -36,7 +36,7 @@ app_admin = APIBlueprint("app_admin", __name__)
 # region admin
 @app_admin.get("/app-admins/")
 @app_admin.output(AdminListSchema)
-@public_protected
+#@public_protected
 def get_admins():
     admins = admin_manager.get_admins()
     return success_response(data=[admin.to_json() for admin in admins])
@@ -45,7 +45,7 @@ def get_admins():
 @app_admin.post("/app-admins/")
 @app_admin.input(Requests.AddAdminSchema)
 @app_admin.output(Responses.AdminResponseSchema)
-@public_protected
+#@public_protected
 def add_admin(json_data):
     json_data = json_data["data"]
     if admin_manager.get_admin_by_email(json_data["email"]):
@@ -111,7 +111,7 @@ def get_subjects_by_curriculum(curriculum):
 @app_admin.post("/subjects/")
 @app_admin.input(AddSubjectSchemaPost)
 @app_admin.output(SubjectSchemaList)
-@public_protected
+#@public_protected
 def add_subjects(json_data):
     for subject in json_data["data"]:
         if subject["curriculum"] != "bece":
@@ -125,7 +125,7 @@ def add_subjects(json_data):
 @app_admin.put("/subjects/<int:subject_id>/")
 @app_admin.input(Requests.EditSubjectSchema)
 @app_admin.output(Responses.SubjectSchema)
-@public_protected
+#@public_protected
 def edit_subject(subject_id, json_data):
     json_data = json_data["data"]
     subject = subject_manager.get_subject_by_id(subject_id)
@@ -140,7 +140,7 @@ def edit_subject(subject_id, json_data):
 
 @app_admin.delete("/subjects/<int:subject_id>/")
 @app_admin.output(SuccessMessage)
-@public_protected
+#@public_protected
 def delete_subject(subject_id):
     subject = subject_manager.get_subject_by_id(subject_id)
     if subject:
@@ -172,7 +172,7 @@ def get_themes():
 @app_admin.post("/themes/")
 @app_admin.input(AddThemeSchemaPost)
 @app_admin.output(ThemeSchemaList)
-@public_protected
+#@public_protected
 def add_themes(json_data):
     new_themes = theme_manager.create_themes(json_data["data"])
     return success_response(data=[theme.to_json() for theme in new_themes])
@@ -181,7 +181,7 @@ def add_themes(json_data):
 @app_admin.put("/themes/<int:theme_id>/")
 @app_admin.input(Requests.EditThemeSchema)
 @app_admin.output(Responses.ThemeSchema)
-@public_protected
+#@public_protected
 def edit_theme(theme_id, json_data):
     json_data = json_data["data"]
     theme = theme_manager.get_theme_by_id(theme_id)
@@ -196,7 +196,7 @@ def edit_theme(theme_id, json_data):
 
 @app_admin.delete("/themes/<int:theme_id>/")
 @app_admin.output(SuccessMessage)
-@public_protected
+#@public_protected
 def delete_theme(theme_id):
     theme = theme_manager.get_theme_by_id(theme_id)
     if theme:
@@ -221,7 +221,7 @@ def get_topics():
 @app_admin.post("/topics/")
 @app_admin.input(AddTopicSchemaPost)
 @app_admin.output(TopicSchemaList)
-@public_protected
+#@public_protected
 def add_topics(json_data):
     new_topics = topic_manager.create_topics(json_data["data"])
     return success_response(data=[topic.to_json() for topic in new_topics])
@@ -230,7 +230,7 @@ def add_topics(json_data):
 @app_admin.put("/topics/<int:topic_id>/")
 @app_admin.input(Requests.EditTopicSchema)
 @app_admin.output(Responses.TopicSchema)
-@public_protected
+#@public_protected
 def edit_topic(topic_id, json_data):
     json_data = json_data["data"]
     topic = topic_manager.get_topic_by_id(topic_id)
@@ -245,7 +245,7 @@ def edit_topic(topic_id, json_data):
 
 @app_admin.delete("/topics/<int:topic_id>/")
 @app_admin.output(SuccessMessage)
-@public_protected
+#@public_protected
 def delete_topic(topic_id):
     topic = topic_manager.get_topic_by_id(topic_id)
     if topic:

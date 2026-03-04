@@ -182,7 +182,7 @@ def student_headers(student_token):
 
 @pytest.fixture
 def app_access_headers():
-    """Return authorization headers for @public_protected endpoints."""
+    """Return authorization headers for #@public_protected endpoints."""
     return {'Authorization': f'Bearer {os.environ["APP_ACCESS_TOKEN"]}'}
 
 
