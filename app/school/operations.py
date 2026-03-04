@@ -8,6 +8,7 @@ from app.subscriptions.constants import (
     FeatureStatus,
     TRIAL_DEFAULT_SEATS,
     TRIAL_DURATION_DAYS,
+    FREE_DEFAULT_SEATS,
 )
 
 from typing import List
@@ -80,9 +81,19 @@ class SchoolManager(BaseManager):
         self.commit()
 
     def demote_schools(self, school_ids: List[int]) -> None:
-        School.query.filter(School.id.in_(school_ids)).update(
-            {"subscription_package": SubscriptionPackages.free}
-        )
+        School.query.filter(School.id.in_(school_ids)).update({
+            "subscription_package": SubscriptionPackages.free,
+            "subscription_tier": TierNames.free,
+            "billing_cycle": None,
+            "price_per_seat": 0,
+            "total_seats": FREE_DEFAULT_SEATS,
+            "scheduled_downgrade": False,
+            "scheduled_downgrade_date": None,
+            "scheduled_billing_cycle": None,
+            "scheduled_billing_cycle_date": None,
+            "scheduled_seat_reduction": None,
+            "scheduled_reduction_date": None,
+        })
         self.commit()
 
 

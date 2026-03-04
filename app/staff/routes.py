@@ -23,7 +23,7 @@ from app.staff.schemas import (
     Responses,
 )
 from app.staff.operations import staff_manager
-from app.subscriptions.constants import SubscriptionLimits, Features
+from app.subscriptions.constants import SubscriptionLimits, Features, TierNames
 from app.integrations.mailer import mailer
 import os
 
@@ -281,7 +281,7 @@ def dashboard_general():
     subscription_expiry = school.subscription_expiry_date
 
     subscription_description = "You have full access to advanced analytics, unlimited student capacity, and dedicated support for your institution."
-    if subscription_package == "free":
+    if school.subscription_tier == TierNames.free:
         subscription_description = "You have limited access to advanced analytics, 10 student capacity, and dedicated support for your institution."
 
 

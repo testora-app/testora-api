@@ -46,6 +46,9 @@ class School(BaseModel):
                 "description": "You have full access to advanced analytics, unlimited student capacity, and dedicated support for your institution.",
             }
         }
+        tier = self.subscription_tier or "free"
+        pkg_key = "premium" if tier in ("trial", "premium", "premium_plus") else "free"
+        pkg = packages[pkg_key]
         return {
             "id": self.id,
             "name": self.name,
@@ -55,13 +58,13 @@ class School(BaseModel):
             "phone_number": self.phone_number,
             "email": self.email,
             "code": self.code,
-            "subscription_package": packages[self.subscription_package]["name"],
+            "subscription_package": pkg["name"],
             "subscription_expiry_date": (
                 str(self.subscription_expiry_date.strftime("%d %b %Y"))
                 if self.subscription_expiry_date
                 else self.subscription_expiry_date
             ),
-            "subscription_package_description": packages[self.subscription_package]["description"],
+            "subscription_package_description": pkg["description"],
             "is_suspended": self.is_suspended,
 
             # expose new subscription fields for the new subscription manager

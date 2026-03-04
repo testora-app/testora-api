@@ -10,10 +10,15 @@ from app.subscriptions.constants import (
     TierNames,
     PackagePrices,
     BillingCycles,
+    SubscriptionPackages,
     FREE_DEFAULT_SEATS,
     TRIAL_DEFAULT_SEATS,
 )
-from app.integrations.mailer import send_trial_expiry_email
+from app.integrations.mailer import (
+    send_trial_expiry_email,
+    send_downgrade_confirmation_email,
+    send_cycle_change_confirmation_email,
+)
 
 
 @dataclass
@@ -258,6 +263,7 @@ def apply_renewal_if_due(today: Optional[date] = None) -> int:
         # 1. Check if trial expired (highest priority)
         if school.subscription_tier == TierNames.trial:
             school.subscription_tier = TierNames.free
+            school.subscription_package = SubscriptionPackages.free
             school.total_seats = FREE_DEFAULT_SEATS
             school.billing_cycle = None
             school.price_per_seat = 0
@@ -272,14 +278,15 @@ def apply_renewal_if_due(today: Optional[date] = None) -> int:
 
         # 2. Downgrade takes precedence over other changes
         if getattr(school, "scheduled_downgrade", False):
+            scheduled_date = school.scheduled_downgrade_date
             school.subscription_tier = TierNames.free
+            school.subscription_package = SubscriptionPackages.free
             school.billing_cycle = None
             school.price_per_seat = 0
             school.total_seats = FREE_DEFAULT_SEATS
             school.scheduled_downgrade = False
             school.scheduled_downgrade_date = None
 
-            # clear any scheduled changes
             school.scheduled_seat_reduction = None
             school.scheduled_reduction_date = None
             school.scheduled_billing_cycle = None
@@ -289,29 +296,41 @@ def apply_renewal_if_due(today: Optional[date] = None) -> int:
             seats_used = compute_seats_used(school.id)
             if seats_used > FREE_DEFAULT_SEATS:
                 send_trial_expiry_email(school, seats_used)
+            send_downgrade_confirmation_email(school, scheduled_date)
 
             processed += 1
             continue
 
         # 3. Apply scheduled billing cycle change
         if school.scheduled_billing_cycle:
-            school.billing_cycle = school.scheduled_billing_cycle
+            new_cycle = school.scheduled_billing_cycle
+            scheduled_date = school.scheduled_billing_cycle_date
+            school.billing_cycle = new_cycle
             school.price_per_seat = PackagePrices.get_price_per_seat(
                 school.subscription_tier,
-                school.scheduled_billing_cycle
+                new_cycle,
             )
             school.scheduled_billing_cycle = None
             school.scheduled_billing_cycle_date = None
             school.save()
+            send_cycle_change_confirmation_email(school, new_cycle, scheduled_date)
             processed += 1
+            continue
 
-        # 4. Apply scheduled seat reduction
+        # 4. Apply scheduled seat reduction (re-validate at apply time)
         reduction = getattr(school, "scheduled_seat_reduction", None)
         if reduction:
-            school.total_seats = max(int(school.total_seats or 0) - int(reduction), 0)
-            school.scheduled_seat_reduction = None
-            school.scheduled_reduction_date = None
-            school.save()
+            seats_used = compute_seats_used(school.id)
+            new_total = max(int(school.total_seats or 0) - int(reduction), 0)
+            if new_total < seats_used:
+                school.scheduled_seat_reduction = None
+                school.scheduled_reduction_date = None
+                school.save()
+            else:
+                school.total_seats = new_total
+                school.scheduled_seat_reduction = None
+                school.scheduled_reduction_date = None
+                school.save()
             processed += 1
 
     return processed

@@ -28,10 +28,11 @@ class SchoolBillingPostSchema(BaseSchema):
     subscription_package = String(required=True, allow_none=False)
 
 
-class SchoolSubscriptionSchema(BaseSchema):
-    subscription_package = String(required=True, allow_none=False)
-    students_number = Integer(required=True, allow_none=False)
-    
+class UpgradeRequestSchema(BaseSchema):
+    tier = String(required=True)
+    billing_cycle = String(required=True)
+    seats = Integer(required=True)
+
 
 class Responses:
     SingleSchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema)
@@ -43,4 +44,4 @@ class Responses:
 
 
 class Requests:
-    SchoolSubscriptionSchema = make_response_schema(SchoolSubscriptionSchema)
+    UpgradeSchema = make_response_schema(UpgradeRequestSchema)

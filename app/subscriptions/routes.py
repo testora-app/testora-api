@@ -21,7 +21,7 @@ from app.integrations.paystack import paystack
 from app.subscriptions.schemas import Responses, Requests
 from app.subscriptions.operations import sb_history_manager
 from app.subscriptions.services import run_billing_process
-from app.subscriptions.constants import PaymentStatus, PackagePrices, SubscriptionPackages, TierNames
+from app.subscriptions.constants import PaymentStatus, PackagePrices, SubscriptionPackages, TierNames, BillingCycles
 
 from app.school.operations import school_manager
 
@@ -263,52 +263,72 @@ def get_single_billing_history(billing_id):
     return success_response(data=billing_history.to_json())
 
 
-@subscription.post("/subscribe")
-@subscription.input(Requests.SchoolSubscriptionSchema)
-@subscription.output(Responses.PaymentInitSchema, 201)
+@subscription.post("/subscriptions/upgrade")
 @token_auth([UserTypes.school_admin])
-def subscribe(json_data):
+def post_upgrade():
+    """Initiate a subscription upgrade (trial/free → premium/premium_plus).
+
+    Request: { "data": { "tier": "premium", "billing_cycle": "termly", "seats": 50 } }
+    """
     school_id = get_current_user()["school_id"]
-    data = json_data["data"]
+    body = request.get_json() or {}
+    data = body.get("data", body)
 
-    now = datetime.now(timezone.utc).date()
+    tier = data.get("tier")
+    billing_cycle = data.get("billing_cycle")
+    seats = data.get("seats")
 
-    amount_due = PackagePrices.calculate_subscription_price(
-        data["subscription_package"], data["students_number"]
-    )
+    valid_tiers = [TierNames.premium, TierNames.premium_plus]
+    valid_cycles = [BillingCycles.monthly, BillingCycles.termly, BillingCycles.yearly]
 
+    if tier not in valid_tiers:
+        return bad_request(f"tier must be one of {valid_tiers}")
+    if billing_cycle not in valid_cycles:
+        return bad_request(f"billing_cycle must be one of {valid_cycles}")
+    if not seats or int(seats) <= 0:
+        return bad_request("seats must be > 0")
 
-    new_bill = sb_history_manager.add_school_billing_history(
-        school_id=school_id,
-        amount_due=amount_due,
-        date_due=now,
-        billed_on=now,
-        settled_on=None,
-        payment_reference=None,
-        subscription_package=data["subscription_package"],
-        subscription_start_date=now,
-        subscription_end_date=now + timedelta(days=31),
-    )
-    user_email = get_current_user()["user_email"]
-
-    resp = paystack.create_payment(email=user_email, amount=amount_due)
-
-    if resp["status"] == True:
-        new_bill.payment_reference = resp["data"]["reference"]
-        new_bill.payment_status = PaymentStatus.pending
-        new_bill.save()
-
-        return success_response(
-            status_code=201,
-            data={
-                "status": True,
-                "authorization_url": resp["data"]["authorization_url"],
-                "reference": resp["data"]["reference"],
-                "access_code": resp["data"]["access_code"],
-            }
+    school = school_manager.get_school_by_id(school_id)
+    if school.subscription_tier == tier:
+        return bad_request(
+            "You are already on this tier. "
+            "To add seats use /subscriptions/add-seats; "
+            "to change your billing cycle use /subscriptions/schedule-cycle-change."
         )
 
+    seats = int(seats)
+    amount_due = PackagePrices.calculate_seat_total(tier, billing_cycle, seats)
+    user_email = get_current_user()["user_email"]
+
+    for stale in sb_history_manager.get_pending_upgrade_histories(school_id):
+        stale.payment_status = PaymentStatus.failed
+        stale.save()
+
+    resp = paystack.create_payment(email=user_email, amount=amount_due)
+    if resp.get("status") is True:
+        ref = resp["data"]["reference"]
+        now = datetime.now(timezone.utc).date()
+        bill = sb_history_manager.add_school_billing_history(
+            school_id=school_id,
+            amount_due=amount_due,
+            date_due=now,
+            billed_on=now,
+            settled_on=None,
+            payment_reference=ref,
+            subscription_package=f"upgrade:{tier}:{billing_cycle}:{seats}",
+            subscription_start_date=now,
+            subscription_end_date=now,
+        )
+        bill.payment_status = PaymentStatus.pending
+        bill.save()
+        return success_response(data={
+            "authorization_url": resp["data"]["authorization_url"],
+            "reference": ref,
+            "access_code": resp["data"]["access_code"],
+            "amount_due": amount_due,
+        })
     return response_builder(400, "Payment initialization failed")
+
 
 # an endpoint to settle the bill
 @subscription.get("/billing-history/<int:billing_id>/settle/")
@@ -354,7 +374,7 @@ def settle_billing_history(billing_id):
 def confirm_payment(reference):
 
     billing_history = sb_history_manager.get_school_billing_history_by_payment_ref(
-        reference
+        reference, lock=True
     )
 
     if not billing_history:
@@ -372,11 +392,11 @@ def confirm_payment(reference):
 
         school = school_manager.get_school_by_id(billing_history.school_id)
 
-        # Handle seat purchase payments: subscription_package = "add_seats:<n>"
-        if str(billing_history.subscription_package or "").startswith("add_seats:"):
+        pkg = str(billing_history.subscription_package or "")
+
+        if pkg.startswith("add_seats:"):
             try:
-                seats_str = str(billing_history.subscription_package).split(":", 1)[1]
-                seats_to_add = int(seats_str)
+                seats_to_add = int(pkg.split(":", 1)[1])
             except Exception:
                 seats_to_add = 0
 
@@ -391,11 +411,23 @@ def confirm_payment(reference):
                 school.total_seats = int(school.total_seats or 0) + int(seats_to_add)
                 school.save()
             return success_response(data=billing_history.to_json())
-        school.subscription_expiry_date = school.subscription_expiry_date + timedelta(
-            days=31
-        )
-        school.subscription_package = "premium"
-        school.save()
+
+        elif pkg.startswith("upgrade:"):
+            try:
+                _, tier, billing_cycle, seats_str = pkg.split(":", 3)
+                seats = int(seats_str)
+            except Exception:
+                return bad_request("Malformed upgrade record")
+            from app.subscriptions.upgrade_handler import handle_successful_upgrade
+            handle_successful_upgrade(school, tier, billing_cycle, seats)
+
+        else:
+            cycle = school.billing_cycle or BillingCycles.monthly
+            cycle_days = PackagePrices.get_days_in_cycle(cycle)
+            base = school.subscription_expiry_date or datetime.now(timezone.utc).date()
+            school.subscription_expiry_date = base + timedelta(days=cycle_days)
+            school.subscription_package = SubscriptionPackages.premium
+            school.save()
 
         return success_response(data=billing_history.to_json())
 
@@ -416,8 +448,8 @@ def paystack_webhook():
     event_type = event.get('event')
 
     billing_history = sb_history_manager.get_school_billing_history_by_payment_ref(
-            event['data']['reference']
-        )
+        event['data']['reference'], lock=True
+    )
 
     if not billing_history:
         return not_found("Bill not found")
@@ -433,12 +465,35 @@ def paystack_webhook():
         billing_history.save()
 
         school = school_manager.get_school_by_id(billing_history.school_id)
-        school.subscription_expiry_date = school.subscription_expiry_date + timedelta(
-            days=31
-        )
-        school.subscription_package = "premium"
-        school.save()
-    
+        pkg = str(billing_history.subscription_package or "")
+
+        if pkg.startswith("add_seats:"):
+            try:
+                seats_to_add = int(pkg.split(":", 1)[1])
+            except Exception:
+                seats_to_add = 0
+            if seats_to_add > 0:
+                school.total_seats = int(school.total_seats or 0) + seats_to_add
+                school.save()
+
+        elif pkg.startswith("upgrade:"):
+            try:
+                _, tier, billing_cycle, seats_str = pkg.split(":", 3)
+                seats = int(seats_str)
+            except Exception:
+                seats = 0
+            if seats > 0:
+                from app.subscriptions.upgrade_handler import handle_successful_upgrade
+                handle_successful_upgrade(school, tier, billing_cycle, seats)
+
+        else:
+            cycle = school.billing_cycle or BillingCycles.monthly
+            cycle_days = PackagePrices.get_days_in_cycle(cycle)
+            base = school.subscription_expiry_date or datetime.now(timezone.utc).date()
+            school.subscription_expiry_date = base + timedelta(days=cycle_days)
+            school.subscription_package = SubscriptionPackages.premium
+            school.save()
+
     elif event_type == 'charge.failed':
         billing_history.payment_status = PaymentStatus.failed
         billing_history.save()
@@ -454,5 +509,31 @@ def run_billing():
     if not auth_header or not hmac.compare_digest(auth_header, APP_SECRET_KEY):
         return permissioned_denied()
 
-    bill_data = run_billing_process()
+    from app.subscriptions.subscription_manager import apply_renewal_if_due
+    apply_renewal_if_due()
+    run_billing_process()
     return success_response()
+
+
+@subscription.post("/suspension-process/")
+@subscription.output(SuccessMessage, 200)
+def run_suspension():
+    auth_header = request.headers.get("X-Internal-Key", "")
+    if not auth_header or not hmac.compare_digest(auth_header, APP_SECRET_KEY):
+        return permissioned_denied()
+
+    from app.subscriptions.services import run_suspension_process
+    run_suspension_process()
+    return success_response()
+
+
+@subscription.post("/renewal-process/")
+@subscription.output(SuccessMessage, 200)
+def run_renewal():
+    auth_header = request.headers.get("X-Internal-Key", "")
+    if not auth_header or not hmac.compare_digest(auth_header, APP_SECRET_KEY):
+        return permissioned_denied()
+
+    from app.subscriptions.subscription_manager import apply_renewal_if_due
+    processed = apply_renewal_if_due()
+    return success_response(data={"processed": processed})

@@ -216,7 +216,11 @@ def sample_school(app, db_session):
         short_name='TestHS',
         code='TEST001',
         location='Test City',
-        subscription_package='premium',
+        subscription_package='Premium',
+        subscription_tier='premium',
+        billing_cycle='monthly',
+        total_seats=50,
+        price_per_seat=75.0,
         subscription_expiry_date=datetime.now(timezone.utc).date() + timedelta(days=30),
         is_suspended=False
     )
@@ -233,7 +237,9 @@ def sample_free_school(app, db_session):
         short_name='FreeTS',
         code='FREE001',
         location='Test City',
-        subscription_package='free',
+        subscription_package='Free',
+        subscription_tier='free',
+        total_seats=10,
         subscription_expiry_date=datetime.now(timezone.utc).date() + timedelta(days=30),
         is_suspended=False
     )
