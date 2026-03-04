@@ -37,11 +37,11 @@ class School(BaseModel):
 
     def to_json(self):
         packages = {
-            "Free": {
+            "free": {
                 "name": "Free Plan",
                 "description": "You have access to basic features with limited student capacity and standard support.",
             },
-            "Premium": {
+            "premium": {
                 "name": "Premium Plan",
                 "description": "You have full access to advanced analytics, unlimited student capacity, and dedicated support for your institution.",
             }
