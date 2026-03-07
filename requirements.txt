@@ -49,6 +49,7 @@ psycopg2==2.9.9
 pycparser==2.22
 Pygments==2.19.1
 PyJWT==2.8.0
+PyMySQL==1.1.2
 pytest==8.4.1
 pytest-asyncio==1.0.0
 pytest-cov==7.0.0
