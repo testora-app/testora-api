@@ -38,7 +38,6 @@ MarkupSafe==2.1.5
 marshmallow==3.21.1
 mypy-extensions==1.0.0
 mysql-connector-python==9.0.0
-mysqlclient==2.2.4
 onesignal-sdk==2.0.0
 ordered-set==4.1.0
 packaging==24.0
