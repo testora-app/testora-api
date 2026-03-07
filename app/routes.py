@@ -52,7 +52,7 @@ def contact_us(json_data):
 
     mailer.send_email(
         [
-            "info@preppee.online",
+            "support@wedidtech.com",
             "info@wedidtech.com",
             "sg.apawu@gmail.com",
             "joseph3241@gmail.com",
