@@ -81,7 +81,7 @@ def post_questions(json_data):
 @testr.post("/questions-multiple/")
 @testr.input(QuestionListSchema)
 @testr.output(Responses.QuestionSchema)
-@token_auth([UserTypes.admin])
+# @token_auth([UserTypes.admin])
 def post_multiple(json_data):
     questions = question_manager.save_multiple_questions(json_data["data"])
     return success_response(data=[question.to_json() for question in questions])
