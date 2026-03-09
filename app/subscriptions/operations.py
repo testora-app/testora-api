@@ -19,11 +19,14 @@ class SchoolBillingHistoryManager(BaseManager):
         ).first()
 
     def get_school_billing_history_by_payment_ref(
-        self, payment_reference: str
+        self, payment_reference: str, lock: bool = False
     ) -> SchoolBillingHistory:
-        return SchoolBillingHistory.query.filter_by(
+        q = SchoolBillingHistory.query.filter_by(
             payment_reference=payment_reference, is_deleted=False
-        ).first()
+        )
+        if lock:
+            q = q.with_for_update()
+        return q.first()
 
     def get_school_billing_history_by_subscription_expiry_date(
         self, school_id: int, subscription_expiry_date: str
@@ -34,11 +37,20 @@ class SchoolBillingHistoryManager(BaseManager):
             is_deleted=False,
         ).first()
 
+    def get_pending_upgrade_histories(self, school_id: int) -> List[SchoolBillingHistory]:
+        return SchoolBillingHistory.query.filter(
+            SchoolBillingHistory.school_id == school_id,
+            SchoolBillingHistory.payment_status == PaymentStatus.pending,
+            SchoolBillingHistory.subscription_package.like("upgrade:%"),
+            SchoolBillingHistory.is_deleted == False,
+        ).all()
+
     def get_overdue_billing_histories(
         self, date_due: str
     ) -> List[SchoolBillingHistory]:
         return SchoolBillingHistory.query.filter(
-            SchoolBillingHistory.date_due >= date_due,
+            SchoolBillingHistory.date_due <= date_due,
+            SchoolBillingHistory.payment_status == PaymentStatus.pending,
             SchoolBillingHistory.is_deleted == False,
         ).all()
 

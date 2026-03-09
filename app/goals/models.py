@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum
 from sqlalchemy import UniqueConstraint, Index, CheckConstraint, func
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum, JSONB
+from sqlalchemy import JSON
 
 from app.extensions import db
 from app._shared.models import BaseModel
@@ -38,7 +39,8 @@ class WeeklyGoal(BaseModel):
     )
     target_value = db.Column(db.Integer, nullable=False, default=0, server_default="0")
     current_value = db.Column(db.Integer, nullable=False, default=0, server_default="0")
-    params = db.Column(JSONB, nullable=False, default=dict, server_default="{}")
+    # JSONB is Postgres-only; use JSON when running on sqlite (tests).
+    params = db.Column(JSONB().with_variant(JSON(), "sqlite"), nullable=False, default=dict, server_default="{}")
     achieved_at = db.Column(db.DateTime(timezone=True), nullable=True)
     is_active = db.Column(db.Boolean, nullable=True, default=True)
 

@@ -1,5 +1,5 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
-from apiflask.validators import OneOf
+from apiflask.validators import OneOf, Length
 from apiflask import PaginationSchema
 
 from app._shared.schemas import BaseSchema, CurriculumTypes, make_response_schema
@@ -8,7 +8,7 @@ from app._shared.schemas import BaseSchema, CurriculumTypes, make_response_schem
 # region Admin Schema
 class AddAdminSchema(BaseSchema):
     email = String(required=True, allow_none=False)
-    password = String(required=True, allow_none=False)
+    password = String(required=True, allow_none=False, validate=[Length(min=8)])
     username = String(required=True, allow_none=False)
     is_super_admin = Boolean(required=True, allow_none=False)
 

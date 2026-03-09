@@ -1,11 +1,11 @@
-from apiflask.fields import String, List, Nested, Date, Boolean, Integer
+from apiflask.fields import String, List, Nested, Date, Boolean, Integer, Float
 from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
 
 
 class SchoolBillingHistorySchema(BaseSchema):
     id = ID_FIELD
     school_id = ID_FIELD
-    amount_due = String(required=True, allow_none=False)
+    amount_due = Float(required=True, allow_none=False)
     date_due = Date(required=True, allow_none=False)
     billed_on = Date(required=True, allow_none=False)
     settled_on = Date(required=False, allow_none=True)
@@ -23,15 +23,16 @@ class PaymentInitSchema(BaseSchema):
 
 
 class SchoolBillingPostSchema(BaseSchema):
-    amount_due = String(required=True, allow_none=False)
+    amount_due = Float(required=True, allow_none=False)
     payment_reference = String(required=False, allow_none=True)
     subscription_package = String(required=True, allow_none=False)
 
 
-class SchoolSubscriptionSchema(BaseSchema):
-    subscription_package = String(required=True, allow_none=False)
-    students_number = Integer(required=True, allow_none=False)
-    
+class UpgradeRequestSchema(BaseSchema):
+    tier = String(required=True)
+    billing_cycle = String(required=True)
+    seats = Integer(required=True)
+
 
 class Responses:
     SingleSchoolBillingHistorySchema = make_response_schema(SchoolBillingHistorySchema)
@@ -43,4 +44,4 @@ class Responses:
 
 
 class Requests:
-    SchoolSubscriptionSchema = make_response_schema(SchoolSubscriptionSchema)
+    UpgradeSchema = make_response_schema(UpgradeRequestSchema)

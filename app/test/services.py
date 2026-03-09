@@ -86,6 +86,29 @@ class TestService:
         if max_duration:
             return max_duration // question_length
         return 3000
+    
+    @staticmethod
+    def determine_test_duration(subject_short_name, student_subject_level) -> int:
+        # default duration is 10 minutes per test in seconds
+        default_duration = 600
+
+        # custom durations per subject can be defined here
+        subject_durations = {
+            'maths': {1: 14 * 60, 2: 18 * 60, 3: 22 * 60, 4: 28 * 60, 5: 34 * 60, 6: 38 * 60, 7: 42* 60, 8: 46*60, 9: 50*60, 10: 50*60},
+            'english': {1: 12 * 60, 2: 15 * 60, 3: 18 * 60, 4: 11 * 60, 5: 16 * 60, 6: 20 * 60, 7: 34* 60, 8: 38*60, 9: 42*60, 10: 42*60},
+        }
+
+        default_duration ={
+            1: 10 * 60, 2: 12 * 60, 3: 16 * 60, 4: 20 * 60, 5: 24 * 60, 6: 26 * 60, 7: 29* 60, 8: 32*60, 9: 35*60, 10: 35*60
+        }
+
+        if subject_short_name in subject_durations:
+            return subject_durations[subject_short_name].get(
+                student_subject_level, default_duration
+            )
+        
+        return default_duration.get(student_subject_level, 600)
+
 
     # DEPRECATED: Use generate_adaptive_questions instead
     @staticmethod
@@ -398,7 +421,7 @@ class TestService:
         # we need a way to determine if we're deducting points lost or half points
 
         points_acquired = 0
-        score_acquired = 0  # correct/total * 100
+        correct_count = 0  # correct answers across main + sub questions (excluding flagged)
 
         # recommended topic, recommendation_level = high
         # a break down of topics and the percentage acquired
@@ -422,7 +445,7 @@ class TestService:
                 topic_totals[q.topic_id] += 1
                 if q.correct_answer == question["student_answer"]:
                     main_question_correct = True
-                    score_acquired += 1
+                    correct_count += 1
                     topic_scores[q.topic_id] += 1
                 else:
                     if deduct_points:
@@ -459,14 +482,18 @@ class TestService:
             points_acquired += points
             question["correct_answer"] = q.correct_answer
             question["points"] = points
-            score_acquired += no_subs_correct
+            correct_count += no_subs_correct
 
-        score_acquired = (score_acquired / total_number) * 100  # correct/total * 100
+        score_acquired = (correct_count / total_number) * 100 if total_number else 0
+        mistakes_count = max(0, int(total_number - correct_count))
 
         return {
             "questions": questions,
             "points_acquired": round(points_acquired, 2),
             "score_acquired": score_acquired,
+            "correct_count": int(correct_count),
+            "total_questions": int(total_number),
+            "mistakes_count": int(mistakes_count),
             "topic_scores": topic_scores,
             "topic_totals": topic_totals,
         }

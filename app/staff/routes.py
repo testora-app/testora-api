@@ -23,11 +23,12 @@ from app.staff.schemas import (
     Responses,
 )
 from app.staff.operations import staff_manager
-from app.subscriptions.constants import SubscriptionLimits, Features
+from app.subscriptions.constants import SubscriptionLimits, Features, TierNames
 from app.integrations.mailer import mailer
 import os
 
 from app.school.operations import school_manager
+from app.extensions import limiter
 
 staff = APIBlueprint("staff", __name__)
 
@@ -82,24 +83,8 @@ def register_staff(json_data):
     code = json_data.pop("school_code")
     school = school_manager.get_school_by_code(code)
     if school:
-        teacher = staff_manager.create_staff(
+        staff_manager.create_staff(
             **json_data, is_admin=False, school_id=school.id
-        )
-
-        context = {
-            "school_name": school.name,
-            "teacher_name": teacher.first_name,
-            "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
-            "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
-            "phone_number": "+233 24 142 3514",
-        }
-
-        html = mailer.generate_email_text("staff_signup.html", context)
-        mailer.send_email(
-            [teacher.email],
-            "You're In!  Welcome to Your Preppee Classroom ",
-            html,
-            html=html,
         )
         return success_response()
     return unauthorized_request("Invalid School Code")
@@ -108,6 +93,7 @@ def register_staff(json_data):
 @staff.post("/staff/authenticate/")
 @staff.input(LoginSchema)
 @staff.output(Responses.VerifiedStaffSchema)
+@limiter.limit("10 per minute")
 def login(json_data):
 
     staff = staff_manager.get_staff_by_email(json_data["email"].strip())
@@ -177,9 +163,25 @@ def approve_staff(json_data):
 
     for staff_id in json_data["staff_ids"]:
         staff = staff_manager.get_staff_by_id(staff_id)
-        if staff:
+        if staff and staff.school_id == school_id:
             staff.is_approved = True
             staff.save()
+
+            context = {
+                "school_name": school.name,
+                "teacher_name": staff.first_name,
+                "guide_link": os.getenv("FRONTEND_URL", "https://preppee.online") + "/docs",
+                "login_url": os.getenv("FRONTEND_URL", "https://preppee.online") + "/login",
+                "phone_number": "+233 24 142 3514",
+            }
+
+            html = mailer.generate_email_text("staff_signup.html", context)
+            mailer.send_email(
+                [staff.email],
+                "You're In!  Welcome to Your Preppee Classroom ",
+                html,
+                html=html,
+        )
     return success_response()
 
 
@@ -188,9 +190,10 @@ def approve_staff(json_data):
 @staff.output(SuccessMessage)
 @token_auth([UserTypes.school_admin])
 def unapprove_staff(json_data):
+    school_id = get_current_user()["school_id"]
     for staff_id in json_data["staff_ids"]:
         staff = staff_manager.get_staff_by_id(staff_id)
-        if staff:
+        if staff and staff.school_id == school_id:
             staff.is_approved = False
             staff.save()
     return success_response()
@@ -209,10 +212,13 @@ def get_staff_list():
 @staff.output(Responses.StaffResponseSchema)
 @token_auth(["*"])
 def get_staff_details(staff_id):
+    current_user = get_current_user()
     staff = staff_manager.get_staff_by_id(staff_id)
-    if staff:
-        return success_response(data=staff.to_json(include_batches=True))
-    return not_found(message="Staff does not exist")
+    if not staff:
+        return not_found(message="Staff does not exist")
+    if current_user["user_type"] != UserTypes.admin and staff.school_id != current_user["school_id"]:
+        return permissioned_denied("You do not have permission to access this resource.")
+    return success_response(data=staff.to_json(include_batches=True))
 
 
 @staff.put("/staff/<int:staff_id>/")
@@ -220,11 +226,14 @@ def get_staff_details(staff_id):
 @staff.output(Responses.StaffResponseSchema)
 @token_auth([UserTypes.school_admin])
 def edit_staff_details(staff_id, json_data):
+    school_id = get_current_user()["school_id"]
     staff = staff_manager.get_staff_by_id(staff_id)
 
     data = json_data["data"]
     subjects = data.pop("subjects", [])
 
+    if staff and staff.school_id != school_id:
+        return permissioned_denied("You do not have permission to access this resource.")
     if staff:
         staff.first_name = data.get("first_name", staff.first_name)
         staff.surname = data.get("surname", staff.surname)
@@ -264,7 +273,7 @@ def dashboard_general():
 
     school_id = get_current_user()["school_id"]
     students = student_manager.get_active_students_by_school(school_id)
-    total_staff = len(staff_manager.get_staff_by_school(school_id, approved_only=True))
+    total_staff = staff_manager.get_staff_by_school(school_id)
     total_batches = len(batch_manager.get_batches_by_school_id(school_id))
     total_tests = len(test_manager.get_tests_by_school_id(school_id))
     school = school_manager.get_school_by_id(school_id)
@@ -272,13 +281,28 @@ def dashboard_general():
     subscription_expiry = school.subscription_expiry_date
 
     subscription_description = "You have full access to advanced analytics, unlimited student capacity, and dedicated support for your institution."
-    if subscription_package == "free":
+    if school.subscription_tier == TierNames.free:
         subscription_description = "You have limited access to advanced analytics, 10 student capacity, and dedicated support for your institution."
+
+
+    pending_staff = len([st for st in total_staff if not st.is_approved])
+    approved_staff = len(total_staff) - pending_staff
+
+    pending_students = len(
+        [
+            st
+            for st in students
+            if not st.is_approved
+        ]
+    )
+    approved_students = len(students) - pending_students
 
     return success_response(
         data={
-            "total_students": len(students),
-            "total_staff": total_staff,
+            "total_students": approved_students,
+            "pending_students": pending_students,
+            "pending_staff": pending_staff,
+            "total_staff": approved_staff,
             "total_batches": total_batches,
             "total_tests": total_tests,
             "package_information": {

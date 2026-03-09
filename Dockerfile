@@ -1,22 +1,16 @@
-# Use an official Python runtime as a parent image
-FROM python:3.12.8
+FROM python:3.12.8-slim
 
-
-# Create and set the working directory in the container
 WORKDIR /app
 
-# Copy the requirements file into the container
 COPY requirements.txt requirements.txt
 
-# Install the Python dependencies
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-
-# Copy the rest of the application source code to the container
 COPY . .
 
-# Expose the port your application will run on (replace 3000 with your app's port)
+RUN adduser --disabled-password --no-create-home appuser
+USER appuser
+
 EXPOSE 8080
 
-# Define the command to run your application
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "run:app"]
+CMD ["gunicorn", "-w", "4", "-k", "gevent", "-b", "0.0.0.0:8080", "--timeout", "120", "run:app"]

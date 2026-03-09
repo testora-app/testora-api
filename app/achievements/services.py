@@ -1,88 +1,273 @@
-from app.achievements.models import StudentHasAchievement, Achievement
-from app.student.models import StudentSubjectLevel
-from app.extensions import db
+import json
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
+
+from app.achievements.models import StudentHasAchievement, Achievement
+from app.extensions import db
 from app.integrations.pusher import pusher
+from app.student.models import Student, StudentSubjectLevel
+from app.test.models import Test
 
 class AchievementEngine:
     def __init__(self, student_id):
         self.student_id = student_id
 
-    def assign(self, name, repeatable=False):
+    BELOW_AP_THRESHOLD = 65  # below "approaching_proficient" in AnalyticsService
+
+    # ---------- Persistence helpers ----------
+
+    def assign(self, name: str, repeatable: bool = False) -> None:
+        """Assign an achievement by its unique name."""
         achievement = Achievement.query.filter_by(name=name).first()
         if not achievement:
             return
 
         exists = StudentHasAchievement.query.filter_by(
             student_id=self.student_id,
-            achievement_id=achievement.id
+            achievement_id=achievement.id,
         ).first()
 
         if exists:
-            print("exists", exists.number_of_times)
             if repeatable:
-                print("repeatable")
-                exists.number_of_times += 1
+                exists.number_of_times = (exists.number_of_times or 1) + 1
+                exists.updated_at = datetime.now(timezone.utc)
                 db.session.commit()
-                return
             return
-        
+
         try:
             new_achievement = StudentHasAchievement(
                 student_id=self.student_id,
                 achievement_id=achievement.id,
                 number_of_times=1,
-                created_at=datetime.now(timezone.utc)
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc),
             )
-        
             db.session.add(new_achievement)
             db.session.commit()
         except Exception as e:
-            print(e)
+            print(f"Error assigning achievement {name}: {e}")
+            db.session.rollback()
 
+    def _parse_requirements(self, achievement: Achievement) -> Dict[str, Any]:
+        if not achievement.requirements:
+            return {}
+        try:
+            return json.loads(achievement.requirements)
+        except Exception:
+            return {}
+
+    # ---------- Metrics ----------
+
+    def _tests_completed_total(self) -> int:
+        from app.test.operations import test_manager
+        return len(test_manager.get_tests_by_student_ids([self.student_id]))
+
+    def _tests_scored_within_band_total(self, score_min: float, score_max: float) -> int:
+        from app.test.operations import test_manager
+        tests = test_manager.get_tests_by_student_ids([self.student_id])
+        return sum(1 for t in tests if score_min <= float(t.score_acquired) <= score_max)
+
+    def _has_previous_failure_below_ap(self, exclude_test_id: Optional[int] = None) -> bool:
+        """Any prior test with score < BELOW_AP_THRESHOLD."""
+        from app.test.operations import test_manager
+        tests = test_manager.get_tests_by_student_ids([self.student_id])
+        for t in tests:
+            if exclude_test_id is not None and t.id == exclude_test_id:
+                continue
+            if float(t.score_acquired) < self.BELOW_AP_THRESHOLD:
+                return True
+        return False
+
+    def _student_current_streak(self) -> int:
+        student = Student.query.get(self.student_id)
+        return int(student.current_streak or 0) if student else 0
+
+    def _student_max_level(self) -> int:
+        levels = StudentSubjectLevel.query.filter_by(student_id=self.student_id).all()
+        return max((lvl.level for lvl in levels), default=0)
+
+    # ---------- Evaluation ----------
+
+    def evaluate_for_test(self, test: Test, email: Optional[str] = None) -> List[str]:
+        """Evaluate and assign achievements triggered by a completed test."""
+        unlocked: List[str] = []
+        all_achievements = Achievement.query.filter_by(is_deleted=False).all()
+
+        test_score = float(test.score_acquired)
+        meta = test.meta or {}
+        total_questions = meta.get("total_questions") or test.question_number
+        mistakes_count = meta.get("mistakes_count")
+        out_time = (meta.get("out_time") or 0) if isinstance(meta, dict) else 0
+        # (available for future achievement rules)
+
+        for ach in all_achievements:
+            req = self._parse_requirements(ach)
+            aclass = ach.achievement_class
+
+            # Volume practice
+            if aclass == "volume_practice":
+                target = int(req.get("number_of_tests") or 0)
+                if target and self._tests_completed_total() >= target:
+                    self.assign(ach.name)
+                    unlocked.append(ach.name)
+                continue
+
+            # Comeback rewards
+            if aclass == "comeback_rewards":
+                cur_min = float(req.get("current_score_min") or 0)
+                cur_max = float(req.get("current_score_max") or 0)
+                requires_prev_fail = bool(req.get("requires_previous_failure"))
+                prev_cond = req.get("previous_failure_condition")
+
+                if not (cur_min <= test_score <= cur_max):
+                    continue
+
+                if requires_prev_fail:
+                    if prev_cond == "below_AP":
+                        if not self._has_previous_failure_below_ap(exclude_test_id=test.id):
+                            continue
+                    else:
+                        continue
+
+                self.assign(ach.name)
+                unlocked.append(ach.name)
+                continue
+
+            # Speed and accuracy
+            if aclass == "speed_and_accuracy":
+                expected_q = req.get("questions_count")
+                if expected_q is not None and total_questions is not None:
+                    if int(total_questions) != int(expected_q):
+                        continue
+
+                if req.get("requires_finish_before_time_end"):
+                    # Frontend sends out_time; if it's > 0, student finished before timer ended.
+                    if not (out_time and int(out_time) > 0):
+                        continue
+
+                # Mistakes-based
+                if req.get("metric") == "mistakes_count":
+                    max_mistakes = req.get("max_mistakes")
+                    if mistakes_count is None:
+                        continue
+                    if max_mistakes is not None and int(mistakes_count) > int(max_mistakes):
+                        continue
+                    self.assign(ach.name)
+                    unlocked.append(ach.name)
+                    continue
+
+                # Score-based
+                if req.get("metric") == "score_percent":
+                    score_min = float(req.get("score_min") or 0)
+                    score_max = float(req.get("score_max") or 100)
+                    if score_min <= test_score <= score_max:
+                        self.assign(ach.name)
+                        unlocked.append(ach.name)
+                    continue
+
+                continue
+
+            # Mastery level (score bands)
+            if aclass == "mastery_level":
+                score_min = float(req.get("score_band_min") or 0)
+                score_max = float(req.get("score_band_max") or 0)
+                required_tests = int(req.get("number_of_tests") or 0)
+                if required_tests <= 0:
+                    continue
+
+                current = self._tests_scored_within_band_total(score_min, score_max)
+                if current >= required_tests:
+                    self.assign(ach.name)
+                    unlocked.append(ach.name)
+                continue
+
+            # Level ups (checked here too, on every test completion)
+            if aclass == "level_ups":
+                target_level = int(req.get("level") or 0)
+                if target_level and self._student_max_level() >= target_level:
+                    self.assign(ach.name)
+                    unlocked.append(ach.name)
+                continue
+
+            # Continuous practice (streak)
+            if aclass == "continuous_practice":
+                streak_days = int(req.get("streak_days") or 0)
+                if streak_days and self._student_current_streak() >= streak_days:
+                    self.assign(ach.name)
+                    unlocked.append(ach.name)
+                continue
+
+            # Honor system badge (windowed)
+            if aclass == "honor_system":
+                tests_window = int(req.get("tests_window") or 20)
+                max_event_ms = int(req.get("max_event_ms") or 15000)
+                max_events_per_test = int(req.get("max_outside_events_per_test") or 2)
+                max_outside_time_ms_per_test = int(req.get("max_outside_time_ms_per_test") or 30000)
+
+                if tests_window <= 0:
+                    continue
+
+                recent = (
+                    Test.query.filter_by(student_id=self.student_id, is_completed=True)
+                    .order_by(Test.finished_on.desc())
+                    .limit(tests_window)
+                    .all()
+                )
+                if len(recent) < tests_window:
+                    continue
+
+                # Only award on boundaries (every 20 tests)
+                if self._tests_completed_total() % tests_window != 0:
+                    continue
+
+                clean = True
+                for t in recent:
+                    tmeta = t.meta or {}
+                    if not isinstance(tmeta, dict):
+                        clean = False
+                        break
+
+                    t_out_ms = int((tmeta.get("outside_time_ms") or tmeta.get("out_time") or 0))
+                    t_events = int(tmeta.get("outside_events") or 0)
+                    t_max_event = int(tmeta.get("max_outside_event_ms") or 0)
+
+                    # Grace is applied in frontend; still guard here.
+                    if t_max_event >= max_event_ms:
+                        clean = False
+                        break
+                    if t_events >= max_events_per_test:
+                        clean = False
+                        break
+                    if t_out_ms >= max_outside_time_ms_per_test:
+                        clean = False
+                        break
+
+                if clean:
+                    self.assign(ach.name, repeatable=True)
+                    unlocked.append(ach.name)
+                continue
+
+        # Notify only newly unlocked items (best-effort).
+        if email:
+            for name in unlocked:
+                AchievementEngine.notify_achievements(email, name)
+
+        return unlocked
+
+    # Backward-compat wrappers (kept so call sites don't break)
     def check_test_achievements(self, subject_id, score, test_count, email=None):
-        if test_count == 1:
-            self.assign("First Step")
-            AchievementEngine.notify_achievements(email, "First Step")
-        elif test_count == 5:
-            self.assign("Steady Start")
-            AchievementEngine.notify_achievements(email, "Steady Start")
-        elif test_count == 10:
-            self.assign("Practice Champ")
-            AchievementEngine.notify_achievements(email, "Practice Champ")
-        elif test_count == 25:
-            self.assign("Quarter Milestone")
-            AchievementEngine.notify_achievements(email, "Quarter Milestone")
-
-        if score == 100:
-            self.assign("Top Scorer", repeatable=True)
-            AchievementEngine.notify_achievements(email, "Top Scorer")
-        if score >= 90:
-            self.assign("Precision Player", repeatable=True)
-            AchievementEngine.notify_achievements(email, "Precision Player")
-        if score >= 80:
-            self.assign("80 Club", repeatable=True)
-            AchievementEngine.notify_achievements(email, "80 Club")
-        if score >= 50 and test_count >= 5:
-            self.assign("Rising Star")
-            AchievementEngine.notify_achievements(email, "Rising Star")
+        test = (
+            Test.query.filter_by(student_id=self.student_id, is_completed=True)
+            .order_by(Test.finished_on.desc())
+            .first()
+        )
+        if test:
+            self.evaluate_for_test(test, email=email)
 
     def check_level_achievements(self, email=None):
-        levels = StudentSubjectLevel.query.filter_by(student_id=self.student_id).all()
-        subjects_over_level3 = [lvl for lvl in levels if lvl.level >= 3]
-        subject_ids = [lvl.subject_id for lvl in subjects_over_level3]
+        # level achievements are evaluated inside evaluate_for_test()
+        return
 
-        if len(subject_ids) >= 3:
-            self.assign("Multi-Subject Pro")
-            AchievementEngine.notify_achievements(email, "Multi-Subject Pro")
-
-        for level in levels:
-            subject_name = self.get_subject_name(level.subject_id)
-            if subject_name == "Math" and level.level >= 5:
-                self.assign("Math Level Up")
-                AchievementEngine.notify_achievements(email, "Math Level Up")
-
-    
     @staticmethod
     def notify_achievements(email, achievement_name):
         if not email:

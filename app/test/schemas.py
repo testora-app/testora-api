@@ -22,6 +22,7 @@ class SubQuestionSchema(BaseSchema):
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
     year = Integer(allow_none=True, required=False)
+    topic_id = Integer(required=False, allow_none=True)
 
 
 class QuestionImageSchema(Schema):
@@ -35,6 +36,7 @@ class QuestionSchema(BaseSchema):
     correct_answer = String(required=True, allow_none=True)
     possible_answers = List(String(), required=True, allow_none=True)
     topic_id = Integer(required=True)
+    subject_id = Integer(required=False)
     points = Integer(required=True, allow_none=True)
     school_id = Integer(allow_none=True)
     flag_reason = String(allow_none=True, required=False)

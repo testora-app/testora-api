@@ -76,7 +76,7 @@ class SubQuestion(BaseModel):
             "points": self.points,
             "is_flagged": self.is_flagged,
             "flag_reason": self.flag_reason,
-            "year": self.year,
+            "year": self.year
         }
 
         if include_correct_answer:

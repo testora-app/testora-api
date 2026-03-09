@@ -3,6 +3,8 @@ from datetime import datetime, timezone
 from collections import Counter, defaultdict
 from typing import List, Dict, Tuple, Any, Optional, Iterable
 
+import json
+
 from apiflask.exceptions import HTTPError
 
 from app.student.operations import student_manager, batch_manager
@@ -1381,50 +1383,223 @@ class AnalyticsService:
 
         return messages
 
+    def calculate_achievement_progress(
+        self, student_id: int, achievement_name: str, achievement_description: str
+    ) -> float:
+        """
+        Calculate progress percentage (0.0 - 100.0) for an achievement based on patterns.
+        Uses existing patterns from achievement names and descriptions.
+        """
+        from app.test.operations import test_manager
+        from app.student.operations import student_manager
+        from app.student.models import StudentSubjectLevel
+        from app.achievements.models import Achievement
+
+        student = student_manager.get_student_by_id(student_id)
+        if not student:
+            return 0.0
+
+        achievement = Achievement.query.filter_by(name=achievement_name).first()
+        requirements: Dict[str, Any] = {}
+        if achievement and achievement.requirements:
+            try:
+                requirements = json.loads(achievement.requirements)
+            except Exception:
+                requirements = {}
+
+        tests = test_manager.get_tests_by_student_ids([student_id])
+
+        # ---- Metadata-driven progress (preferred) ----
+        if requirements:
+            # Volume practice
+            if achievement and achievement.achievement_class == "volume_practice":
+                target = int(requirements.get("number_of_tests") or 0)
+                if target <= 0:
+                    return 0.0
+                current = min(len(tests), target)
+                return round((current / target) * 100.0, 2)
+
+            # Continuous practice (streak)
+            if achievement and achievement.achievement_class == "continuous_practice":
+                target = int(requirements.get("streak_days") or 0)
+                if target <= 0:
+                    return 0.0
+                current = min(int(student.current_streak or 0), target)
+                return round((current / target) * 100.0, 2)
+
+            # Level ups
+            if achievement and achievement.achievement_class == "level_ups":
+                target = int(requirements.get("level") or 0)
+                if target <= 0:
+                    return 0.0
+                levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
+                max_level = max((lvl.level for lvl in levels), default=0)
+                current = min(max_level, target)
+                return round((current / target) * 100.0, 2)
+
+            # Mastery level (score bands)
+            if achievement and achievement.achievement_class == "mastery_level":
+                score_min = float(requirements.get("score_band_min") or 0)
+                score_max = float(requirements.get("score_band_max") or 0)
+                target = int(requirements.get("number_of_tests") or 0)
+                if target <= 0:
+                    return 0.0
+                within = sum(1 for t in tests if score_min <= float(t.score_acquired) <= score_max)
+                current = min(within, target)
+                return round((current / target) * 100.0, 2)
+
+            # Speed and accuracy
+            if achievement and achievement.achievement_class == "speed_and_accuracy":
+                expected_q = requirements.get("questions_count")
+                if expected_q is None:
+                    return 0.0
+
+                # Find best progress across tests matching the expected question count
+                candidate_tests = []
+                for t in tests:
+                    tmeta = t.meta or {}
+                    tq = (tmeta.get("total_questions") if isinstance(tmeta, dict) else None) or t.question_number
+                    if tq is None:
+                        continue
+                    if int(tq) == int(expected_q):
+                        candidate_tests.append(t)
+
+                if not candidate_tests:
+                    return 0.0
+
+                # Progress is binary-ish for these, but we can still return best partial on mistakes.
+                metric = requirements.get("metric")
+                requires_finish = bool(requirements.get("requires_finish_before_time_end"))
+
+                best = 0.0
+                for t in candidate_tests:
+                    tmeta = t.meta or {}
+                    out_time = (tmeta.get("out_time") or 0) if isinstance(tmeta, dict) else 0
+                    if requires_finish and not (out_time and int(out_time) > 0):
+                        continue
+
+                    if metric == "score_percent":
+                        score_min = float(requirements.get("score_min") or 0)
+                        score_max = float(requirements.get("score_max") or 100)
+                        pct = 100.0 if (score_min <= float(t.score_acquired) <= score_max) else 0.0
+                        best = max(best, pct)
+                        continue
+
+                    if metric == "mistakes_count":
+                        max_mistakes = int(requirements.get("max_mistakes") or 0)
+                        mistakes = tmeta.get("mistakes_count") if isinstance(tmeta, dict) else None
+                        if mistakes is None:
+                            continue
+
+                        mistakes = int(mistakes)
+                        if mistakes <= max_mistakes:
+                            best = max(best, 100.0)
+                        else:
+                            # map mistakes to progress: 0..max_mistakes => 100%, otherwise decay
+                            # 1 extra mistake => 50%, 2 extra => 0% (simple)
+                            extra = mistakes - max_mistakes
+                            if extra == 1:
+                                best = max(best, 50.0)
+                            else:
+                                best = max(best, 0.0)
+                        continue
+
+                return best
+
+            # comeback_rewards progress is hard to quantify; return 0 for locked.
+            if achievement and achievement.achievement_class == "comeback_rewards":
+                return 0.0
+
+        # ---- Legacy fallback (description regex) ----
+        # Default: if we can't determine progress, return 0
+        return 0.0
+
     def get_student_achievements(
         self, student_id: int, include_requirements: bool = False
     ) -> List[Dict[str, Any]]:
-        """Return a student's achievements with metadata and counts."""
+        """Return ALL achievements (earned and locked) with progress percentages."""
         from app.achievements.models import StudentHasAchievement, Achievement
         from app.extensions import db
 
-        rows = (
+        # Get all achievements
+        all_achievements = Achievement.query.filter_by(is_deleted=False).all()
+        
+        # Get student's earned achievements
+        earned_achievements = (
             db.session.query(StudentHasAchievement, Achievement)
             .join(Achievement, Achievement.id == StudentHasAchievement.achievement_id)
             .filter(StudentHasAchievement.student_id == student_id)
             .all()
         )
+        
+        # Create a map of earned achievements
+        earned_map = {sha.achievement_id: sha for sha, _ in earned_achievements}
 
         results: List[Dict[str, Any]] = []
-        for sha, ach in rows:
-            item = ach.to_json(
-                include_requirements=include_requirements
-            )  # id, name, description, image_url, class[, requirements]
-            # Ensure stable keys expected by callers
-            item.update(
-                {
-                    "achievement_id": ach.id,  # redundant with "id", but convenient
-                    "number_of_times": sha.number_of_times or 1,
-                    "first_awarded_at": (
-                        sha.created_at.isoformat()
-                        if getattr(sha, "created_at", None)
-                        else None
-                    ),
-                    "last_awarded_at": (
-                        getattr(sha, "updated_at", None).isoformat()
-                        if getattr(sha, "updated_at", None)
-                        else None
-                    ),
-                }
+        
+        for ach in all_achievements:
+            item = ach.to_json(include_requirements=include_requirements)
+            
+            # Check if achievement is earned
+            is_earned = ach.id in earned_map
+            sha = earned_map.get(ach.id)
+            
+            # Calculate progress
+            progress_percentage = self.calculate_achievement_progress(
+                student_id, ach.name, ach.description
             )
+            
+            # If earned, progress is always 100%
+            if is_earned:
+                progress_percentage = 100.0
+            
+            item.update({
+                "achievement_id": ach.id,
+                "is_earned": is_earned,
+                "progress_percentage": progress_percentage,
+                "number_of_times": sha.number_of_times if sha else 0,
+                "first_awarded_at": (
+                    sha.created_at.isoformat()
+                    if sha and getattr(sha, "created_at", None)
+                    else None
+                ),
+                "last_awarded_at": (
+                    sha.updated_at.isoformat()
+                    if sha and getattr(sha, "updated_at", None)
+                    else (sha.created_at.isoformat() if sha and getattr(sha, "created_at", None) else None)
+                ),
+            })
             results.append(item)
 
-        # Sort newest awards first (fallback to first_awarded)
+        # Sort: earned achievements first (by last_awarded_at), then by progress percentage
         results.sort(
-            key=lambda x: x.get("last_awarded_at") or x.get("first_awarded_at") or "",
-            reverse=True,
+            key=lambda x: (
+                not x["is_earned"],  # False (earned) comes before True (not earned)
+                -x["progress_percentage"],  # Higher progress first
+                x.get("last_awarded_at") or x.get("first_awarded_at") or ""
+            ),
+            reverse=False
         )
+        
         return results
+    
+    def get_overall_preparedness(self, student_id, subject_id=None, batch_id=None):
+        """
+        Get overall preparedness data for a student including average mastery and subject-wise performance.
+        """
+        subject_performance = self.get_subject_proficiency(student_id, subject_id, batch_id)
+        
+        if not subject_performance:
+            average_mastery = 0.0
+        else:
+            average_mastery = round(
+                sum(subj["average_score"] for subj in subject_performance) / len(subject_performance), 2
+            )
+        
+        return {
+            "average_mastery": average_mastery,
+            "subjects": subject_performance
+        }
 
 
 analytics_service = AnalyticsService()

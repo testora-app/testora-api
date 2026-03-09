@@ -81,6 +81,7 @@ class QuestionManager(BaseManager):
             sub_obj = obj.pop("sub_questions", [])
             answer_images = obj.pop("answer_images", [])
             question_images = obj.pop("question_images", [])
+            obj.pop("subject_id", None)  # Remove subject_id if present
 
             new_question = self.create_question(**obj, is_save_function=True)
             questions_list.append(new_question)

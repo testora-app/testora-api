@@ -2,11 +2,12 @@ from app.subscriptions.operations import sb_history_manager
 from app.subscriptions.constants import (
     PackagePrices,
     SubscriptionPackages,
+    TierNames,
+    BillingCycles,
     PaymentStatus,
 )
 
 from app.school.operations import school_manager
-from app.student.operations import student_manager
 
 from datetime import datetime, timezone, timedelta
 
@@ -26,12 +27,15 @@ def run_billing_process() -> None:
         if billing_history:
             continue
 
-        student_number = len(student_manager.get_active_students_by_school(school.id))
+        amount_due = PackagePrices.calculate_seat_total(
+            school.subscription_tier or TierNames.free,
+            school.billing_cycle or BillingCycles.monthly,
+            school.total_seats or 0,
+        )
+
         new_bill = sb_history_manager.add_school_billing_history(
             school_id=school.id,
-            amount_due=PackagePrices.calculate_subscription_price(
-                school.subscription_package, student_number
-            ),
+            amount_due=amount_due,
             date_due=(datetime.now(timezone.utc) + timedelta(days=7)).date(),
             billed_on=datetime.now(timezone.utc),
             settled_on=None,
@@ -43,7 +47,7 @@ def run_billing_process() -> None:
             subscription_end_date=school.subscription_expiry_date,
         )
 
-        if school.subscription_package == SubscriptionPackages.free:
+        if school.subscription_tier == TierNames.free:
             new_bill.payment_status = PaymentStatus.success
             new_bill.settled_on = datetime.now(timezone.utc).date()
             new_bill.save()

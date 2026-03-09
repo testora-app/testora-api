@@ -30,13 +30,20 @@ from app.test.services import TestService
 from app.student.operations import student_manager, stusublvl_manager
 from app.student.services import SubjectLevelManager
 from app.school.operations import school_manager
-from app.subscriptions.constants import SubscriptionPackages, SubscriptionLimits, Features, FeatureStatus
+from app.subscriptions.constants import (
+    SubscriptionPackages,
+    SubscriptionLimits,
+    Features,
+    FeatureStatus,
+    TierNames,
+)
 from app.notifications.operations import recipient_manager
 
 
 from app.analytics.topic_analytics import TopicAnalytics
 from app.analytics.remarks_analyzer import RemarksAnalyzer
 from app.achievements.services import AchievementEngine
+from app.honor_system.services import HonorSystemService
 from app.integrations.pusher import pusher
 from app.integrations.mailer import mailer
 
@@ -50,6 +57,7 @@ testr = APIBlueprint("testr", __name__)
 
 @testr.get("/questions/")
 @testr.output(QuestionListSchema, 200)
+@token_auth([UserTypes.admin])
 def get_questions():
     questions = question_manager.get_questions()
     return success_response(data=[question.to_json() for question in questions])
@@ -58,6 +66,7 @@ def get_questions():
 @testr.post("/questions/")
 @testr.input(Requests.AddQuestionSchema)
 @testr.output(Responses.QuestionSchema)
+@token_auth([UserTypes.admin])
 def post_questions(json_data):
     json_data = json_data["data"]
     sub = json_data.pop("sub_questions") if json_data.get("sub_questions", None) else []
@@ -72,6 +81,7 @@ def post_questions(json_data):
 @testr.post("/questions-multiple/")
 @testr.input(QuestionListSchema)
 @testr.output(Responses.QuestionSchema)
+# @token_auth([UserTypes.admin])
 def post_multiple(json_data):
     questions = question_manager.save_multiple_questions(json_data["data"])
     return success_response(data=[question.to_json() for question in questions])
@@ -80,6 +90,7 @@ def post_multiple(json_data):
 @testr.put("/questions/<int:question_id>/")
 @testr.input(Requests.EditQuestionSchema)
 @testr.output(Responses.QuestionSchema)
+@token_auth([UserTypes.admin])
 def edit_questions(question_id, json_data):
     # implement edit
     question = question_manager.get_question_by_id(question_id)
@@ -89,6 +100,7 @@ def edit_questions(question_id, json_data):
 
 @testr.delete("/questions/<int:question_id>/")
 @testr.output(SuccessMessage)
+@token_auth([UserTypes.admin])
 def delete_questions(question_id):
     question = question_manager.get_question_by_id(question_id)
     subquestions = question_manager.get_subquestion_by_parent(question_id)
@@ -104,6 +116,7 @@ def delete_questions(question_id):
 @testr.post("/flag-questions/")
 @testr.input(Requests.FlagQuestionSchema)
 @testr.output(SuccessMessage)
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
 def flag_questions(json_data):
     data = json_data["data"]
     question_ids = [q["question_id"] for q in data]
@@ -122,7 +135,7 @@ def flag_questions(json_data):
     # send notification to admins here
     mailer.send_email(
         subject="Flagged Questions Notification",
-        recipients=["support@preppee.online"],
+        recipients=["support@preppee.online", "sg.apawu@gmail.com", "jaytaser@gmail.com"],
         text=html,
         html=True,
     )
@@ -183,7 +196,8 @@ def create_test(json_data):
     # get the name of the course, check if it's in the school's subscription thingy or not
     subject = subject_manager.get_subject_by_id(subject_id)
 
-    if subject.is_premium and school.subscription_package != SubscriptionPackages.premium:
+    # Premium content gating: if subject is premium, require paid tier
+    if subject.is_premium and school.subscription_tier == TierNames.free:
         return premium_only_feature()
 
     # validate the mode of the exam
@@ -192,10 +206,8 @@ def create_test(json_data):
             f"{exam_mode} is not in valid modes: {ExamModes.get_valid_exam_modes()}."
         )
 
-    if (
-        SubscriptionLimits.get_limits(school.subscription_package)[Features.ExamMode]
-        == FeatureStatus.DISABLED
-    ):
+    # Exam mode is paid-only
+    if SubscriptionLimits.get_limits(school.subscription_package)[Features.ExamMode] == FeatureStatus.DISABLED:
         return premium_only_feature()
 
     # get the student level for the particular subject
@@ -233,9 +245,7 @@ def create_test(json_data):
     )
 
     test_obj = new_test.to_json()
-    test_obj["duration"] = TestService.determine_test_duration_in_seconds(
-        subject.max_duration, len(questions)
-    )
+    test_obj["duration"] = TestService.determine_test_duration(subject.short_name.lower(), student_level.level)
 
     return success_response(data=test_obj, status_code=201)
 
@@ -258,12 +268,42 @@ def mark_test(test_id, json_data):
         test.is_completed = True
         # TODO: Determine the level that'll deduct points
 
+        # --- Honor system / anti-cheat evaluation (best-effort) ---
+        test_meta = json_data.get("meta") or {}
+        honor = HonorSystemService()
+        anti = honor.evaluate_test_meta(test_meta)
+
+        # mark (normal path)
         marked_test = TestService.mark_test(json_data["questions"])
         # update the questions with the correct answer, it'll already have their answer
         test.finished_on = datetime.now(timezone.utc)
-        test.meta = json_data["meta"]
+        # persist computed marking stats into meta so other services (achievements/analytics)
+        # can evaluate speed/accuracy + progress without schema changes.
+        test_meta.update(
+            {
+                "total_questions": marked_test.get("total_questions"),
+                "correct_count": marked_test.get("correct_count"),
+                "mistakes_count": marked_test.get("mistakes_count"),
+                # anti-cheat metrics
+                "outside_time_ms": anti.get("outside_time_ms"),
+                "outside_events": anti.get("outside_events"),
+                "max_outside_event_ms": anti.get("max_outside_event_ms"),
+                "penalty_flag": anti.get("penalty_flag"),
+                "is_suspicious": anti.get("is_suspicious"),
+            }
+        )
+
+        # If student spent too long outside test -> force 0 score
+        if anti.get("should_auto_end"):
+            marked_test["points_acquired"] = 0
+            marked_test["score_acquired"] = 0
+            marked_test["correct_count"] = 0
+            test_meta["terminated_reason"] = "anti_cheat"
+        test.meta = test_meta
         test.questions = marked_test["questions"]
-        test.questions_correct = marked_test["score_acquired"]
+        # questions_correct should be a count, not the percent score.
+        test.questions_correct = marked_test.get("correct_count")
+        test.question_number = marked_test.get("total_questions")
         test.points_acquired = marked_test["points_acquired"]
         test.score_acquired = marked_test["score_acquired"]
         test.save()
@@ -292,13 +332,28 @@ def mark_test(test_id, json_data):
         TopicAnalytics.student_level_topic_analytics(student_id, test.subject_id)
         RemarksAnalyzer.add_remarks_to_test(test, last_test)
 
+        streak_update = student_manager.update_streak(student_id, datetime.now(timezone.utc))
+
+        # Evaluate achievements after streak update so streak-based achievements
+        # use the latest streak value.
         test_count = len(test_manager.get_tests_by_student_ids([student_id]))
 
         engine = AchievementEngine(student_id)
-        engine.check_test_achievements(test.subject_id, test.score_acquired, test_count, email=student["user_email"])
+        engine.check_test_achievements(
+            test.subject_id,
+            test.score_acquired,
+            test_count,
+            email=student["user_email"],
+        )
         engine.check_level_achievements(email=student["user_email"])
 
-        streak_update = student_manager.update_streak(student_id, datetime.now(timezone.utc))
+        # Teacher notifications: cheating too much / honor vibes
+        try:
+            student_obj = student_manager.get_student_by_id(student_id)
+            if student_obj:
+                honor.notify_if_needed(test, student_obj)
+        except Exception:
+            pass
 
         if streak_update["streak_modified"]:
             recipient = recipient_manager.get_recipient_by_email(

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(pip install:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(ENVIRONMENT=testing python:*)",
+      "Bash(python:*)"
+    ]
+  }
+}
