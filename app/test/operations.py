@@ -15,6 +15,22 @@ class QuestionManager(BaseManager):
     def get_questions_by_topics(self, topic_ids: List[int]):
         return Question.query.filter(Question.topic_id.in_(topic_ids)).all()
 
+    def get_question_counts_by_subject(self, subject_id: int) -> Dict[int, int]:
+        from app.app_admin.models import Topic
+        results = (
+            Question.query
+            .join(Topic, Question.topic_id == Topic.id)
+            .filter(
+                Topic.subject_id == subject_id,
+                Question.is_deleted == False,
+                Question.is_flagged != True,
+            )
+            .with_entities(Question.topic_id, func.count(Question.id).label('count'))
+            .group_by(Question.topic_id)
+            .all()
+        )
+        return {row.topic_id: row.count for row in results}
+
     def get_question_by_id(self, question_id) -> Question:
         return Question.query.filter_by(id=question_id).first()
 

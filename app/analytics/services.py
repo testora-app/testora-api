@@ -8,7 +8,7 @@ import json
 from apiflask.exceptions import HTTPError
 
 from app.student.operations import student_manager, batch_manager
-from app.test.operations import test_manager
+from app.test.operations import test_manager, question_manager
 from app.app_admin.operations import subject_manager
 from app.student.operations import student_manager
 from app.app_admin.operations import topic_manager
@@ -824,20 +824,57 @@ class AnalyticsService:
         else:
             return "high_practice"
 
+    def _get_weighted_preparedness_for_subject(self, student_id: int, subject_id: int) -> float:
+        """
+        Compute coverage-weighted preparedness for a student in a subject.
+
+        Formula: Σ(question_count_for_topic × student_avg_score) / Σ(question_count_for_topic)
+
+        Unattempted topics contribute 0 to the numerator but are still in the denominator,
+        so a student who has only covered a fraction of the curriculum scores proportionally lower.
+        Topics with no active questions are excluded entirely.
+        """
+        topics = topic_manager.get_topic_by_subject(subject_id)
+        if not topics:
+            return 0.0
+
+        question_counts = question_manager.get_question_counts_by_subject(subject_id)
+
+        averages_rows = sts_manager.get_averages_for_topics_by_subject_id(student_id, subject_id)
+        student_averages = {row.topic_id: float(row.average_score) for row in averages_rows}
+
+        total_weight = 0.0
+        weighted_score_sum = 0.0
+
+        for topic in topics:
+            weight = question_counts.get(topic.id, 0)
+            if weight == 0:
+                continue
+            score = student_averages.get(topic.id, 0.0)
+            weighted_score_sum += weight * score
+            total_weight += weight
+
+        if total_weight == 0:
+            return 0.0
+
+        return round(weighted_score_sum / total_weight, 2)
+
     def get_performance_indicators(self, student_id, subject_id=None, batch_id=None):
         student = student_manager.get_student_by_id(student_id)
         tests = test_manager.get_tests_by_student_ids([student_id])
         if subject_id:
             tests = [test for test in tests if test.subject_id == subject_id]
 
-        average_score = round(
-            (
-                sum(test.score_acquired for test in tests) / len(tests)
-                if len(tests) > 0
-                else 0
-            ),
-            2,
-        )
+        if subject_id:
+            average_score = self._get_weighted_preparedness_for_subject(student_id, subject_id)
+        else:
+            subjects = subject_manager.get_subject_by_curriculum("bece")
+            subject_scores = [
+                self._get_weighted_preparedness_for_subject(student_id, s.id)
+                for s in subjects
+            ]
+            average_score = round(sum(subject_scores) / len(subject_scores), 2) if subject_scores else 0.0
+
         proficiency = self.get_performance_band(average_score)
         total_time_spent = round(
             sum((test.finished_on - test.started_on).total_seconds() for test in tests)
@@ -858,34 +895,19 @@ class AnalyticsService:
         }
 
     def get_subject_proficiency(self, student_id, subject_id=None, batch_id=None):
-        tests = test_manager.get_tests_by_student_ids([student_id])
-        subject_ids = []
-        if subject_id:
-            tests = [test for test in tests if test.subject_id == subject_id]
-            subject_ids.append(subject_id)
-        else:
-            subject_ids = [test.subject_id for test in tests]
-
         subjects = subject_manager.get_subject_by_curriculum("bece")
+        if subject_id:
+            subjects = [s for s in subjects if s.id == subject_id]
 
         subject_performance = []
 
         for subject in subjects:
-            subject_tests = [test for test in tests if test.subject_id == subject.id]
-
-            average_score = round(
-                (
-                    sum(subject_test.score_acquired for subject_test in subject_tests) / len(subject_tests)
-                    if len(subject_tests) > 0
-                    else 0
-                ),
-                2,
-            )
+            average_score = self._get_weighted_preparedness_for_subject(student_id, subject.id)
             proficiency = self.get_performance_band(average_score)
 
             subject_performance.append(
                 {
-                    "subject_id": subject_id,
+                    "subject_id": subject.id,
                     "subject_name": subject.name,
                     "average_score": average_score,
                     "proficiency": proficiency,
@@ -1255,8 +1277,16 @@ class AnalyticsService:
         power_up_zone.sort(key=lambda x: x["avg_score"])
         power_up_zone = power_up_zone[:2]
 
-        # 6) Compute overall mastery
-        overall_avg = round(sum(topic_avg.values()) / len(topic_avg), 2)
+        # 6) Compute overall mastery using coverage-weighted formula across all subject topics
+        if subject_id:
+            overall_avg = self._get_weighted_preparedness_for_subject(student_id, subject_id)
+        else:
+            subjects = subject_manager.get_subject_by_curriculum("bece")
+            subject_scores = [
+                self._get_weighted_preparedness_for_subject(student_id, s.id)
+                for s in subjects
+            ]
+            overall_avg = round(sum(subject_scores) / len(subject_scores), 2) if subject_scores else 0.0
 
         return {
             "mastery_percent": overall_avg,
