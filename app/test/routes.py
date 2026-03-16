@@ -120,25 +120,25 @@ def delete_questions(question_id):
 def flag_questions(json_data):
     data = json_data["data"]
     question_ids = [q["question_id"] for q in data]
+    
+    if len(question_ids) > 0:
+        objects = {q["question_id"]: q["flag_reason"] for q in data}
 
-    objects = {q["question_id"]: q["flag_reason"] for q in data}
+        questions = question_manager.get_question_by_ids(question_ids)
 
-    questions = question_manager.get_question_by_ids(question_ids)
+        for question in questions:
+            question.is_flagged = True
+            question.flag_reason = json.dumps(objects[question.id])
+            question.save()
+        html = render_template("flagged_questions.html", questions=questions)
+         # send notification to admins here
 
-    for question in questions:
-        question.is_flagged = True
-        question.flag_reason = json.dumps(objects[question.id])
-        question.save()
-
-
-    html = render_template("flagged_questions.html", questions=questions)
-    # send notification to admins here
-    mailer.send_email(
-        subject="Flagged Questions Notification",
-        recipients=["support@preppee.online", "sg.apawu@gmail.com", "jaytaser@gmail.com"],
-        text=html,
-        html=True,
-    )
+        mailer.send_email(
+            subject="Flagged Questions Notification",
+            recipients=["support@preppee.online", "sg.apawu@gmail.com", "jaytaser@gmail.com"],
+            text=html,
+            html=True,
+        )
 
     return success_response()
 
