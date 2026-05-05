@@ -50,17 +50,20 @@ def contact_us(json_data):
 
     contact_html = mailer.generate_email_text("new_contact.html", data)
 
-    mailer.send_email(
-        [
-            "support@wedidtech.com",
-            "info@wedidtech.com",
+    admins = [
+            "russellrandyedwin@gmail.com"
             "sg.apawu@gmail.com",
             "joseph3241@gmail.com",
-        ],
-        "We Have A New Contact!",
-        contact_html,
-        html=contact_html,
-    )
+            "jaytaser@gmail.com",
+        ]
+    
+    for admin in admins:
+        mailer.send_email(
+            [admin],
+            "We Have A New Contact!",
+            contact_html,
+            html=contact_html,
+        )
     return success_response()
 
 
