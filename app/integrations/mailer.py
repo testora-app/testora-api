@@ -35,19 +35,24 @@ class Mailer(object):
         :return: Response from the SMTP2GO API
         """
 
-        headers = {"accept": "application/json", "Content-Type": "application/json"}
-        payload = {
-            "api_key": self.api_key,
-            "to": recipients,
-            "sender": sender,
-            "subject": subject,
-            "text_body": text if not html else None,
-            "html_body": text if html else None,
-        }
+        try:
+            headers = {"accept": "application/json", "Content-Type": "application/json"}
+            payload = {
+                "api_key": self.api_key,
+                "to": recipients,
+                "sender": sender,
+                "subject": subject,
+                "text_body": text if not html else None,
+                "html_body": text if html else None,
+            }
 
-        response = requests.post(self.api_url, headers=headers, json=payload)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        return response.json()
+            response = requests.post(self.api_url, headers=headers, json=payload)
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            print(f"Failed to send email: {e}")
+            return None
 
 
 mailer = Mailer()
