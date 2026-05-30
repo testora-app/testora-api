@@ -29,6 +29,17 @@ def _verify_student_access(student_id):
     return True
 
 
+def _verify_batch_access(batch_id):
+    """Ensure the requested batch belongs to the caller's school."""
+    if batch_id is None:
+        return True
+    current_user = get_current_user()
+    batch = batch_manager.get_batch_by_id(batch_id)
+    if not batch:
+        return False
+    return batch.school_id == current_user["school_id"]
+
+
 #region NEW ANALYTICS
 
 @analytics.get("/analytics/practice-rate")
@@ -37,6 +48,8 @@ def _verify_student_access(student_id):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def practice_rate(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     practice_rate_results = analytics_service.get_practice_rate(school_id, **query_data)
     return success_response(data=practice_rate_results)
@@ -48,6 +61,8 @@ def practice_rate(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def performance_distribution(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     performance_distribution_results = analytics_service.get_performance_distribution(school_id, **query_data)
     return success_response(data=performance_distribution_results)
@@ -59,6 +74,8 @@ def performance_distribution(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def subject_performance(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     subject_performance_results = analytics_service.get_subject_performance(school_id, **query_data)
     return success_response(data=subject_performance_results)
@@ -70,6 +87,8 @@ def subject_performance(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def recent_tests_activities(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     recent_tests_activities_results = analytics_service.get_recent_tests_activities(school_id, **query_data)
     return success_response(data=recent_tests_activities_results)
@@ -81,6 +100,8 @@ def recent_tests_activities(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def proficiency_distribution(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     proficiency_distribution_results = analytics_service.get_proficiency_distribution(school_id, **query_data)
     return success_response(data=proficiency_distribution_results)
@@ -92,6 +113,8 @@ def proficiency_distribution(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def average_score_trend(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     average_score_trend_results = analytics_service.get_average_score_trend(school_id, **query_data)
     return success_response(data=average_score_trend_results)
@@ -103,6 +126,8 @@ def average_score_trend(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id"]})
 def performance_general(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     school_id = get_current_user()["school_id"]
     performance_general_results = analytics_service.get_performance_general(school_id, **query_data)
     return success_response(data=performance_general_results)
@@ -114,6 +139,8 @@ def performance_general(query_data):
 @token_auth([UserTypes.school_admin, UserTypes.staff])
 @require_params_by_usertype({UserTypes.staff: ["batch_id", "subject_id"]})
 def students_proficiency(query_data):
+    if not _verify_batch_access(query_data.get("batch_id")):
+        return permissioned_denied("You do not have permission to view this batch.")
     students_proficiency_results = analytics_service.get_students_proficiency(**query_data)
     return success_response(data=students_proficiency_results)
 
@@ -202,6 +229,39 @@ def failing_topics(student_id, query_data):
     return success_response(data=failing_topics_results)
 
 
+@analytics.get('/analytics/<student_id>/best-topics')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.BestTopicsDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def best_topics(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
+    best_topics_results = analytics_service.get_best_topics(student_id, **query_data)
+    return success_response(data=best_topics_results)
+
+
+@analytics.get('/analytics/<student_id>/time-per-question')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.TimePerQuestionDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def time_per_question(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
+    time_per_question_results = analytics_service.get_time_per_question(student_id, **query_data)
+    return success_response(data=time_per_question_results)
+
+
+@analytics.get('/analytics/<student_id>/integrity-summary')
+@analytics.input(Requests.AnalyticsQuerySchema, location="query")
+@analytics.output(Responses.IntegritySummaryDataSchema)
+@token_auth([UserTypes.student, UserTypes.school_admin, UserTypes.staff])
+def integrity_summary(student_id, query_data):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
+    integrity_summary_results = analytics_service.get_integrity_summary(student_id, **query_data)
+    return success_response(data=integrity_summary_results)
+
+
 @analytics.get('/analytics/<student_id>/student-proficiency')
 @analytics.input(Requests.AnalyticsQuerySchema, location="query")
 @analytics.output(Responses.StudentProficiencyDataSchema)
@@ -262,6 +322,41 @@ def get_student_weekly_goals(student_id):
         return permissioned_denied("You do not have permission to access this resource.")
     weekly_goals_results = analytics_service.get_student_weekly_goals(student_id)
     return success_response(data=weekly_goals_results)
+
+
+@analytics.get('/analytics/<student_id>/recommendations')
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
+def student_recommendations(student_id):
+    if not _verify_student_access(student_id):
+        return permissioned_denied("You do not have permission to access this resource.")
+    from flask import request
+    raw_subject = request.args.get("subject_id")
+    subject_id = None
+    if raw_subject:
+        try:
+            subject_id = int(raw_subject)
+        except ValueError:
+            subject_id = None
+    data = analytics_service.get_recommendations(student_id, subject_id=subject_id)
+    return success_response(data=data)
+
+
+@analytics.get('/analytics/batches/compare')
+@token_auth([UserTypes.school_admin, UserTypes.staff])
+def compare_batches_route():
+    from flask import request
+    raw = request.args.get("ids", "")
+    if not raw:
+        return permissioned_denied("Provide ids=A,B query param.")
+    try:
+        batch_ids = [int(p) for p in raw.split(",") if p.strip()]
+    except ValueError:
+        return permissioned_denied("ids must be comma-separated integers.")
+    if not (2 <= len(batch_ids) <= 4):
+        return permissioned_denied("Compare expects between 2 and 4 batch ids.")
+    school_id = get_current_user()["school_id"]
+    data = analytics_service.compare_batches(batch_ids, school_id=school_id)
+    return success_response(data=data)
 
 
 @analytics.get('/analytics/<student_id>/weekly-wins-messages')

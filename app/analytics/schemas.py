@@ -284,16 +284,17 @@ class PracticeOverviewDataSchema(BaseSchema):
     power_up_zone = List(Nested(TopicMasteryLevelItem), required=True)
 
 class AchievementItemData(BaseSchema):
+    id = Integer(required=True, validate=Range(min=0), example=86)
     achievement_id = Integer(required=True, validate=Range(min=0), example=86)
     name = String(required=True, example="Math Whiz")
     achievement_class = String(required=False, allow_none=True, example="gold")
-    description = String(required=True, example="Awarded for excellence in mathematics.")
-    image_url = String(required=True, example="http://example.com/images/achievement/math_whiz.png")
+    description = String(required=True, allow_none=True, example="Awarded for excellence in mathematics.")
+    image_url = String(required=True, allow_none=True, example="http://example.com/images/achievement/math_whiz.png")
     is_earned = Boolean(required=True, example=True)
     progress_percentage = Float(required=True, validate=Range(min=0, max=100), example=75.5)
     number_of_times = Integer(required=True, validate=Range(min=0), example=3)
-    first_awarded_at = DateTime(required=False, allow_none=True, example="2025-09-15T10:20:30Z")
-    last_awarded_at = DateTime(required=False, allow_none=True, example="2025-09-15T10:20:30Z")
+    first_awarded_at = String(required=False, allow_none=True, example="2025-09-15T10:20:30Z")
+    last_awarded_at = String(required=False, allow_none=True, example="2025-09-15T10:20:30Z")
 
 
 class WeeklyGoalItemSchema(BaseSchema):
@@ -329,6 +330,56 @@ class OverallPreparednessDataSchema(BaseSchema):
     subjects = List(Nested(SubjectPerformanceDataSchema), required=True)
 
 
+class TimePerQuestionBucketSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    count = Integer(required=True, validate=Range(min=0), example=12)
+    avg_seconds = Float(required=True, validate=Range(min=0), example=45.5)
+
+
+class TimePerQuestionDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    avg_seconds = Float(required=True, validate=Range(min=0), example=52.3)
+    total_questions = Integer(required=True, validate=Range(min=0), example=58)
+    fast_correct = Nested(TimePerQuestionBucketSchema, required=True)
+    fast_wrong = Nested(TimePerQuestionBucketSchema, required=True)
+    slow_correct = Nested(TimePerQuestionBucketSchema, required=True)
+    slow_wrong = Nested(TimePerQuestionBucketSchema, required=True)
+
+
+class BestTopicsDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    topic_name = String(required=True, example="Algebra")
+    average_score = Float(required=True, validate=Range(min=0, max=100), example=88.5)
+    proficiency = String(
+        required=True,
+        validate=OneOf(["highly_proficient", "proficient", "approaching_proficient", "developing", "emerging"]),
+        example="highly_proficient",
+    )
+
+
+class FlaggedTestSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    test_id = Integer(required=True, validate=Range(min=0), example=412)
+    date = String(required=False, allow_none=True, example="2026-05-12T14:30:00Z")
+    out_time_ms = Integer(required=True, validate=Range(min=0), example=18500)
+    outside_events = Integer(required=True, validate=Range(min=0), example=2)
+    max_outside_event_ms = Integer(required=True, validate=Range(min=0), example=12000)
+
+
+class IntegritySummaryDataSchema(BaseSchema):
+    class Meta:
+        ordered = True
+    suspect_test_count = Integer(required=True, validate=Range(min=0), example=6)
+    window_size = Integer(required=True, validate=Range(min=0), example=15)
+    threshold = Integer(required=True, validate=Range(min=0), example=5)
+    subject_name = String(required=False, allow_none=True, example="Mathematics")
+    flagged_tests = List(Nested(FlaggedTestSchema), required=True)
+
+
 class Responses:
     WeeklyReportSchema = make_response_schema(WeeklyReportSchema)
     TopicPerformanceSchema = make_response_schema(TopicPerformanceSchema, is_list=True)
@@ -356,6 +407,9 @@ class Responses:
     WeeklyGoalsDataSchema = make_response_schema(WeeklyGoalItemSchema, is_list=True)
     WeeklyWinsMessagesDataSchema = make_response_schema(WeeklyWinsMessageSchema, is_list=True)
     OverallPreparednessDataSchema = make_response_schema(OverallPreparednessDataSchema)
+    TimePerQuestionDataSchema = make_response_schema(TimePerQuestionDataSchema)
+    BestTopicsDataSchema = make_response_schema(BestTopicsDataSchema, is_list=True)
+    IntegritySummaryDataSchema = make_response_schema(IntegritySummaryDataSchema)
 
 
 class Requests:

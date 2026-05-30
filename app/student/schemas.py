@@ -71,6 +71,15 @@ class BatchSchema(BaseSchema):
     subjects = List(Nested(SubjectSchema), required=False)
     students = List(Integer(), allow_none=True, required=False)
     staff = List(Integer(), allow_none=True, required=False)
+    status = String(required=False, allow_none=True, validate=OneOf(["active", "archived", "graduated"]))
+    academic_year = String(required=False, allow_none=True)
+    exam_year = Integer(required=False, allow_none=True)
+    archived_at = String(required=False, allow_none=True)
+    archived_by = Integer(required=False, allow_none=True)
+
+
+class BatchListQuerySchema(Schema):
+    status = String(required=False, allow_none=True, validate=OneOf(["active", "archived", "graduated", "all"]))
 
 
 class BatchListSchema(BaseSchema):
@@ -155,6 +164,7 @@ class Requests:
     EndSessionSchema = make_response_schema(EndSessionSchema, is_list=True)
     UpdateStudentSchema = make_response_schema(UpdateStudentSchema)
     StudentQueryParams = StudentQueryParams
+    BatchListQuerySchema = BatchListQuerySchema
 
 
 

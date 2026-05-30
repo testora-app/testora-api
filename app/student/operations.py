@@ -113,9 +113,11 @@ class StudentManager(BaseManager):
 
 
 class BatchManager(BaseManager):
+    VALID_STATUSES = ("active", "archived", "graduated")
+
     def create_batch(self, batch_name, school_id, curriculum, students=[]):
         new_batch = Batch(
-            batch_name=batch_name, school_id=school_id, curriculum=curriculum
+            batch_name=batch_name, school_id=school_id, curriculum=curriculum, status="active"
         )
 
         self.save(new_batch)
@@ -128,21 +130,43 @@ class BatchManager(BaseManager):
         new_batch.save()
         return new_batch
 
-    def get_all_batches(self) -> List[Batch]:
-        return Batch.query.all()
+    def get_all_batches(self, status=None) -> List[Batch]:
+        query = Batch.query
+        if status and status != "all":
+            query = query.filter_by(status=status)
+        return query.all()
 
     def get_batch_by_id(self, batch_id) -> Batch:
         return Batch.query.get(batch_id)
 
-    def get_batches_by_school_id(self, school_id) -> List[Batch]:
-        return Batch.query.filter_by(school_id=school_id).all()
+    def get_batches_by_school_id(self, school_id, status=None) -> List[Batch]:
+        query = Batch.query.filter_by(school_id=school_id)
+        if status and status != "all":
+            query = query.filter_by(status=status)
+        return query.all()
 
     def get_batch_by_curriculum(self, curriculum) -> List[Batch]:
         return Batch.query.filter_by(curriculum=curriculum).all()
-    
+
     @staticmethod
     def get_batches_by_ids(batch_ids) -> List[Batch]:
         return Batch.query.filter(Batch.id.in_(batch_ids)).all()
+
+    def archive_batch(self, batch: Batch, archived_by_user_id=None) -> Batch:
+        from datetime import datetime, timezone
+        batch.status = "archived"
+        batch.archived_at = datetime.now(timezone.utc)
+        if archived_by_user_id is not None:
+            batch.archived_by = archived_by_user_id
+        batch.save()
+        return batch
+
+    def unarchive_batch(self, batch: Batch) -> Batch:
+        batch.status = "active"
+        batch.archived_at = None
+        batch.archived_by = None
+        batch.save()
+        return batch
 
 
 class StudentSubjectLevelManager(BaseManager):
