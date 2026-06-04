@@ -51,6 +51,60 @@ class TestQuestionRoutes:
         data = json.loads(response.data)
         assert data['data']['text'] == payload['data']['text']
 
+    def test_post_question_with_explanation(
+        self, client, auth_headers, sample_subject, sample_topic
+    ):
+        """Test POST /questions/ persists and returns the explanation."""
+        payload = {
+            "data": {
+                "text": "Which gas do plants absorb during photosynthesis?",
+                "possible_answers": ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen"],
+                "correct_answer": "Carbon dioxide",
+                "explanation": "Plants take in carbon dioxide and release oxygen during photosynthesis.",
+                "topic_id": sample_topic.id,
+                "points": 1,
+                "year": 2024
+            }
+        }
+
+        response = client.post(
+            '/questions/',
+            data=json.dumps(payload),
+            content_type='application/json',
+            headers=auth_headers
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['data']['explanation'] == payload['data']['explanation']
+
+    def test_post_multiple_questions_with_explanation(
+        self, client, sample_subject, sample_topic
+    ):
+        """Test POST /questions-multiple/ accepts and stores explanations."""
+        payload = {
+            "data": [
+                {
+                    "text": "What is 2 + 2?",
+                    "possible_answers": ["2", "3", "4", "5"],
+                    "correct_answer": "4",
+                    "explanation": "Adding two and two gives four.",
+                    "topic_id": sample_topic.id,
+                    "points": 1,
+                }
+            ]
+        }
+
+        response = client.post(
+            '/questions-multiple/',
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert data['data'][0]['explanation'] == payload['data'][0]['explanation']
+
     def test_put_question(self, client, auth_headers, sample_question):
         """Test PUT /questions/<id>/ updates question."""
         payload = {

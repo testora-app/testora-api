@@ -7,6 +7,7 @@ class Question(BaseModel):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=False)
     correct_answer = db.Column(db.Text, nullable=True)
+    explanation = db.Column(db.Text, nullable=True)
     possible_answers = db.Column(db.Text, nullable=True)
     topic_id = db.Column(db.Integer, db.ForeignKey("topic.id"), nullable=False)
     points = db.Column(db.Integer, nullable=True, default=None)
@@ -49,6 +50,7 @@ class Question(BaseModel):
 
         if include_correct_answer:
             question_json["correct_answer"] = self.correct_answer
+            question_json["explanation"] = self.explanation
         return question_json
 
 

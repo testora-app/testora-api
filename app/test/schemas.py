@@ -34,6 +34,7 @@ class QuestionSchema(BaseSchema):
     id = Integer(dump_only=True)
     text = String(required=True)
     correct_answer = String(required=True, allow_none=True)
+    explanation = String(allow_none=True, required=False)
     possible_answers = List(String(), required=True, allow_none=True)
     topic_id = Integer(required=True)
     subject_id = Integer(required=False)
