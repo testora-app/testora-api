@@ -42,7 +42,10 @@ class StagingConfig(BaseConfig):
         "pool_pre_ping": True,
     }
     CORS_METHODS = ["POST", "PUT", "GET", "OPTIONS", "DELETE"]
-    CORS_ORIGIN = ["https://staging.preppee.online"]
+    CORS_ORIGIN = [
+        "https://staging.preppee.online",
+        "https://staging---preppee-admin-981396515065.europe-west1.run.app",
+    ]
     CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]
     CORS_AUTOMATIC_OPTIONS = True
 
@@ -60,7 +63,11 @@ class ProductionConfig(BaseConfig):
         "pool_pre_ping": True,
     }
     CORS_METHODS = ["POST", "PUT", "GET", "OPTIONS", "DELETE"]
-    CORS_ORIGIN = ["https://preppee.online", "https://www.preppee.online"]
+    CORS_ORIGIN = [
+        "https://preppee.online",
+        "https://www.preppee.online",
+        "https://preppee-admin-981396515065.europe-west1.run.app",
+    ]
     CORS_ALLOW_HEADERS = ["Content-Type", "Authorization"]
     CORS_AUTOMATIC_OPTIONS = True
 
