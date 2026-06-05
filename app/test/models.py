@@ -16,7 +16,10 @@ class Question(BaseModel):
     flag_reason = db.Column(db.Text, nullable=True)
     year = db.Column(db.Integer, nullable=True)
     is_instructional = db.Column(db.Boolean, default=False, nullable=True)
-    
+    # exam item category: synonym/antonym/idiom/cloze/comprehension/sentence-completion/
+    # vowel-sound/consonant-sound/question-tag. Drives exam-paper assembly + UI rendering.
+    item_type = db.Column(db.String(40), nullable=True)
+
 
     sub_questions = db.relationship("SubQuestion", backref="parent_question", lazy=True)
     topic = db.relationship("Topic", back_populates="questions")
@@ -36,6 +39,8 @@ class Question(BaseModel):
             ],
             "level": self.topic.level,
             "is_flagged": self.is_flagged,
+            "is_instructional": self.is_instructional,
+            "item_type": getattr(self, "item_type", None),
             "flag_reason": self.flag_reason,
             "year": self.year,
             "question_images": {

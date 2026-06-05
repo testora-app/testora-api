@@ -31,6 +31,41 @@ class QuestionManager(BaseManager):
         )
         return {row.topic_id: row.count for row in results}
 
+    def get_questions_by_item_types(self, subject_id, item_types, limit) -> List[Question]:
+        """Random non-flagged questions of the given item_type(s) for a subject —
+        the building block of exam-mode blueprint assembly."""
+        from app.app_admin.models import Topic
+        return (
+            Question.query.join(Topic, Question.topic_id == Topic.id)
+            .filter(
+                Topic.subject_id == subject_id,
+                Question.item_type.in_(item_types),
+                Question.is_deleted == False,
+                Question.is_flagged != True,
+            )
+            .order_by(func.random())
+            .limit(limit)
+            .all()
+        )
+
+    def get_random_questions_for_subject(self, subject_id, count) -> List[Question]:
+        """Random non-flagged questions mixed across ALL levels of a subject — the
+        exam paper for subjects without an item_type blueprint (Maths, Science, …).
+        Excludes passage parents (is_instructional)."""
+        from app.app_admin.models import Topic
+        return (
+            Question.query.join(Topic, Question.topic_id == Topic.id)
+            .filter(
+                Topic.subject_id == subject_id,
+                Question.is_deleted == False,
+                Question.is_flagged != True,
+                Question.is_instructional != True,
+            )
+            .order_by(func.random())
+            .limit(count)
+            .all()
+        )
+
     def get_question_by_id(self, question_id) -> Question:
         return Question.query.filter_by(id=question_id).first()
 

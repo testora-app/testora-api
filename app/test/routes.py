@@ -13,6 +13,7 @@ from app._shared.api_errors import (
 )
 from app._shared.decorators import token_auth
 from app._shared.services import get_current_user
+from app.extensions import db
 
 from app.app_admin.operations import subject_manager
 
@@ -92,9 +93,36 @@ def post_multiple(json_data):
 @testr.output(Responses.QuestionSchema)
 @token_auth([UserTypes.admin])
 def edit_questions(question_id, json_data):
-    # implement edit
+    data = json_data["data"]
     question = question_manager.get_question_by_id(question_id)
+    if not question:
+        return not_found()
 
+    sub_questions = data.get("sub_questions") or []
+
+    question.text = data["text"]
+    question.correct_answer = data.get("correct_answer")
+    question.possible_answers = str(data["possible_answers"])
+    question.topic_id = data["topic_id"]
+    question.points = data.get("points")
+    if "explanation" in data:
+        question.explanation = data.get("explanation")
+
+    for existing_sub in question_manager.get_subquestion_by_parent(question_id):
+        db.session.delete(existing_sub)
+
+    for sub in sub_questions:
+        new_sub = question_manager.create_subquestion(
+            parent_question_id=question.id,
+            text=sub["text"],
+            correct_answer=sub["correct_answer"],
+            possible_answers=sub["possible_answers"],
+            points=sub["points"],
+            is_save_function=False,
+        )
+        db.session.add(new_sub)
+
+    db.session.commit()
     return success_response(data=question.to_json())
 
 
@@ -222,15 +250,29 @@ def create_test(json_data):
     if student and not TestService.is_mode_accessible(exam_mode, student_level.level):
         return bad_request(f"{exam_mode} mode is not available at your current level!")
 
-    questions = TestService.generate_adaptive_questions(
-        subject_id, student.id, student_level.level
-    )
-    questions = [
-        question.to_json(include_correct_answer=False) for question in questions
-    ]
-
-    # determine the number of points and total score
-    total_points = TestService.determine_total_test_points(questions)
+    # Exam mode assembles a real BECE paper: the fixed sectioned blueprint for English,
+    # and a 40-question paper mixed across ALL levels for every other subject. Level
+    # (practice) mode uses the adaptive, performance-based generator.
+    is_exam_paper = exam_mode == ExamModes.exam
+    if is_exam_paper:
+        questions = []
+        for q, section in TestService.generate_exam_questions(subject.short_name, subject_id):
+            q_json = q.to_json(include_correct_answer=False)
+            q_json["section"] = section
+            questions.append(q_json)
+        # exam marks are flat: a passage parent contributes its gaps, not itself
+        total_points = sum(
+            len(q.get("sub_questions") or []) if q.get("is_instructional") else 1
+            for q in questions
+        )
+    else:
+        question_objs = TestService.generate_adaptive_questions(
+            subject_id, student.id, student_level.level
+        )
+        questions = [
+            question.to_json(include_correct_answer=False) for question in question_objs
+        ]
+        total_points = TestService.determine_total_test_points(questions)
 
     # number of questions should include sub questions
 
@@ -242,10 +284,15 @@ def create_test(json_data):
         total_points=total_points,
         question_number=len(questions),
         school_id=student.school_id,
+        meta={"mode": exam_mode},
     )
 
     test_obj = new_test.to_json()
-    test_obj["duration"] = TestService.determine_test_duration(subject.short_name.lower(), student_level.level)
+    test_obj["duration"] = (
+        TestService.get_exam_duration(subject.short_name)
+        if is_exam_paper
+        else TestService.determine_test_duration(subject.short_name.lower(), student_level.level)
+    )
 
     return success_response(data=test_obj, status_code=201)
 
@@ -273,8 +320,10 @@ def mark_test(test_id, json_data):
         honor = HonorSystemService()
         anti = honor.evaluate_test_meta(test_meta)
 
-        # mark (normal path)
-        marked_test = TestService.mark_test(json_data["questions"])
+        # mark: exam tests use flat 1-mark-per-correct scoring; practice uses the
+        # level-weighted points engine. The mode was recorded on the test at creation.
+        is_exam = (test.meta or {}).get("mode") == ExamModes.exam
+        marked_test = TestService.mark_test(json_data["questions"], flat=is_exam)
         # update the questions with the correct answer, it'll already have their answer
         test.finished_on = datetime.now(timezone.utc)
         # persist computed marking stats into meta so other services (achievements/analytics)

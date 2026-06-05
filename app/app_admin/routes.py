@@ -133,6 +133,10 @@ def edit_subject(subject_id, json_data):
         subject.curriculum = json_data["curriculum"]
         subject.name = json_data["name"]
         subject.short_name = json_data["short_name"]
+        if "max_duration" in json_data:
+            subject.max_duration = json_data["max_duration"]
+        if "is_premium" in json_data:
+            subject.is_premium = json_data["is_premium"]
         subject.save()
         return success_response(data=subject.to_json())
     return not_found()
@@ -238,6 +242,8 @@ def edit_topic(topic_id, json_data):
         topic.name = json_data["name"]
         topic.short_name = json_data["short_name"]
         topic.subject_id = json_data["subject_id"]
+        topic.level = json_data["level"]
+        topic.theme_id = json_data["theme_id"]
         topic.save()
         return success_response(data=topic.to_json())
     return not_found()

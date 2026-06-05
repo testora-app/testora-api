@@ -22,8 +22,72 @@ from app.app_admin.models import Topic
 from app.test.models import Question
 
 
+# Every BECE objective paper is 40 questions. Subjects without an item_type blueprint
+# get this many, mixed across all levels.
+EXAM_QUESTION_COUNT = 40
+
+# Exam-mode blueprints: the FIXED composition of a real BECE objective paper, keyed by
+# subject short_name. Each slot is (item_types, count). Cloze/comprehension slots pull a
+# passage parent whose sub_questions supply the marks. Subjects without a blueprint get
+# the generic 40-question mixed paper instead.
+EXAM_BLUEPRINTS = {
+    # English Language — Paper 1 (objective): 40 marks.
+    "ENG-CCP": {
+        "duration": 50 * 60,  # 50 minutes
+        "sections": [
+            ("Grammar Usage", [
+                (["sentence-completion", "question-tag"], 15),
+                (["synonym"], 5),
+                (["idiom"], 5),
+                (["antonym"], 5),
+                (["cloze"], 1),          # one passage parent (5 gaps = 5 marks)
+            ]),
+            ("Oral Language", [
+                (["consonant-sound"], 3),
+                (["vowel-sound"], 2),
+            ]),
+        ],
+    },
+}
+
+
 class TestService:
     """Enhanced TestService with adaptive question generation"""
+
+    @staticmethod
+    def has_exam_blueprint(subject_short_name) -> bool:
+        return subject_short_name in EXAM_BLUEPRINTS
+
+    @staticmethod
+    def get_exam_duration(subject_short_name) -> int:
+        bp = EXAM_BLUEPRINTS.get(subject_short_name)
+        return bp["duration"] if bp else 3000
+
+    @staticmethod
+    def generate_exam_questions(subject_short_name, subject_id):
+        """Assemble a real exam paper as a list of (Question, section_name) pairs.
+
+        - Subjects WITH a blueprint (English) get the fixed sectioned composition.
+        - Every other subject gets EXAM_QUESTION_COUNT questions mixed across ALL
+          levels (a full mock paper), under a single "Objective Test" section.
+        """
+        from app.test.operations import question_manager
+
+        bp = EXAM_BLUEPRINTS.get(subject_short_name)
+        if bp:
+            out = []
+            for section_name, slots in bp["sections"]:
+                for item_types, count in slots:
+                    for q in question_manager.get_questions_by_item_types(
+                        subject_id, item_types, count
+                    ):
+                        out.append((q, section_name))
+            return out
+
+        questions = question_manager.get_random_questions_for_subject(
+            subject_id, EXAM_QUESTION_COUNT
+        )
+        return [(q, "Objective Test") for q in questions]
 
     @staticmethod
     def is_mode_accessible(exam_mode, student_level):
@@ -416,9 +480,10 @@ class TestService:
         }
     
     @staticmethod
-    def mark_test(questions, deduct_points=False):
+    def mark_test(questions, deduct_points=False, flat=False):
         from app.test.operations import question_manager
-        # we need a way to determine if we're deducting points lost or half points
+        # flat=True -> exam scoring: every correct answer is worth exactly 1 mark
+        # (main or sub). flat=False -> level-weighted practice points.
 
         points_acquired = 0
         correct_count = 0  # correct answers across main + sub questions (excluding flagged)
@@ -439,11 +504,16 @@ class TestService:
             main_question_correct = False
             no_subs_correct = 0
 
-            if not q.is_flagged:
-                #TODO: MAKE THIS BETTER JOSEPH 
+            # A passage/stimulus parent (cloze / comprehension) is itself NOT scorable:
+            # it carries no answer of its own. Don't count it toward the total and never
+            # mark it — only its sub_questions below are real, answerable questions.
+            if q.is_instructional:
+                total_number -= 1
+            elif not q.is_flagged:
+                #TODO: MAKE THIS BETTER JOSEPH
                 # current logic: mark main question if it's not flagged
                 topic_totals[q.topic_id] += 1
-                if q.correct_answer == question["student_answer"]:
+                if q.correct_answer == question.get("student_answer"):
                     main_question_correct = True
                     correct_count += 1
                     topic_scores[q.topic_id] += 1
@@ -471,14 +541,18 @@ class TestService:
                         if deduct_points:
                             points_acquired -= 1
 
-            points = round(
-                TestService.determine_question_points(
-                    question,
-                    main_correct=main_question_correct,
-                    sub_questions_correct=no_subs_correct,
-                ),
-                2,
-            )
+            if flat:
+                # exam: 1 mark per correct answer (main + each correct sub)
+                points = (1 if main_question_correct else 0) + no_subs_correct
+            else:
+                points = round(
+                    TestService.determine_question_points(
+                        question,
+                        main_correct=main_question_correct,
+                        sub_questions_correct=no_subs_correct,
+                    ),
+                    2,
+                )
             points_acquired += points
             question["correct_answer"] = q.correct_answer
             question["points"] = points

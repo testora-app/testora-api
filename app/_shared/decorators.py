@@ -50,6 +50,11 @@ def require_params_by_usertype(param_rules):
 
 def can_access_info():
     user = get_current_user()
+
+    # The platform super-admin is not scoped to any school and may access any resource.
+    if user["user_type"] == UserTypes.admin:
+        return True
+
     student_id = request.view_args.get("student_id")
     batch_id = request.args.get("batch_id")
 
