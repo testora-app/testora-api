@@ -25,6 +25,44 @@ class TestQuestionRoutes:
         response = client.get('/questions/')
         assert response.status_code == 401
 
+    def test_get_questions_paginated(self, client, auth_headers, multiple_questions):
+        """Test GET /questions/ returns one page plus pagination metadata."""
+        response = client.get('/questions/?page=1&per_page=4', headers=auth_headers)
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert len(data['data']) == 4
+        pagination = data['pagination']
+        assert pagination['page'] == 1
+        assert pagination['per_page'] == 4
+        assert pagination['total'] >= 10
+        assert pagination['total_pages'] >= 3
+
+    def test_get_questions_search_filters_by_text(
+        self, client, auth_headers, multiple_questions
+    ):
+        """Test GET /questions/?search= only returns matching questions."""
+        response = client.get('/questions/?search=question 3', headers=auth_headers)
+
+        assert response.status_code == 200
+        data = json.loads(response.data)
+        assert len(data['data']) >= 1
+        assert all('question 3' in q['text'].lower() for q in data['data'])
+
+    def test_get_questions_filter_by_subject(
+        self, client, auth_headers, sample_subject, multiple_questions
+    ):
+        """Test GET /questions/?subject_id= scopes results to that subject."""
+        match = client.get(
+            f'/questions/?subject_id={sample_subject.id}', headers=auth_headers
+        )
+        assert match.status_code == 200
+        assert len(json.loads(match.data)['data']) >= 10
+
+        miss = client.get('/questions/?subject_id=999999', headers=auth_headers)
+        assert miss.status_code == 200
+        assert json.loads(miss.data)['data'] == []
+
     def test_post_question_with_valid_data(
         self, client, auth_headers, sample_subject, sample_topic
     ):

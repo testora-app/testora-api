@@ -12,6 +12,40 @@ class QuestionManager(BaseManager):
     def get_questions(self) -> List[Question]:
         return Question.query.filter_by(is_deleted=False).all()
 
+    def get_questions_paginated(
+        self,
+        page,
+        per_page,
+        subject_id=None,
+        theme_id=None,
+        topic_id=None,
+        search=None,
+    ):
+        from app.app_admin.models import Topic
+        from sqlalchemy.orm import joinedload, selectinload
+
+        query = Question.query.filter_by(is_deleted=False)
+
+        if subject_id or theme_id:
+            query = query.join(Topic, Question.topic_id == Topic.id)
+            if subject_id:
+                query = query.filter(Topic.subject_id == subject_id)
+            if theme_id:
+                query = query.filter(Topic.theme_id == theme_id)
+        if topic_id:
+            query = query.filter(Question.topic_id == topic_id)
+        if search and search.strip():
+            query = query.filter(Question.text.ilike(f"%{search.strip()}%"))
+
+        query = query.options(
+            joinedload(Question.topic),
+            selectinload(Question.sub_questions),
+            selectinload(Question.images),
+        )
+        return query.order_by(Question.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+
     def get_questions_by_topics(self, topic_ids: List[int]):
         return Question.query.filter(Question.topic_id.in_(topic_ids)).all()
 

@@ -21,6 +21,7 @@ from app.test.operations import question_manager, test_manager
 from app.test.schemas import (
     TestQuestionsListSchema,
     QuestionListSchema,
+    QuestionQuerySchema,
     TestListSchema,
     TestQuerySchema,
     Responses,
@@ -57,11 +58,27 @@ testr = APIBlueprint("testr", __name__)
 
 
 @testr.get("/questions/")
+@testr.input(QuestionQuerySchema, location="query")
 @testr.output(QuestionListSchema, 200)
 @token_auth([UserTypes.admin])
-def get_questions():
-    questions = question_manager.get_questions()
-    return success_response(data=[question.to_json() for question in questions])
+def get_questions(query_data):
+    pagination = question_manager.get_questions_paginated(
+        page=query_data["page"],
+        per_page=query_data["per_page"],
+        subject_id=query_data.get("subject_id"),
+        theme_id=query_data.get("theme_id"),
+        topic_id=query_data.get("topic_id"),
+        search=query_data.get("search"),
+    )
+    return success_response(
+        data=[question.to_json() for question in pagination.items],
+        pagination={
+            "page": pagination.page,
+            "per_page": pagination.per_page,
+            "total": pagination.total,
+            "total_pages": pagination.pages,
+        },
+    )
 
 
 @testr.post("/questions/")

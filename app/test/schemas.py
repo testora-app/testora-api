@@ -9,7 +9,7 @@ from apiflask.fields import (
     Dict,
     Decimal,
 )
-from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
+from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema, PaginationQuery
 
 
 class SubQuestionSchema(BaseSchema):
@@ -52,6 +52,13 @@ class QuestionSchema(BaseSchema):
 
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))
+
+
+class QuestionQuerySchema(PaginationQuery):
+    subject_id = Integer(allow_none=True, required=False)
+    theme_id = Integer(allow_none=True, required=False)
+    topic_id = Integer(allow_none=True, required=False)
+    search = String(allow_none=True, required=False)
 
 
 class CreateTestSchema(BaseSchema):
