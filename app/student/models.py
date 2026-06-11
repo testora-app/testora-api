@@ -18,6 +18,12 @@ class Batch(BaseModel):
     batch_name = db.Column(db.String, nullable=False)
     school_id = db.Column(db.Integer, db.ForeignKey("school.id"), nullable=False)
     curriculum = db.Column(db.String, nullable=False)
+    # active | archived | graduated. Default: active.
+    status = db.Column(db.String(20), nullable=False, default="active")
+    academic_year = db.Column(db.String(20), nullable=True)
+    exam_year = db.Column(db.Integer, nullable=True)
+    archived_at = db.Column(db.DateTime, nullable=True)
+    archived_by = db.Column(db.Integer, nullable=True)
     students = db.relationship(
         "Student", secondary=student_batches, backref=db.backref("batches", lazy=True)
     )
@@ -35,16 +41,21 @@ class Batch(BaseModel):
             "id": self.id,
             "batch_name": self.batch_name,
             "school_id": self.school_id,
-            "curriculum": self.curriculum
+            "curriculum": self.curriculum,
+            "status": self.status or "active",
+            "academic_year": self.academic_year,
+            "exam_year": self.exam_year,
+            "archived_at": self.archived_at.isoformat() if self.archived_at else None,
+            "archived_by": self.archived_by,
         }
         if include_staff:
             data["staff"] = [staff.to_json() for staff in self.staff]
-            
+
         if include_students:
             data["students"] = [
                 student.to_json(include_batch=False) for student in self.students
             ]
-        
+
         if include_subjects:
             subjects = subject_manager.get_subject_by_curriculum(self.curriculum)
             data["subjects"] = [subject.to_json() for subject in subjects]

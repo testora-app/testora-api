@@ -1,5 +1,5 @@
 from apiflask.fields import Integer, String, Boolean, List, Nested
-from apiflask.validators import OneOf, Length
+from apiflask.validators import OneOf, Length, Range
 from apiflask import PaginationSchema
 
 from app._shared.schemas import BaseSchema, CurriculumTypes, make_response_schema
@@ -41,16 +41,18 @@ class TopicSchema(BaseSchema):
     id = Integer(required=True)
     name = String(required=True, allow_none=False)
     short_name = String(required=False, allow_none=True)
+    description = String(required=False, allow_none=True)
     subject_id = Integer(required=True, allow_none=False)
     theme_id = Integer(required=True, allow_none=False)
-    level = Integer(required=True, allow_none=False)
+    level = Integer(required=True, allow_none=False, validate=[Range(min=1, max=9)])
 
 
 class AddTopicSchema(BaseSchema):
     name = String(required=True, allow_none=False)
     short_name = String(required=False, allow_none=True)
+    description = String(required=False, allow_none=True)
     subject_id = Integer(required=True, allow_none=False)
-    level = Integer(required=True, allow_none=False)
+    level = Integer(required=True, allow_none=False, validate=[Range(min=1, max=9)])
     theme_id = Integer(required=True, allow_none=False)
 
 
@@ -91,6 +93,8 @@ class SubjectSchema(BaseSchema):
     curriculum = String(
         required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
     )
+    max_duration = Integer(required=False, allow_none=True)
+    is_premium = Boolean(required=False, allow_none=True)
     themes = List(Nested(ThemeSchema), required=False, allow_none=True)
 
 
@@ -100,6 +104,8 @@ class AddSubjectSchema(BaseSchema):
     curriculum = String(
         required=True, allow_none=False, validate=[OneOf(CurriculumTypes.bece)]
     )
+    max_duration = Integer(required=False, allow_none=True)
+    is_premium = Boolean(required=False, allow_none=True)
 
 
 class AddSubjectSchemaPost(BaseSchema):

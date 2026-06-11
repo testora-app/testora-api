@@ -9,7 +9,7 @@ from apiflask.fields import (
     Dict,
     Decimal,
 )
-from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema
+from app._shared.schemas import BaseSchema, ID_FIELD, make_response_schema, PaginationQuery
 
 
 class SubQuestionSchema(BaseSchema):
@@ -34,6 +34,7 @@ class QuestionSchema(BaseSchema):
     id = Integer(dump_only=True)
     text = String(required=True)
     correct_answer = String(required=True, allow_none=True)
+    explanation = String(allow_none=True, required=False)
     possible_answers = List(String(), required=True, allow_none=True)
     topic_id = Integer(required=True)
     subject_id = Integer(required=False)
@@ -44,12 +45,20 @@ class QuestionSchema(BaseSchema):
     sub_questions = List(Nested(SubQuestionSchema), required=False, allow_none=True)
     year = Integer(allow_none=True, required=False)
     is_instructional = Boolean(allow_none=True, required=False, missing=False)
+    item_type = String(allow_none=True, required=False)
     answer_images = List(Nested(QuestionImageSchema), required=False, allow_none=True)
     question_images = List(Nested(QuestionImageSchema), required=False, allow_none=True)
     
 
 class QuestionListSchema(BaseSchema):
     data = List(Nested(QuestionSchema))
+
+
+class QuestionQuerySchema(PaginationQuery):
+    subject_id = Integer(allow_none=True, required=False)
+    theme_id = Integer(allow_none=True, required=False)
+    topic_id = Integer(allow_none=True, required=False)
+    search = String(allow_none=True, required=False)
 
 
 class CreateTestSchema(BaseSchema):
@@ -92,8 +101,9 @@ class SubmittedQuestionsSchema(BaseSchema):
     level = Integer(required=False, allow_none=True)
     points = Integer(required=False, allow_none=True)
     text = String(required=True)
-    possible_answers = List(String(), required=True)
-    student_answer = String(required=True)
+    possible_answers = List(String(), required=True, allow_none=True)
+    # Optional: a passage/stimulus parent (is_instructional) has no answer of its own.
+    student_answer = String(required=False, allow_none=True)
     topic_id = Integer(required=True)
     school_id = Integer(allow_none=True)
     meta = Dict(allow_none=True, required=False)
@@ -101,6 +111,8 @@ class SubmittedQuestionsSchema(BaseSchema):
     options = Dict(allow_none=True, required=False)
     flag_reason = String(allow_none=True, required=False)
     is_flagged = Boolean(allow_none=True, required=False)
+    is_instructional = Boolean(allow_none=True, required=False)
+    item_type = String(allow_none=True, required=False)
     year = Integer(allow_none=True, required=False)
     sub_questions = List(
         Nested(SubmittedSubQuestionSchema), required=False, allow_none=True

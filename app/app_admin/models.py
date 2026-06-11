@@ -84,6 +84,7 @@ class Topic(BaseModel):
     name = db.Column(db.String(100), nullable=False)
     short_name = db.Column(db.String(20), nullable=False, unique=True)
     level = db.Column(db.Integer, nullable=False)
+    description = db.Column(db.Text, nullable=True)
     theme_id = db.Column(db.Integer, db.ForeignKey("theme.id"), nullable=False)
     subject_id = db.Column(db.Integer, db.ForeignKey("subject.id"), nullable=False)
 
@@ -98,6 +99,7 @@ class Topic(BaseModel):
             "name": self.name,
             "short_name": self.short_name,
             "level": self.level,
+            "description": self.description,
             "theme_id": self.theme_id,
             "subject_id": self.subject_id,
         }

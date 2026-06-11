@@ -12,6 +12,40 @@ class QuestionManager(BaseManager):
     def get_questions(self) -> List[Question]:
         return Question.query.filter_by(is_deleted=False).all()
 
+    def get_questions_paginated(
+        self,
+        page,
+        per_page,
+        subject_id=None,
+        theme_id=None,
+        topic_id=None,
+        search=None,
+    ):
+        from app.app_admin.models import Topic
+        from sqlalchemy.orm import joinedload, selectinload
+
+        query = Question.query.filter_by(is_deleted=False)
+
+        if subject_id or theme_id:
+            query = query.join(Topic, Question.topic_id == Topic.id)
+            if subject_id:
+                query = query.filter(Topic.subject_id == subject_id)
+            if theme_id:
+                query = query.filter(Topic.theme_id == theme_id)
+        if topic_id:
+            query = query.filter(Question.topic_id == topic_id)
+        if search and search.strip():
+            query = query.filter(Question.text.ilike(f"%{search.strip()}%"))
+
+        query = query.options(
+            joinedload(Question.topic),
+            selectinload(Question.sub_questions),
+            selectinload(Question.images),
+        )
+        return query.order_by(Question.id.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
+
     def get_questions_by_topics(self, topic_ids: List[int]):
         return Question.query.filter(Question.topic_id.in_(topic_ids)).all()
 
@@ -30,6 +64,41 @@ class QuestionManager(BaseManager):
             .all()
         )
         return {row.topic_id: row.count for row in results}
+
+    def get_questions_by_item_types(self, subject_id, item_types, limit) -> List[Question]:
+        """Random non-flagged questions of the given item_type(s) for a subject —
+        the building block of exam-mode blueprint assembly."""
+        from app.app_admin.models import Topic
+        return (
+            Question.query.join(Topic, Question.topic_id == Topic.id)
+            .filter(
+                Topic.subject_id == subject_id,
+                Question.item_type.in_(item_types),
+                Question.is_deleted == False,
+                Question.is_flagged != True,
+            )
+            .order_by(func.random())
+            .limit(limit)
+            .all()
+        )
+
+    def get_random_questions_for_subject(self, subject_id, count) -> List[Question]:
+        """Random non-flagged questions mixed across ALL levels of a subject — the
+        exam paper for subjects without an item_type blueprint (Maths, Science, …).
+        Excludes passage parents (is_instructional)."""
+        from app.app_admin.models import Topic
+        return (
+            Question.query.join(Topic, Question.topic_id == Topic.id)
+            .filter(
+                Topic.subject_id == subject_id,
+                Question.is_deleted == False,
+                Question.is_flagged != True,
+                Question.is_instructional != True,
+            )
+            .order_by(func.random())
+            .limit(count)
+            .all()
+        )
 
     def get_question_by_id(self, question_id) -> Question:
         return Question.query.filter_by(id=question_id).first()

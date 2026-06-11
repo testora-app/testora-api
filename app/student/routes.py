@@ -315,6 +315,21 @@ def update_student(student_id, json_data):
     return success_response(data=student.to_json())
 
 
+@student.get("/students/time-on-platform/<int:student_id>/")
+@token_auth([UserTypes.student, UserTypes.staff, UserTypes.school_admin])
+def time_on_platform(student_id):
+    current_user = get_current_user()
+    if current_user["user_type"] == UserTypes.student:
+        if int(student_id) != int(current_user["user_id"]):
+            return permissioned_denied("You can only view your own time-on-platform.")
+    else:
+        target = student_manager.get_student_by_id(student_id)
+        if not target or target.school_id != current_user["school_id"]:
+            return permissioned_denied("You do not have permission to view this student.")
+    data = ssm_manager.get_time_on_platform_breakdown(student_id)
+    return success_response(data=data)
+
+
 @student.post("/students/end-session/")
 @student.input(Requests.EndSessionSchema)
 @student.output(SuccessMessage)
@@ -372,6 +387,8 @@ def edit_batch(batch_id, json_data):
     batch = batch_manager.get_batch_by_id(batch_id)
     data = json_data["data"]
     if batch:
+        if (batch.status or "active") == "archived":
+            return bad_request("Cannot edit an archived batch. Restore it first.")
         batch.batch_name = data["batch_name"]
         batch.curriculum = data["curriculum"]
         batch.students = [
@@ -383,19 +400,54 @@ def edit_batch(batch_id, json_data):
     return success_response(data=batch.to_json())
 
 
+@student.post("/batches/<int:batch_id>/archive/")
+@student.output(Responses.BatchSchema)
+@token_auth([UserTypes.school_admin])
+def archive_batch(batch_id):
+    current_user = get_current_user()
+    batch = batch_manager.get_batch_by_id(batch_id)
+    if not batch:
+        return not_found("Batch not found")
+    if batch.school_id != current_user["school_id"]:
+        return permissioned_denied("You do not have permission to archive this batch.")
+    if (batch.status or "active") == "archived":
+        return bad_request("Batch is already archived.")
+    batch_manager.archive_batch(batch, archived_by_user_id=current_user["user_id"])
+    return success_response(data=batch.to_json())
+
+
+@student.post("/batches/<int:batch_id>/unarchive/")
+@student.output(Responses.BatchSchema)
+@token_auth([UserTypes.school_admin])
+def unarchive_batch(batch_id):
+    current_user = get_current_user()
+    batch = batch_manager.get_batch_by_id(batch_id)
+    if not batch:
+        return not_found("Batch not found")
+    if batch.school_id != current_user["school_id"]:
+        return permissioned_denied("You do not have permission to restore this batch.")
+    if (batch.status or "active") != "archived":
+        return bad_request("Batch is not archived.")
+    batch_manager.unarchive_batch(batch)
+    return success_response(data=batch.to_json())
+
+
 @student.get("/batches/")
+@student.input(Requests.BatchListQuerySchema, location="query")
 @student.output(BatchListSchema)
 @token_auth([UserTypes.admin, UserTypes.school_admin, UserTypes.staff, UserTypes.student])
-def get_batches():
+def get_batches(query_data):
     current_user = get_current_user()
     school_id = current_user["school_id"]
     user_type = current_user["user_type"]
+    # Default to "active" only — archived batches are read-only and require an explicit ask.
+    status_filter = query_data.get("status") or "active"
 
     # Get all batches for the school (or all if admin)
     if school_id:
-        all_batches = batch_manager.get_batches_by_school_id(school_id)
+        all_batches = batch_manager.get_batches_by_school_id(school_id, status=status_filter)
     else:
-        all_batches = batch_manager.get_all_batches()
+        all_batches = batch_manager.get_all_batches(status=status_filter)
 
     # Filter batches based on user type
     if user_type == UserTypes.student:

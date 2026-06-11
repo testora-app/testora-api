@@ -208,9 +208,9 @@ class AnalyticsService:
 
         # 2. Define Dynamic Thresholds (min_tests, max_tests)
         # Standards adjusted for 2025 learning engagement benchmarks
-        if time_range == "week":
+        if time_range == "this_week":
             thresholds = {"minimal": (1, 1), "consistent": (2, 4), "high": (5, 10**6)}
-        elif time_range == "month":
+        elif time_range == "this_month":
             thresholds = {"minimal": (1, 4), "consistent": (5, 12), "high": (13, 10**6)}
         else:  # all_time
             thresholds = {"minimal": (1, 10), "consistent": (11, 30), "high": (31, 10**6)}
@@ -1413,135 +1413,99 @@ class AnalyticsService:
 
         return messages
 
-    def calculate_achievement_progress(
-        self, student_id: int, achievement_name: str, achievement_description: str
-    ) -> float:
-        """
-        Calculate progress percentage (0.0 - 100.0) for an achievement based on patterns.
-        Uses existing patterns from achievement names and descriptions.
-        """
-        from app.test.operations import test_manager
-        from app.student.operations import student_manager
-        from app.student.models import StudentSubjectLevel
-        from app.achievements.models import Achievement
+    def _ach_progress_percent(self, ach, student, tests, max_level) -> float:
+        """Compute progress (0–100) for one locked achievement using pre-loaded data.
 
-        student = student_manager.get_student_by_id(student_id)
-        if not student:
+        Callers are responsible for short-circuiting earned achievements (progress = 100).
+        """
+        if not ach.requirements:
+            return 0.0
+        try:
+            requirements = json.loads(ach.requirements)
+        except Exception:
+            return 0.0
+        if not requirements:
             return 0.0
 
-        achievement = Achievement.query.filter_by(name=achievement_name).first()
-        requirements: Dict[str, Any] = {}
-        if achievement and achievement.requirements:
-            try:
-                requirements = json.loads(achievement.requirements)
-            except Exception:
-                requirements = {}
+        ach_class = ach.achievement_class
 
-        tests = test_manager.get_tests_by_student_ids([student_id])
+        if ach_class == "volume_practice":
+            target = int(requirements.get("number_of_tests") or 0)
+            if target <= 0:
+                return 0.0
+            return round((min(len(tests), target) / target) * 100.0, 2)
 
-        # ---- Metadata-driven progress (preferred) ----
-        if requirements:
-            # Volume practice
-            if achievement and achievement.achievement_class == "volume_practice":
-                target = int(requirements.get("number_of_tests") or 0)
-                if target <= 0:
-                    return 0.0
-                current = min(len(tests), target)
-                return round((current / target) * 100.0, 2)
+        if ach_class == "continuous_practice":
+            target = int(requirements.get("streak_days") or 0)
+            if target <= 0:
+                return 0.0
+            current = min(int(student.current_streak or 0), target)
+            return round((current / target) * 100.0, 2)
 
-            # Continuous practice (streak)
-            if achievement and achievement.achievement_class == "continuous_practice":
-                target = int(requirements.get("streak_days") or 0)
-                if target <= 0:
-                    return 0.0
-                current = min(int(student.current_streak or 0), target)
-                return round((current / target) * 100.0, 2)
+        if ach_class == "level_ups":
+            target = int(requirements.get("level") or 0)
+            if target <= 0:
+                return 0.0
+            return round((min(max_level, target) / target) * 100.0, 2)
 
-            # Level ups
-            if achievement and achievement.achievement_class == "level_ups":
-                target = int(requirements.get("level") or 0)
-                if target <= 0:
-                    return 0.0
-                levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
-                max_level = max((lvl.level for lvl in levels), default=0)
-                current = min(max_level, target)
-                return round((current / target) * 100.0, 2)
+        if ach_class == "mastery_level":
+            score_min = float(requirements.get("score_band_min") or 0)
+            score_max = float(requirements.get("score_band_max") or 0)
+            target = int(requirements.get("number_of_tests") or 0)
+            if target <= 0:
+                return 0.0
+            within = sum(1 for t in tests if score_min <= float(t.score_acquired) <= score_max)
+            return round((min(within, target) / target) * 100.0, 2)
 
-            # Mastery level (score bands)
-            if achievement and achievement.achievement_class == "mastery_level":
-                score_min = float(requirements.get("score_band_min") or 0)
-                score_max = float(requirements.get("score_band_max") or 0)
-                target = int(requirements.get("number_of_tests") or 0)
-                if target <= 0:
-                    return 0.0
-                within = sum(1 for t in tests if score_min <= float(t.score_acquired) <= score_max)
-                current = min(within, target)
-                return round((current / target) * 100.0, 2)
-
-            # Speed and accuracy
-            if achievement and achievement.achievement_class == "speed_and_accuracy":
-                expected_q = requirements.get("questions_count")
-                if expected_q is None:
-                    return 0.0
-
-                # Find best progress across tests matching the expected question count
-                candidate_tests = []
-                for t in tests:
-                    tmeta = t.meta or {}
-                    tq = (tmeta.get("total_questions") if isinstance(tmeta, dict) else None) or t.question_number
-                    if tq is None:
-                        continue
-                    if int(tq) == int(expected_q):
-                        candidate_tests.append(t)
-
-                if not candidate_tests:
-                    return 0.0
-
-                # Progress is binary-ish for these, but we can still return best partial on mistakes.
-                metric = requirements.get("metric")
-                requires_finish = bool(requirements.get("requires_finish_before_time_end"))
-
-                best = 0.0
-                for t in candidate_tests:
-                    tmeta = t.meta or {}
-                    out_time = (tmeta.get("out_time") or 0) if isinstance(tmeta, dict) else 0
-                    if requires_finish and not (out_time and int(out_time) > 0):
-                        continue
-
-                    if metric == "score_percent":
-                        score_min = float(requirements.get("score_min") or 0)
-                        score_max = float(requirements.get("score_max") or 100)
-                        pct = 100.0 if (score_min <= float(t.score_acquired) <= score_max) else 0.0
-                        best = max(best, pct)
-                        continue
-
-                    if metric == "mistakes_count":
-                        max_mistakes = int(requirements.get("max_mistakes") or 0)
-                        mistakes = tmeta.get("mistakes_count") if isinstance(tmeta, dict) else None
-                        if mistakes is None:
-                            continue
-
-                        mistakes = int(mistakes)
-                        if mistakes <= max_mistakes:
-                            best = max(best, 100.0)
-                        else:
-                            # map mistakes to progress: 0..max_mistakes => 100%, otherwise decay
-                            # 1 extra mistake => 50%, 2 extra => 0% (simple)
-                            extra = mistakes - max_mistakes
-                            if extra == 1:
-                                best = max(best, 50.0)
-                            else:
-                                best = max(best, 0.0)
-                        continue
-
-                return best
-
-            # comeback_rewards progress is hard to quantify; return 0 for locked.
-            if achievement and achievement.achievement_class == "comeback_rewards":
+        if ach_class == "speed_and_accuracy":
+            expected_q = requirements.get("questions_count")
+            if expected_q is None:
                 return 0.0
 
-        # ---- Legacy fallback (description regex) ----
-        # Default: if we can't determine progress, return 0
+            candidates = []
+            for t in tests:
+                tmeta = t.meta or {}
+                tq = (tmeta.get("total_questions") if isinstance(tmeta, dict) else None) or t.question_number
+                if tq is None:
+                    continue
+                if int(tq) == int(expected_q):
+                    candidates.append(t)
+            if not candidates:
+                return 0.0
+
+            metric = requirements.get("metric")
+            requires_finish = bool(requirements.get("requires_finish_before_time_end"))
+
+            best = 0.0
+            for t in candidates:
+                tmeta = t.meta or {}
+                out_time = (tmeta.get("out_time") or 0) if isinstance(tmeta, dict) else 0
+                if requires_finish and not (out_time and int(out_time) > 0):
+                    continue
+
+                if metric == "score_percent":
+                    score_min = float(requirements.get("score_min") or 0)
+                    score_max = float(requirements.get("score_max") or 100)
+                    pct = 100.0 if (score_min <= float(t.score_acquired) <= score_max) else 0.0
+                    best = max(best, pct)
+                    continue
+
+                if metric == "mistakes_count":
+                    max_mistakes = int(requirements.get("max_mistakes") or 0)
+                    mistakes = tmeta.get("mistakes_count") if isinstance(tmeta, dict) else None
+                    if mistakes is None:
+                        continue
+
+                    mistakes = int(mistakes)
+                    if mistakes <= max_mistakes:
+                        best = max(best, 100.0)
+                    else:
+                        extra = mistakes - max_mistakes
+                        best = max(best, 50.0 if extra == 1 else 0.0)
+                    continue
+
+            return best
+
         return 0.0
 
     def get_student_achievements(
@@ -1549,41 +1513,46 @@ class AnalyticsService:
     ) -> List[Dict[str, Any]]:
         """Return ALL achievements (earned and locked) with progress percentages."""
         from app.achievements.models import StudentHasAchievement, Achievement
+        from app.student.models import StudentSubjectLevel
         from app.extensions import db
 
-        # Get all achievements
         all_achievements = Achievement.query.filter_by(is_deleted=False).all()
-        
-        # Get student's earned achievements
-        earned_achievements = (
-            db.session.query(StudentHasAchievement, Achievement)
-            .join(Achievement, Achievement.id == StudentHasAchievement.achievement_id)
+        if not all_achievements:
+            return []
+
+        earned_rows = (
+            db.session.query(StudentHasAchievement)
             .filter(StudentHasAchievement.student_id == student_id)
             .all()
         )
-        
-        # Create a map of earned achievements
-        earned_map = {sha.achievement_id: sha for sha, _ in earned_achievements}
+        earned_map = {sha.achievement_id: sha for sha in earned_rows}
+
+        # Pre-load per-student data once so progress for N locked achievements
+        # doesn't fan out into 3N queries.
+        needs_progress = any(ach.id not in earned_map for ach in all_achievements)
+        student = student_manager.get_student_by_id(student_id) if needs_progress else None
+        if student:
+            tests = test_manager.get_tests_by_student_ids([student_id])
+            levels = StudentSubjectLevel.query.filter_by(student_id=student_id).all()
+            max_level = max((lvl.level for lvl in levels), default=0)
+        else:
+            tests, max_level = [], 0
 
         results: List[Dict[str, Any]] = []
-        
         for ach in all_achievements:
             item = ach.to_json(include_requirements=include_requirements)
-            
-            # Check if achievement is earned
-            is_earned = ach.id in earned_map
             sha = earned_map.get(ach.id)
-            
-            # Calculate progress
-            progress_percentage = self.calculate_achievement_progress(
-                student_id, ach.name, ach.description
-            )
-            
-            # If earned, progress is always 100%
+            is_earned = sha is not None
+
             if is_earned:
                 progress_percentage = 100.0
-            
+            elif student is not None:
+                progress_percentage = self._ach_progress_percent(ach, student, tests, max_level)
+            else:
+                progress_percentage = 0.0
+
             item.update({
+                "id": ach.id,
                 "achievement_id": ach.id,
                 "is_earned": is_earned,
                 "progress_percentage": progress_percentage,
@@ -1601,18 +1570,415 @@ class AnalyticsService:
             })
             results.append(item)
 
-        # Sort: earned achievements first (by last_awarded_at), then by progress percentage
         results.sort(
             key=lambda x: (
-                not x["is_earned"],  # False (earned) comes before True (not earned)
-                -x["progress_percentage"],  # Higher progress first
-                x.get("last_awarded_at") or x.get("first_awarded_at") or ""
-            ),
-            reverse=False
+                not x["is_earned"],
+                -x["progress_percentage"],
+                x.get("last_awarded_at") or x.get("first_awarded_at") or "",
+            )
         )
-        
         return results
     
+    def _batch_snapshot(self, batch_id):
+        """Compute headline metrics for a single batch."""
+        batch = batch_manager.get_batch_by_id(batch_id)
+        if not batch:
+            return None
+        students = batch.to_json(include_students=True, include_subjects=False, include_staff=False)["students"]
+        student_ids = [s["id"] for s in students]
+
+        if not student_ids:
+            return {
+                "batch_id": batch.id,
+                "batch_name": batch.batch_name,
+                "status": batch.status or "active",
+                "academic_year": batch.academic_year,
+                "exam_year": batch.exam_year,
+                "total_students": 0,
+                "average_score": 0.0,
+                "total_tests": 0,
+                "tier_distribution": {
+                    "highly_proficient": {"count": 0, "percentage": 0.0},
+                    "proficient": {"count": 0, "percentage": 0.0},
+                    "approaching_proficient": {"count": 0, "percentage": 0.0},
+                    "developing": {"count": 0, "percentage": 0.0},
+                    "emerging": {"count": 0, "percentage": 0.0},
+                },
+            }
+
+        tests = test_manager.get_tests_by_student_ids(student_ids)
+        total_students = len(student_ids)
+        avg = (sum(t.score_acquired for t in tests) / len(tests)) if tests else 0.0
+
+        tiers = {
+            band: self.calculate_student_average_performance(total_students, tests, band)
+            for band in self.performance_bands.keys()
+        }
+
+        return {
+            "batch_id": batch.id,
+            "batch_name": batch.batch_name,
+            "status": batch.status or "active",
+            "academic_year": batch.academic_year,
+            "exam_year": batch.exam_year,
+            "total_students": total_students,
+            "average_score": round(avg, 2),
+            "total_tests": len(tests),
+            "tier_distribution": tiers,
+        }
+
+    def compare_batches(self, batch_ids, school_id=None):
+        """Return side-by-side batch snapshots + a delta summary.
+
+        school_id, if provided, scopes access — any batch not in that school is dropped.
+        """
+        snapshots = []
+        for bid in batch_ids:
+            snap = self._batch_snapshot(bid)
+            if not snap:
+                continue
+            if school_id is not None:
+                batch = batch_manager.get_batch_by_id(bid)
+                if batch and batch.school_id != school_id:
+                    continue
+            snapshots.append(snap)
+
+        delta = None
+        if len(snapshots) == 2:
+            diff = round(snapshots[1]["average_score"] - snapshots[0]["average_score"], 2)
+            if diff > 0.5:
+                summary = f"Year-over-year improvement: +{diff}pp average score"
+            elif diff < -0.5:
+                summary = f"Decline: {diff}pp average score"
+            else:
+                summary = "Flat"
+            delta = {
+                "average_score_delta": diff,
+                "tests_delta": snapshots[1]["total_tests"] - snapshots[0]["total_tests"],
+                "students_delta": snapshots[1]["total_students"] - snapshots[0]["total_students"],
+                "summary": summary,
+            }
+
+        return {
+            "batches": snapshots,
+            "delta": delta,
+        }
+
+    # Recommendation pruning rules:
+    #   - Mastery (priority): topics now scoring >= MASTERY_THRESHOLD are dropped immediately.
+    #   - Age: source recommendations older than REC_MAX_AGE_DAYS are dropped (mastery still wins).
+    #   - Hard cap of REC_MAX_ITEMS so the teacher card stays scannable.
+    MASTERY_THRESHOLD = 80
+    REC_MAX_AGE_DAYS = 14
+    REC_MAX_ITEMS = 3
+
+    def get_recommendations(self, student_id, subject_id=None):
+        """Heuristic recommendations for teachers based on failing topics + recent practice gaps.
+
+        Pruned by current mastery (highest priority) and source-recommendation age.
+        Capped at REC_MAX_ITEMS to keep the teacher-facing card scannable.
+        """
+        from datetime import timedelta
+
+        now = datetime.now(timezone.utc)
+        age_cutoff = now - timedelta(days=self.REC_MAX_AGE_DAYS)
+
+        raw_recs = ssr_manager.select_student_recommendations(student_id)
+        topic_ids = list({r.topic_id for r in raw_recs})
+        topics_by_id = {t.id: t for t in topic_manager.get_topic_by_ids(topic_ids)} if topic_ids else {}
+        subject_ids = list({t.subject_id for t in topics_by_id.values()})
+        subjects_by_id = {s.id: s for s in subject_manager.get_subjects_by_ids(subject_ids)} if subject_ids else {}
+
+        # Pre-aggregate topic averages in one shot to avoid N queries inside the loop
+        all_scores = sts_manager.select_student_topic_score_history(student_id)
+        score_sum = defaultdict(float)
+        score_count = defaultdict(int)
+        for s in all_scores:
+            score_sum[s.topic_id] += float(s.score_acquired)
+            score_count[s.topic_id] += 1
+        topic_avg_by_id = {
+            tid: round(score_sum[tid] / score_count[tid], 2)
+            for tid in score_count
+        }
+
+        # Pick the most-recent source rec per topic so age check uses latest data
+        latest_by_topic = {}
+        for r in raw_recs:
+            existing = latest_by_topic.get(r.topic_id)
+            if existing is None or (r.created_at and existing.created_at and r.created_at > existing.created_at):
+                latest_by_topic[r.topic_id] = r
+
+        recs = []
+        for topic_id, rec_row in latest_by_topic.items():
+            topic = topics_by_id.get(topic_id)
+            if not topic:
+                continue
+            if subject_id and topic.subject_id != subject_id:
+                continue
+
+            # Mastery prune (priority): if topic avg has reached mastery, drop the rec
+            avg_score = topic_avg_by_id.get(topic_id)
+            if avg_score is None:
+                continue
+            if avg_score >= self.MASTERY_THRESHOLD:
+                continue
+
+            # Age prune: drop recommendations whose source row is older than the cutoff
+            rec_created = rec_row.created_at
+            if rec_created and rec_created.tzinfo is None:
+                rec_created = rec_created.replace(tzinfo=timezone.utc)
+            if rec_created and rec_created < age_cutoff:
+                continue
+
+            priority = "high" if avg_score < 50 else ("medium" if avg_score < 65 else "low")
+            subject = subjects_by_id.get(topic.subject_id)
+            recs.append({
+                "id": f"failing-{topic_id}",
+                "title": f"Drill {topic.name}",
+                "body": (
+                    f"This student's average in this topic is {avg_score}%. "
+                    "Targeted practice on a few questions per day will lift this faster than mixed-subject tests."
+                ),
+                "subject_name": subject.name if subject else None,
+                "topic_name": topic.name,
+                "priority": priority,
+                "_sort_score": avg_score,
+            })
+
+        # Lowest scores first, then cap
+        recs.sort(key=lambda r: r["_sort_score"])
+        recs = recs[: self.REC_MAX_ITEMS]
+        for r in recs:
+            r.pop("_sort_score", None)
+
+        # If there's still room, surface a streak nudge (informational, never blocks a topic rec)
+        if len(recs) < self.REC_MAX_ITEMS:
+            student = student_manager.get_student_by_id(student_id)
+            if student and (student.current_streak or 0) >= 3:
+                recs.append({
+                    "id": "streak-keep-alive",
+                    "title": "Keep the streak going",
+                    "body": (
+                        f"This student is on a {student.current_streak}-day streak. "
+                        "A short test today protects it — worth a nudge."
+                    ),
+                    "subject_name": None,
+                    "topic_name": None,
+                    "priority": "low",
+                })
+
+        return {
+            "recommendations": recs[: self.REC_MAX_ITEMS],
+            "generated_at": now.isoformat(),
+        }
+
+    # region Deep Dive: time per question / best topics / integrity
+
+    def _question_correctness_and_time(self, test):
+        """Yield (topic_id, time_seconds, is_correct) tuples per main question in a graded test.
+
+        Sub-questions are not surfaced individually — they contribute to scoring but
+        don't carry a per-question timing signal from the client.
+        """
+        questions = test.questions or []
+        for q in questions:
+            if not isinstance(q, dict):
+                continue
+            meta = q.get("meta") or {}
+            time_ms = meta.get("time_spent")
+            if time_ms is None:
+                continue
+            try:
+                time_seconds = float(time_ms) / 1000.0
+            except (TypeError, ValueError):
+                continue
+            if time_seconds <= 0:
+                continue
+            topic_id = q.get("topic_id")
+            student_answer = q.get("student_answer")
+            correct_answer = q.get("correct_answer")
+            if correct_answer is None or student_answer is None:
+                continue
+            is_correct = student_answer == correct_answer
+            yield topic_id, time_seconds, is_correct
+
+    def get_time_per_question(self, student_id, subject_id=None, batch_id=None):
+        """Per-topic median splits each question into Fast vs Slow; correctness gives 4 buckets.
+
+        Per-topic median means a 'slow' question in fractions isn't the same threshold as
+        a 'slow' question in essays — topics with naturally longer questions are handled fairly.
+        """
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        if subject_id:
+            tests = [t for t in tests if t.subject_id == subject_id]
+
+        topic_times = defaultdict(list)
+        records = []
+        for test in tests:
+            for topic_id, time_seconds, is_correct in self._question_correctness_and_time(test):
+                if topic_id is None:
+                    continue
+                topic_times[topic_id].append(time_seconds)
+                records.append((topic_id, time_seconds, is_correct))
+
+        if not records:
+            def _empty():
+                return {"count": 0, "avg_seconds": 0.0}
+            return {
+                "avg_seconds": 0.0,
+                "total_questions": 0,
+                "fast_correct": _empty(),
+                "fast_wrong": _empty(),
+                "slow_correct": _empty(),
+                "slow_wrong": _empty(),
+            }
+
+        # Per-topic median; needs ≥2 samples for the split to be meaningful, otherwise
+        # we treat the question as fast (it has no peer to compare against).
+        topic_medians = {}
+        for topic_id, times in topic_times.items():
+            if len(times) < 2:
+                topic_medians[topic_id] = None
+                continue
+            sorted_times = sorted(times)
+            mid = len(sorted_times) // 2
+            if len(sorted_times) % 2 == 0:
+                topic_medians[topic_id] = (sorted_times[mid - 1] + sorted_times[mid]) / 2.0
+            else:
+                topic_medians[topic_id] = sorted_times[mid]
+
+        buckets = {
+            "fast_correct": [],
+            "fast_wrong": [],
+            "slow_correct": [],
+            "slow_wrong": [],
+        }
+        for topic_id, time_seconds, is_correct in records:
+            median = topic_medians.get(topic_id)
+            is_slow = median is not None and time_seconds > median
+            key = (
+                ("slow_correct" if is_correct else "slow_wrong")
+                if is_slow
+                else ("fast_correct" if is_correct else "fast_wrong")
+            )
+            buckets[key].append(time_seconds)
+
+        def _summarize(values):
+            if not values:
+                return {"count": 0, "avg_seconds": 0.0}
+            return {"count": len(values), "avg_seconds": round(sum(values) / len(values), 2)}
+
+        all_times = [t for _, t, _ in records]
+        return {
+            "avg_seconds": round(sum(all_times) / len(all_times), 2),
+            "total_questions": len(all_times),
+            "fast_correct": _summarize(buckets["fast_correct"]),
+            "fast_wrong": _summarize(buckets["fast_wrong"]),
+            "slow_correct": _summarize(buckets["slow_correct"]),
+            "slow_wrong": _summarize(buckets["slow_wrong"]),
+        }
+
+    BEST_TOPICS_MIN_SCORE = 70
+    BEST_TOPICS_LIMIT = 5
+
+    def get_best_topics(self, student_id, subject_id=None, batch_id=None):
+        """Mirror of failing topics for the high end of the distribution."""
+        scores = sts_manager.select_student_topic_score_history(student_id)
+        if not scores:
+            return []
+
+        topic_ids = list({s.topic_id for s in scores})
+        topics_by_id = {t.id: t for t in topic_manager.get_topic_by_ids(topic_ids)}
+        if subject_id:
+            topics_by_id = {tid: t for tid, t in topics_by_id.items() if t.subject_id == subject_id}
+
+        topic_scores = defaultdict(list)
+        for s in scores:
+            if s.topic_id in topics_by_id:
+                topic_scores[s.topic_id].append(float(s.score_acquired))
+
+        results = []
+        for topic_id, vals in topic_scores.items():
+            avg = round(sum(vals) / len(vals), 2)
+            if avg < self.BEST_TOPICS_MIN_SCORE:
+                continue
+            results.append({
+                "topic_name": topics_by_id[topic_id].name,
+                "average_score": avg,
+                "proficiency": self.get_performance_band(avg),
+            })
+
+        results.sort(key=lambda r: r["average_score"], reverse=True)
+        return results[: self.BEST_TOPICS_LIMIT]
+
+    INTEGRITY_OUT_TIME_THRESHOLD_MS = 10000
+    INTEGRITY_WINDOW_SIZE = 15
+    INTEGRITY_FLAG_THRESHOLD = 5
+
+    def _extract_outside_time_ms(self, meta):
+        """Pull the cumulative-outside-time signal from test meta.
+
+        The frontend originally sent `out_time`; the mark_test handler now normalizes
+        it to `outside_time_ms`, but older rows may still carry the legacy key.
+        """
+        if not isinstance(meta, dict):
+            return 0
+        for key in ("outside_time_ms", "out_time"):
+            value = meta.get(key)
+            if value is None:
+                continue
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                continue
+        return 0
+
+    def get_integrity_summary(self, student_id, subject_id=None, batch_id=None):
+        """Rolling-window flag: last N tests in the subject; if M+ have cumulative
+        out-of-fullscreen time over the threshold, surface a teacher note.
+
+        Returns the count, threshold, window size, and the flagged tests themselves so
+        the teacher can investigate rather than just see a number.
+        """
+        tests = test_manager.get_tests_by_student_ids([student_id])
+        if subject_id:
+            tests = [t for t in tests if t.subject_id == subject_id]
+
+        # Only completed tests count — in-progress submissions would skew the window
+        tests = [t for t in tests if t.is_completed and t.created_at is not None]
+        tests.sort(key=lambda t: t.created_at, reverse=True)
+        window = tests[: self.INTEGRITY_WINDOW_SIZE]
+
+        flagged = []
+        for t in window:
+            out_ms = self._extract_outside_time_ms(t.meta)
+            if out_ms >= self.INTEGRITY_OUT_TIME_THRESHOLD_MS:
+                meta = t.meta or {}
+                flagged.append({
+                    "test_id": t.id,
+                    "date": (t.created_at.isoformat() if t.created_at else None),
+                    "out_time_ms": out_ms,
+                    "outside_events": int(meta.get("outside_events") or 0) if isinstance(meta, dict) else 0,
+                    "max_outside_event_ms": int(meta.get("max_outside_event_ms") or 0) if isinstance(meta, dict) else 0,
+                })
+
+        subject_name = None
+        if subject_id:
+            subj = subject_manager.get_subject_by_id(subject_id)
+            if subj:
+                subject_name = subj.name
+
+        return {
+            "suspect_test_count": len(flagged),
+            "window_size": self.INTEGRITY_WINDOW_SIZE,
+            "threshold": self.INTEGRITY_FLAG_THRESHOLD,
+            "subject_name": subject_name,
+            "flagged_tests": flagged,
+        }
+
+    # endregion Deep Dive
+
+
     def get_overall_preparedness(self, student_id, subject_id=None, batch_id=None):
         """
         Get overall preparedness data for a student including average mastery and subject-wise performance.

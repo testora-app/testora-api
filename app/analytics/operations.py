@@ -399,6 +399,36 @@ class StudentSessionManager(BaseManager):
 
         return last_week_time, time_spent_this_week
     
+    def get_time_on_platform_breakdown(self, student_id):
+        """
+        Returns total session minutes for the student across three windows:
+          this_week_minutes  — Monday of current ISO week → now
+          this_month_minutes — first day of current calendar month → now
+          all_time_minutes   — every recorded session
+        Durations are stored as seconds on `StudentSession.duration`.
+        """
+        from app.extensions import db
+
+        now = datetime.now(timezone.utc)
+        start_of_week = now - timedelta(days=now.weekday(), hours=now.hour, minutes=now.minute, seconds=now.second, microseconds=now.microsecond)
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        def _sum_between(lower):
+            q = db.session.query(db.func.sum(StudentSession.duration)).filter(
+                StudentSession.student_id == student_id
+            )
+            if lower is not None:
+                q = q.filter(StudentSession.created_at >= lower)
+            value = q.scalar() or 0.0
+            # stored as seconds → minutes
+            return round(float(value) / 60.0, 2)
+
+        return {
+            "this_week_minutes": _sum_between(start_of_week),
+            "this_month_minutes": _sum_between(start_of_month),
+            "all_time_minutes": _sum_between(None),
+        }
+
     def get_average_session_duration(self, student_ids=None):
         """
         Computes average session duration for the given list of student IDs.

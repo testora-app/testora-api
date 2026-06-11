@@ -35,13 +35,16 @@ class SubjectManager(BaseManager):
     def create_subjects(self, entries: List[Dict]) -> List[Subject]:
         entities: List[Subject] = []
         for entry in entries:
-            entities.append(
-                Subject(
-                    name=entry["name"],
-                    short_name=entry["short_name"],
-                    curriculum=entry["curriculum"],
-                )
+            subject = Subject(
+                name=entry["name"],
+                short_name=entry["short_name"],
+                curriculum=entry["curriculum"],
             )
+            if entry.get("max_duration") is not None:
+                subject.max_duration = entry["max_duration"]
+            if entry.get("is_premium") is not None:
+                subject.is_premium = entry["is_premium"]
+            entities.append(subject)
         self.save_multiple(entities)
         return entities
 
@@ -72,6 +75,7 @@ class TopicManager(BaseManager):
                     name=entry["name"],
                     short_name=entry["short_name"],
                     level=entry["level"],
+                    description=entry.get("description"),
                     theme_id=entry["theme_id"],
                     subject_id=entry["subject_id"],
                 )

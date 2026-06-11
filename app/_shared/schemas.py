@@ -102,6 +102,7 @@ class ExamModes:
 
 
 class QuestionsNumberLimiter:
+    # Level 10 mirrors level 9 — it's a "fully done" milestone badge, not a real difficulty tier.
     questions_per_level = {
         "1": 10,
         "2": 12,
@@ -112,6 +113,7 @@ class QuestionsNumberLimiter:
         "7": 30,
         "8": 35,
         "9": 40,
+        "10": 40,
     }
 
     @classmethod
@@ -120,6 +122,7 @@ class QuestionsNumberLimiter:
 
 
 class QuestionPoints:
+    # Level 10 mirrors level 9 — it's a "fully done" milestone badge, not a real difficulty tier.
     question_level_points = {
         1: 1.2,
         2: 1.5,
@@ -130,6 +133,7 @@ class QuestionPoints:
         7: 2.65,
         8: 2.8,
         9: 3,
+        10: 3,
     }
 
     @classmethod
